@@ -122,17 +122,17 @@ void printGPUDebug() {
 		printf("%02X ", gpu.vram[i]);
 	}
 	printf("\n");
-	
+	exit(1);
 }
 
 void renderScanline() {
-	uint8_t tilenr, yoff, xoff, row, col, i;
+	uint16_t yoff, xoff, tilenr;
+	uint8_t row, col, i;
 	uint8_t color;
 	int bit, offset;
 	
 	yoff = gpu.f.bgmap ? 0x1C00 : 0x1800;
-	
-	yoff += ((gpu.line + gpu.f.scy) & 255) >> 3;
+	yoff += (((gpu.line + gpu.f.scy) & 255) >> 3) << 5;
 	xoff = gpu.f.scx >> 3;
 	
 	row = (gpu.line + gpu.f.scy) & 0x07;
@@ -140,14 +140,16 @@ void renderScanline() {
 	
 	tilenr = gpu.vram[yoff + xoff];
 
+	//printf("line=%d, yoff=0x%02X, xoff=0x%02X, yoff+xoff=0x%02X, tilenr=0x%02X\n", gpu.line, yoff, xoff, yoff+xoff, tilenr);
 	for(i=0; i<160; i++) {
-		//color = gpu.palette[gpu.tileset[tilenr][row][col]];
+		color = gpu.palette[gpu.tileset[tilenr][row][col]];
 		
+		/*
 		bit = 1 << (7 - col);
 		offset = tilenr * 16 + row * 2;
 		color = gpu.palette[((gpu.vram[offset] & bit) ? 0x01 : 0x00)
 							| ((gpu.vram[offset+1] & bit) ? 0x02 : 0x00)];
-		
+		*/
 		setPixelColor(i, gpu.line, color);
 		
 		col++;
