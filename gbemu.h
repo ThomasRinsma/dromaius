@@ -4,7 +4,28 @@
 #include <stdint.h>
 #include <SDL.h>
 
-#define HEADER_START 0x134
+#define HEADER_START        0x134
+
+#define GPU_TILEMAP_ADDR1   0x1800
+#define GPU_TILEMAP_ADDR0   0x1C00
+
+#define CPU_CLOCKS_PER_FRAME 17556
+
+typedef struct keymap_s {
+	int start;
+	int select;
+	int left;
+	int up;
+	int right;
+	int down;
+	int b;
+	int a;
+} keymap_t;
+
+typedef struct settings_s {
+	int debug;
+	keymap_t keymap;
+} settings_t;
 
 typedef struct romheader_s {
 	char	gamename[15];
@@ -38,7 +59,6 @@ typedef struct cpu_s {
 	int ints;
 	int c;
 	int dc;
-	int t;
 } cpu_t;
 
 typedef struct mem_s {
@@ -47,7 +67,9 @@ typedef struct mem_s {
 	uint8_t *workram;
 	uint8_t *extram;
 	uint8_t *zeropageram;
-	int romlen;
+	uint8_t inputRow[2];
+	uint8_t inputWire;
+	size_t romlen;
 	int biosLoaded;
 } mem_t;
 
@@ -58,23 +80,31 @@ typedef enum gpumode_s {
 	GPU_MODE_VRAM
 } gpumode_t;
 
-typedef struct gpuflags_s {
-	uint8_t bgtoggle;
-	uint8_t lcdtoggle;
-	uint8_t bgmap;
-	uint8_t bgtile;
+typedef enum gpuflags_s {
+	GPU_FLAG_BG,
+	GPU_FLAG_SPRITES,
+	GPU_FLAG_SPRITESIZE,
+	GPU_FLAG_TILEMAP,
+	GPU_FLAG_TILESET,
+	GPU_FLAG_WINDOW,
+	GPU_FLAG_WINDOWTILEMAP,
+	GPU_FLAG_LCD
+} gpuflags_t;
+
+typedef struct gpuregs_s {
+	gpuflags_t flags;
+	uint8_t line;
 	uint8_t scx;
 	uint8_t scy;
-} gpuflags_t;
+} gpuregs_t;
 
 typedef struct gpu_s {
 	uint8_t ***tileset;
 	uint8_t *vram;
 	uint8_t *oam;
 	uint8_t palette[4];
-	gpuflags_t f;
+	gpuregs_t r;
 	gpumode_t mode;
-	uint8_t line;
 	int mclock;
 } gpu_t;
 

@@ -7,6 +7,7 @@
 #define F_HCARRY	0x20
 #define F_CARRY		0x10
 
+extern settings_t settings;
 extern mem_t mem;
 extern cpu_t cpu;
 extern gpu_t gpu;
@@ -25,7 +26,6 @@ void initCPU() {
 	
 	cpu.ints = 0;
 	cpu.c = 0;
-	cpu.t = 0;
 }
 
 void doOpcodeADD(uint8_t val) {
@@ -249,7 +249,9 @@ int executeInstruction() {
 	uint8_t utmp8, utmp8_2;
 	
 	inst = readByte(cpu.r.pc);
-	//printf("Read instruction 0x%02X (0x%02X: 0x%02X) at 0x%04X. (%d)\n", inst, cpu.r.pc+1, readByte(cpu.r.pc+1), cpu.r.pc, cpu.r.pc);
+	if(settings.debug && cpu.c%100==0) {
+		printf("Read instruction 0x%02X at 0x%04X. (%d)\n", inst, cpu.r.pc, cpu.r.pc);
+	}
 	cpu.r.pc++;
 	cpu.dc = cpu.c;
 	

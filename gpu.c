@@ -6,6 +6,7 @@
 #define SCREEN_WIDTH  160
 #define SCREEN_HEIGHT 144
 
+extern settings_t settings;
 extern mem_t mem;
 extern cpu_t cpu;
 extern gpu_t gpu;
@@ -40,8 +41,11 @@ void initGPU() {
 	int i, j;
 	
 	gpu.mode = GPU_MODE_HBLANK;
-	gpu.line = 0;
 	gpu.mclock = 0;
+	gpu.r.line = 0;
+	gpu.r.scx = 0;
+	gpu.r.scy = 0;
+	gpu.r.flags = 0;
 
 	gpu.vram = (uint8_t *)calloc(0x2000, sizeof(uint8_t));
 	gpu.oam = (uint8_t *)calloc(0xA0, sizeof(uint8_t));
@@ -55,25 +59,36 @@ void initGPU() {
 	}
 }
 
+void freeGPU() {
+	int i, j;
+	
+	free(gpu.vram);
+	free(gpu.oam);
+	
+	for(i=0; i<512; i++) {
+		for(j=0; j<8; j++) {
+			free(gpu.tileset[i][j]);
+		}
+		free(gpu.tileset[i]);
+	}
+	free(gpu.tileset);	
+}
+
 uint8_t gpuReadIOByte(uint16_t addr) {
 	uint8_t res;
 	
 	switch(addr) {
 		case 0:
-			res  = (gpu.f.bgtoggle ? 0x01 : 0x00);
-			res |= (gpu.f.bgmap ? 0x08 : 0x00);
-			res |= (gpu.f.bgtile ? 0x10 : 0x00);
-			res |= (gpu.f.lcdtoggle ? 0x80 : 0x00);
-			return res;
+			return gpu.r.flags;
 			
 		case 2:
-			return gpu.f.scy;
+			return gpu.r.scy;
 			
 		case 3:
-			return gpu.f.scx;
+			return gpu.r.scx;
 			
 		case 4:
-			return gpu.line;
+			return gpu.r.line;
 			
 		default:
 			return 0x00; // TODO: Unhandled I/O, no idea what GB does here
@@ -85,35 +100,43 @@ void gpuWriteIOByte(uint8_t b, uint16_t addr) {
 	
 	switch(addr) {
 		case 0:
-			gpu.f.bgtoggle = (b & 0x01) ? 1 : 0;
-			gpu.f.bgmap = (b & 0x08) ? 1 : 0;
-			gpu.f.bgtile = (b & 0x10) ? 1 : 0;
-			gpu.f.lcdtoggle = (b & 0x80) ? 1 : 0;
+			gpu.r.flags = b;
 			break;
 		
 		case 2:
-			gpu.f.scy = b;
+			gpu.r.scy = b;
+			break;
 			
 		case 3:
-			gpu.f.scx = b;
+			gpu.r.scx = b;
+			break;
 			
 		case 7:
 			for(i=0; i<4; i++) {
 				gpu.palette[i] = (b >> (i * 2)) & 3;
 			}
+			break;
+			
+		default:
+			// Do nothing
+			break;
 	}
 }
 
-void setPixelColor(int x, int y, uint8_t color) {
+inline void setPixelColor(int x, int y, uint8_t color) {
 	//printf("Setting (%d,%d) to (%d).\n", x, y, color);
 	((uint8_t*)surface->pixels)[y*SCREEN_WIDTH + x] = color;
 }
 
 void printGPUDebug() {
-	printf("bgtoggle=%d,lcdtoggle=%d,bgmap=%d,bgtile=%d,scx=%d,scy=%d\n",
-			gpu.f.bgtoggle, gpu.f.lcdtoggle, gpu.f.bgmap, gpu.f.bgtile, gpu.f.scx, gpu.f.scy);
+	printf("bgtoggle=%d,lcdtoggle=%d,bgmap=%d,tileset=%d,scx=%d,scy=%d\n",
+		(gpu.r.flags | GPU_FLAG_BG) ? 1 : 0, 
+		(gpu.r.flags | GPU_FLAG_LCD) ? 1 : 0,
+		(gpu.r.flags | GPU_FLAG_TILEMAP) ? 1 : 0,
+		(gpu.r.flags | GPU_FLAG_TILESET) ? 1 : 0,
+		gpu.r.scx, gpu.r.scy);
 
-	
+	/*
 	int base = 0x1800;
 	int i;
 	
@@ -121,8 +144,7 @@ void printGPUDebug() {
 		if(i%32 == 0) printf("\n");
 		printf("%02X ", gpu.vram[i]);
 	}
-	printf("\n");
-	exit(1);
+	printf("\n");*/
 }
 
 void renderScanline() {
@@ -131,16 +153,27 @@ void renderScanline() {
 	uint8_t color;
 	int bit, offset;
 	
-	yoff = gpu.f.bgmap ? 0x1C00 : 0x1800;
-	yoff += (((gpu.line + gpu.f.scy) & 255) >> 3) << 5;
-	xoff = gpu.f.scx >> 3;
+	// Use tilemap 1 or tilemap 0?
+	yoff = (gpu.r.flags | GPU_FLAG_TILEMAP) ? GPU_TILEMAP_ADDR1 : GPU_TILEMAP_ADDR0;
 	
-	row = (gpu.line + gpu.f.scy) & 0x07;
-	col = gpu.f.scx & 0x07;
+	// divide y offset by 8 (to get whole tile)
+	// then multiply by 32 (= amount of tiles in a row)
+	yoff += (((gpu.r.line + gpu.r.scy) & 255) >> 3) << 5;
 	
+	// divide x offset by 8 (to get whole tile)
+	xoff = gpu.r.scx >> 3;
+	
+	// row number inside our tile, we only need 3 bits
+	row = (gpu.r.line + gpu.r.scy) & 0x07;
+	
+	// same with column number
+	col = gpu.r.scx & 0x07;
+	
+	// tile number from bgmap
 	tilenr = gpu.vram[yoff + xoff];
 
-	//printf("line=%d, yoff=0x%02X, xoff=0x%02X, yoff+xoff=0x%02X, tilenr=0x%02X\n", gpu.line, yoff, xoff, yoff+xoff, tilenr);
+	// TODO: tilemap signed stuff
+	
 	for(i=0; i<160; i++) {
 		color = gpu.palette[gpu.tileset[tilenr][row][col]];
 		
@@ -150,7 +183,7 @@ void renderScanline() {
 		color = gpu.palette[((gpu.vram[offset] & bit) ? 0x01 : 0x00)
 							| ((gpu.vram[offset+1] & bit) ? 0x02 : 0x00)];
 		*/
-		setPixelColor(i, gpu.line, color);
+		setPixelColor(i, gpu.r.line, color);
 		
 		col++;
 		if(col == 8) {
@@ -160,10 +193,6 @@ void renderScanline() {
 		}
 	}
 	
-}
-
-void updateDisplay() {
-
 }
 
 void updateTile(uint8_t b, uint16_t addr) {
@@ -187,9 +216,9 @@ void stepGPU() {
 		case GPU_MODE_HBLANK:
 			if(gpu.mclock >= 51) {
 				gpu.mclock = 0;
-				gpu.line++;
+				gpu.r.line++;
 				
-				if(gpu.line == 144) { // last line
+				if(gpu.r.line == 144) { // last line
 					gpu.mode = GPU_MODE_VBLANK;
 					SDL_Flip(surface);
 				}
@@ -202,11 +231,11 @@ void stepGPU() {
 		case GPU_MODE_VBLANK:
 			if(gpu.mclock >= 114) {
 				gpu.mclock = 0;
-				gpu.line++;
+				gpu.r.line++;
 				
-				if(gpu.line > 153) {
+				if(gpu.r.line > 153) {
 					gpu.mode = GPU_MODE_OAM;
-					gpu.line = 0;
+					gpu.r.line = 0;
 				}
 			}
 			break;

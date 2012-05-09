@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "gbemu.h"
 
+extern settings_t settings;
 extern mem_t mem;
 extern cpu_t cpu;
 extern gpu_t gpu;
@@ -30,12 +31,28 @@ void initMemory(uint8_t *rombuffer, size_t romlen) {
 	mem.biosLoaded = 1;
 	mem.bios = biosBytes;
 	
+	// This changes the BIOS to jump over logo check
+	mem.bios[0x00E0] = 0xC3; // JP nn
+	mem.bios[0x00E1] = 0x00; // 0x0100 (low byte)
+	mem.bios[0x00E2] = 0x01; // 0x0100 (high byte)
+	
+	mem.inputWire = 0x10;
+	mem.inputRow[0] = 0x0F;
+	mem.inputRow[1] = 0x0F;
+	
 	mem.rom = rombuffer;
 	mem.romlen = romlen;
 	
 	mem.workram = (uint8_t *)calloc(0x2000, sizeof(uint8_t));
 	mem.extram = (uint8_t *)calloc(0x2000, sizeof(uint8_t));
 	mem.zeropageram = (uint8_t *)calloc(127, sizeof(uint8_t));
+}
+
+void freeMemory() {
+	free(mem.rom);
+	free(mem.workram);
+	free(mem.extram);
+	free(mem.zeropageram);
 }
 
 // Read a byte from memory
@@ -45,9 +62,11 @@ uint8_t readByte(uint16_t addr) {
 		case 0x0000:
 			if(mem.biosLoaded) {
 				if(addr < 0x0100) return mem.bios[addr];
-				else if(addr == 0x0100) mem.biosLoaded = 0;
+				else if(addr == 0x0100) {
+					printf("End of bios reached!\n");
+					mem.biosLoaded = 0;
+				}
 			}
-			
 			return mem.rom[addr];
 		
 		// ROM0
@@ -96,9 +115,21 @@ uint8_t readByte(uint16_t addr) {
 				if(addr >= 0xFF80) { // Zero page
 					return mem.zeropageram[addr & 0x7F];
 				}
-				else { // I/O
+				else if(addr >= 0xFF40) { // I/O
 					return gpuReadIOByte(addr - 0xFF40);
 				}
+				else if(addr == 0xFF00) { 
+					if(mem.inputWire == 0x10) {
+						printf("0x10: %x.\n", mem.inputRow[0]);
+						return mem.inputRow[0];
+					}
+					if(mem.inputWire == 0x20) {
+						printf("0x20: %x.\n", mem.inputRow[1]);
+						return mem.inputRow[1];
+					}
+					return 0;
+				}
+				return 0;
 			}
 		
 	}
@@ -182,8 +213,13 @@ void writeByte(uint8_t b, uint16_t addr) {
 					mem.zeropageram[addr & 0x7F] = b;
 					return;
 				}
-				else { // I/O
+				else if(addr >= 0xFF40) { // I/O
 					gpuWriteIOByte(b, addr - 0xFF40);
+					return;
+				}
+				else if(addr == 0xFF00) {
+					mem.inputWire = b & 0x30;
+					printf("write %x to inputWire.\n", b);
 					return;
 				}
 			}
@@ -193,6 +229,30 @@ void writeByte(uint8_t b, uint16_t addr) {
 void writeWord(uint16_t w, uint16_t addr) {
 	writeByte(w & 0xFF, addr);
 	writeByte(w >> 8, addr+1);
+}
+
+void handleGameInput(int state, SDLKey key) {
+	if(state == 1) {
+		// key up
+		if(key == settings.keymap.start) mem.inputRow[1] |= 0x01;
+		else if(key == settings.keymap.select) mem.inputRow[1] |= 0x02;
+		else if(key == settings.keymap.left) mem.inputRow[1] |= 0x04;
+		else if(key == settings.keymap.up) mem.inputRow[1] |= 0x08;
+		else if(key == settings.keymap.right) mem.inputRow[0] |= 0x01;
+		else if(key == settings.keymap.down) mem.inputRow[0] |= 0x02;
+		else if(key == settings.keymap.b) mem.inputRow[0] |= 0x04;
+		else if(key == settings.keymap.a) mem.inputRow[0] |= 0x08;
+	} else {
+		// key down down
+		if(key == settings.keymap.start) mem.inputRow[1] &= 0x0E;
+		else if(key == settings.keymap.select) mem.inputRow[1] &= 0x0D;
+		else if(key == settings.keymap.left) mem.inputRow[1] &= 0x0B;
+		else if(key == settings.keymap.up) mem.inputRow[1] &= 0x07;
+		else if(key == settings.keymap.right) mem.inputRow[0] &= 0x0E;
+		else if(key == settings.keymap.down) mem.inputRow[0] &= 0x0D;
+		else if(key == settings.keymap.b) mem.inputRow[0] &= 0x0B;
+		else if(key == settings.keymap.a) mem.inputRow[0] &= 0x07;
+	}
 }
 
 void dumpToFile() {
