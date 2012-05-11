@@ -136,7 +136,7 @@ void printGPUDebug() {
 		(gpu.r.flags | GPU_FLAG_TILESET) ? 1 : 0,
 		gpu.r.scx, gpu.r.scy);
 
-	/*
+	
 	int base = 0x1800;
 	int i;
 	
@@ -144,7 +144,7 @@ void printGPUDebug() {
 		if(i%32 == 0) printf("\n");
 		printf("%02X ", gpu.vram[i]);
 	}
-	printf("\n");*/
+	printf("\n");
 }
 
 void renderScanline() {

@@ -92,10 +92,8 @@ int main(int argc, char *argv[]) {
 				switch(event.key.keysym.sym) {
 					case SDLK_F1: // debug
 						printGPUDebug();
-						printRegisters();
 						//dumpToFile();
-						readByte(0x0100);
-						settings.debug = 1;
+						//settings.debug = 1;
 						break;
 					
 					case SDLK_r: // reset
