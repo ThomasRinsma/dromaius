@@ -249,7 +249,7 @@ int executeInstruction() {
 	uint8_t utmp8, utmp8_2;
 	
 	inst = readByte(cpu.r.pc);
-	if(settings.debug && cpu.c%100==0) {
+	if(settings.debug) {
 		printf("Read instruction 0x%02X at 0x%04X. (%d)\n", inst, cpu.r.pc, cpu.r.pc);
 	}
 	cpu.r.pc++;

@@ -82,7 +82,9 @@ int main(int argc, char *argv[]) {
 				done = 1;
 				break;
 			}
-			//printRegisters();
+			if(settings.debug) {
+				printRegisters();
+			}
 			stepGPU();
 		}
 		
@@ -90,10 +92,16 @@ int main(int argc, char *argv[]) {
 		while(SDL_PollEvent(&event)) {;
 			if(event.type == SDL_KEYDOWN) {
 				switch(event.key.keysym.sym) {
-					case SDLK_F1: // debug
+					case SDLK_F1: // toggle: debugging on every instruction
+						settings.debug = !settings.debug;
+						break;
+						
+					case SDLK_F2: // debug gpu
 						printGPUDebug();
-						//dumpToFile();
-						//settings.debug = 1;
+						break;
+							
+					case SDLK_F3: // dump memory contents to file
+						dumpToFile();
 						break;
 					
 					case SDLK_r: // reset
