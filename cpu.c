@@ -202,6 +202,28 @@ void doExtraOP(uint8_t inst) {
 			}
 		}
 	}
+	else if(inst & 0x40) { // BIT
+		bit = (inst & 0x38) >> 3; // bit nr.
+		ptr = numToRegPtr(inst & 0x07);
+		
+		if(!ptr) { // mem
+			tmp = readByte((cpu.r.h << 8) + cpu.r.l);
+			cpu.c += 2;
+		} else { // reg
+			tmp = *ptr;
+		}
+		
+		cpu.r.f &= ~F_SUBSTRACT;
+		cpu.r.f |= F_HCARRY;
+		
+		if(tmp & (0x01 << bit)) {
+			cpu.r.f &= ~F_ZERO;
+		} else {
+			cpu.r.f |= F_ZERO;
+		}
+		
+		cpu.c += 2;
+	}
 	else {
 		bit = (inst & 0x08) ? 1 : 0;
 		ptr = numToRegPtr(inst & 0x07);

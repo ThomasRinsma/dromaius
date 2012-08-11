@@ -103,6 +103,10 @@ int main(int argc, char *argv[]) {
 					case SDLK_F3: // dump memory contents to file
 						dumpToFile();
 						break;
+						
+					case SDLK_F4:
+						printf("buttons held: 0x%02X, buttons down: 0x%02X. scroll timer: 0x%02X\n", readByte(0xC0A1), readByte(0xC0A2), readByte(0xC0A3));
+						break;
 					
 					case SDLK_r: // reset
 						freeGPU();
