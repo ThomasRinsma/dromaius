@@ -12,20 +12,46 @@ extern mem_t mem;
 extern cpu_t cpu;
 extern gpu_t gpu;
 
+regs_t registerStore;
+
 void initCPU() {
-	cpu.r.a = 0;
+	cpu.r.a = 0x01;
 	cpu.r.b = 0;
-	cpu.r.c = 0;
+	cpu.r.c = 0x13;
 	cpu.r.d = 0;
-	cpu.r.e = 0;
-	cpu.r.h = 0;
-	cpu.r.l = 0;
+	cpu.r.e = 0xD8;
+	cpu.r.h = 0x01;
+	cpu.r.l = 0x4D;
 	cpu.r.f = 0;
 	cpu.r.pc = 0;
-	cpu.r.sp = 0;
+	cpu.r.sp = 0xFFFE;
 	
+	cpu.intsOn = 1;
+	cpu.intFlags = 0;
 	cpu.ints = 0;
 	cpu.c = 0;
+}
+
+void storeRegisters() {
+	registerStore.a = cpu.r.a;
+	registerStore.b = cpu.r.b;
+	registerStore.c = cpu.r.c;
+	registerStore.d = cpu.r.d;
+	registerStore.e = cpu.r.e;
+	registerStore.f = cpu.r.f;
+	registerStore.h = cpu.r.h;
+	registerStore.l = cpu.r.l;
+}
+
+void loadRegisters() {
+	cpu.r.a = registerStore.a;
+	cpu.r.b = registerStore.b;
+	cpu.r.c = registerStore.c;
+	cpu.r.d = registerStore.d;
+	cpu.r.e = registerStore.e;
+	cpu.r.f = registerStore.f;
+	cpu.r.h = registerStore.h;
+	cpu.r.l = registerStore.l;
 }
 
 void doOpcodeADD(uint8_t val) {
@@ -113,8 +139,19 @@ void doOpcodeCP(uint8_t val) {
 }
 
 void doOpcodeRST(uint8_t val) {
-	printf("RST (%d) called.\n", val);
-	exit(1);
+	//printf("RST (0x%02X) called.\n", val);
+	
+	// backup registers
+	storeRegisters();
+	
+	// push PC to stack
+	cpu.r.sp -= 2;
+	writeWord(cpu.r.pc, cpu.r.sp);
+	
+	// jump to val
+	cpu.r.pc = val;
+	
+	cpu.c += 3;
 }
 
 void doOpcodeUNIMP() {
@@ -247,11 +284,16 @@ int executeInstruction() {
 	uint16_t utmp16, utmp16_2;
 	int8_t tmp8, tmp8_2;
 	uint8_t utmp8, utmp8_2;
+	uint8_t interrupts;
 	
 	inst = readByte(cpu.r.pc);
 	if(settings.debug) {
-		printf("Read instruction 0x%02X at 0x%04X. (%d)\n", inst, cpu.r.pc, cpu.r.pc);
+		if(cpu.r.pc == 0x0245) {
+			printf("Read instruction 0x%02X at 0x%04X. (%d)\n", inst, cpu.r.pc, cpu.r.pc);
+			printRegisters();
+		}
 	}
+	
 	cpu.r.pc++;
 	cpu.dc = cpu.c;
 	
@@ -1494,9 +1536,13 @@ int executeInstruction() {
 			break;
 
 		case 0xD9: // RETI
-			cpu.ints = 1;
+			cpu.intsOn = 1;
+			
+			loadRegisters();
+			
 			cpu.r.pc = readWord(cpu.r.sp);
 			cpu.r.sp += 2;
+			
 			cpu.r.c += 3;
 			break;
 
@@ -1643,7 +1689,7 @@ int executeInstruction() {
 			break;
 
 		case 0xF3: // DI
-			cpu.ints = 0;
+			cpu.intsOn = 0;
 			cpu.c += 1;
 			break;
 
@@ -1691,7 +1737,7 @@ int executeInstruction() {
 			break;
 
 		case 0xFB: // EI
-			cpu.ints = 1;
+			cpu.intsOn = 1;
 			cpu.c += 1;
 			break;
 
@@ -1717,6 +1763,37 @@ int executeInstruction() {
 	}
 	
 	cpu.dc = cpu.c - cpu.dc; // delta cycles
+	
+	// Interrupts
+	if(cpu.intsOn && cpu.ints && cpu.intFlags) {
+		interrupts = cpu.intFlags & cpu.ints; // mask enabled interrupt(s)
+		cpu.intsOn = 0;
+		
+		if(interrupts & INT_VBLANK) {
+			cpu.intFlags &= ~INT_VBLANK;
+			doOpcodeRST(0x40);
+		}
+		else if(interrupts & INT_LCDSTAT) {
+			cpu.intFlags &= ~INT_LCDSTAT;
+			doOpcodeRST(0x48);
+		}
+		else if(interrupts & INT_TIMER) {
+			cpu.intFlags &= ~INT_TIMER;
+			doOpcodeRST(0x50);
+		}
+		else if(interrupts & INT_SERIAL) {
+			cpu.intFlags &= ~INT_SERIAL;
+			doOpcodeRST(0x58);
+		}
+		else if(interrupts & INT_JOYPAD) {
+			cpu.intFlags &= ~INT_JOYPAD;
+			doOpcodeRST(0x60);
+		} 
+		else {
+			cpu.intsOn = 1;
+		}
+		
+	}
 	
 	return 1;
 }

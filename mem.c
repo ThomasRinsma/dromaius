@@ -103,7 +103,7 @@ uint8_t readByte(uint16_t addr) {
 				return mem.workram[addr & 0x1FFF];
 			}
 			
-			if(addr & 0x0F00 == 0xE00) {
+			if((addr & 0x0F00) == 0x0E00) {
 				if(addr < 0xFEA0) { // Object Attribute Memory
 			    	return gpu.oam[addr & 0xFF];
 			    }
@@ -112,7 +112,10 @@ uint8_t readByte(uint16_t addr) {
 			    }
 			}
 			else {
-				if(addr >= 0xFF80) { // Zero page
+				if(addr == 0xFFFF) { // interrupt enable
+					return cpu.ints;
+				}
+				else if(addr >= 0xFF80) { // Zero page
 					return mem.zeropageram[addr & 0x7F];
 				}
 				else if(addr >= 0xFF40) { // I/O
@@ -120,14 +123,17 @@ uint8_t readByte(uint16_t addr) {
 				}
 				else if(addr == 0xFF00) { 
 					if(mem.inputWire == 0x10) {
-						printf("0x10: %x.\n", mem.inputRow[0]);
+						//printf("0x10: %x.\n", mem.inputRow[0]);
 						return mem.inputRow[0];
 					}
 					if(mem.inputWire == 0x20) {
-						printf("0x20: %x.\n", mem.inputRow[1]);
+						//printf("0x20: %x.\n", mem.inputRow[1]);
 						return mem.inputRow[1];
 					}
 					return 0;
+				}
+				else if(addr == 0xFF0F) { // interrupt flags
+					return cpu.intFlags;
 				}
 				return 0;
 			}
@@ -197,10 +203,10 @@ void writeByte(uint8_t b, uint16_t addr) {
 				mem.workram[addr & 0x1FFF] = b;
 				return;
 			}
-			
-			if(addr & 0x0F00 == 0xE00) {
+			if((addr & 0x0F00) == 0x0E00) {
 				if(addr < 0xFEA0) { // Object Attribute Memory
 			    	gpu.oam[addr & 0xFF] = b;
+			    	gpuBuildSpriteData(b, addr - 0xFE00);
 			    	return;
 			    }
 			    else {
@@ -209,7 +215,11 @@ void writeByte(uint8_t b, uint16_t addr) {
 			    }
 			}
 			else {
-				if(addr >= 0xFF80) { // Zero page
+				if(addr == 0xFFFF) { // interrupt enable
+					cpu.ints = b;
+					return;
+				}
+				else if(addr >= 0xFF80) { // Zero page
 					mem.zeropageram[addr & 0x7F] = b;
 					return;
 				}
@@ -219,7 +229,11 @@ void writeByte(uint8_t b, uint16_t addr) {
 				}
 				else if(addr == 0xFF00) {
 					mem.inputWire = b & 0x30;
-					printf("write %x to inputWire.\n", b);
+					//printf("write %x to inputWire.\n", b);
+					return;
+				}
+				else if(addr == 0xFF0F) {
+					cpu.intFlags = b; // TODO: Can we allow program to set these?
 					return;
 				}
 			}
@@ -234,24 +248,88 @@ void writeWord(uint16_t w, uint16_t addr) {
 void handleGameInput(int state, SDLKey key) {
 	if(state == 1) {
 		// key up
-		if(key == settings.keymap.start) mem.inputRow[1] |= 0x01;
-		else if(key == settings.keymap.select) mem.inputRow[1] |= 0x02;
-		else if(key == settings.keymap.left) mem.inputRow[1] |= 0x04;
-		else if(key == settings.keymap.up) mem.inputRow[1] |= 0x08;
-		else if(key == settings.keymap.right) mem.inputRow[0] |= 0x01;
-		else if(key == settings.keymap.down) mem.inputRow[0] |= 0x02;
-		else if(key == settings.keymap.b) mem.inputRow[0] |= 0x04;
-		else if(key == settings.keymap.a) mem.inputRow[0] |= 0x08;
+		if(key == settings.keymap.start && settings.keymap.startDown) {
+			mem.inputRow[1] |= 0x01;
+			printf("start up!\n");
+			settings.keymap.startDown = 0;
+		}
+		else if(key == settings.keymap.select && settings.keymap.selectDown) {
+			mem.inputRow[1] |= 0x02;
+			printf("select up!\n");
+			settings.keymap.selectDown = 0;
+		}
+		else if(key == settings.keymap.left && settings.keymap.leftDown) {
+			mem.inputRow[1] |= 0x04;
+			printf("left up!\n");
+			settings.keymap.leftDown = 0;
+		}
+		else if(key == settings.keymap.up && settings.keymap.upDown) {
+			mem.inputRow[1] |= 0x08;
+			printf("up up!\n");
+			settings.keymap.upDown = 0;
+		}
+		else if(key == settings.keymap.right && settings.keymap.rightDown) {
+			mem.inputRow[0] |= 0x01;
+			printf("right up!\n");
+			settings.keymap.rightDown = 0;
+		}
+		else if(key == settings.keymap.down && settings.keymap.downDown) {
+			mem.inputRow[0] |= 0x02;
+			printf("down up!\n");
+			settings.keymap.downDown = 0;
+		}
+		else if(key == settings.keymap.b && settings.keymap.bDown) {
+			mem.inputRow[0] |= 0x04;
+			printf("b up!\n");
+			settings.keymap.bDown = 0;
+		}
+		else if(key == settings.keymap.a && settings.keymap.aDown) {
+			mem.inputRow[0] |= 0x08;
+			printf("a up!\n");
+			settings.keymap.aDown = 0;
+		}
 	} else {
-		// key down down
-		if(key == settings.keymap.start) mem.inputRow[1] &= 0x0E;
-		else if(key == settings.keymap.select) mem.inputRow[1] &= 0x0D;
-		else if(key == settings.keymap.left) mem.inputRow[1] &= 0x0B;
-		else if(key == settings.keymap.up) mem.inputRow[1] &= 0x07;
-		else if(key == settings.keymap.right) mem.inputRow[0] &= 0x0E;
-		else if(key == settings.keymap.down) mem.inputRow[0] &= 0x0D;
-		else if(key == settings.keymap.b) mem.inputRow[0] &= 0x0B;
-		else if(key == settings.keymap.a) mem.inputRow[0] &= 0x07;
+		// key down
+		if(key == settings.keymap.start && !settings.keymap.startDown) {
+			mem.inputRow[1] &= 0x0E;
+			printf("start down!\n");
+			settings.keymap.startDown = 1;
+		}
+		else if(key == settings.keymap.select && !settings.keymap.selectDown) {
+			mem.inputRow[1] &= 0x0D;
+			printf("select down!\n");
+			settings.keymap.selectDown = 1;
+		}
+		else if(key == settings.keymap.left && !settings.keymap.leftDown) {
+			mem.inputRow[1] &= 0x0B;
+			printf("left down!\n");
+			settings.keymap.leftDown = 1;
+		}
+		else if(key == settings.keymap.up && !settings.keymap.upDown) {
+			mem.inputRow[1] &= 0x07;
+			printf("up down!\n");
+			settings.keymap.upDown = 1;
+		}
+		else if(key == settings.keymap.right && !settings.keymap.rightDown) {
+			mem.inputRow[0] &= 0x0E;
+			printf("right down!\n");
+			settings.keymap.rightDown = 1;
+		}
+		else if(key == settings.keymap.down && !settings.keymap.downDown) {
+			mem.inputRow[0] &= 0x0D;
+			printf("down down!\n");
+			settings.keymap.downDown = 1;
+		}
+		else if(key == settings.keymap.b && !settings.keymap.bDown) {
+			mem.inputRow[0] &= 0x0B;
+			printf("b down!\n");
+			settings.keymap.bDown = 1;
+		}
+		else if(key == settings.keymap.a && !settings.keymap.aDown) {
+			mem.inputRow[0] &= 0x07;
+			printf("a down!\n");
+			settings.keymap.aDown = 1;
+		}
 	}
 }
 

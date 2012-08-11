@@ -6,20 +6,35 @@
 
 #define HEADER_START        0x134
 
-#define GPU_TILEMAP_ADDR1   0x1800
-#define GPU_TILEMAP_ADDR0   0x1C00
+#define GPU_TILEMAP_ADDR0   0x1800
+#define GPU_TILEMAP_ADDR1   0x1C00
 
 #define CPU_CLOCKS_PER_FRAME 17556
 
 typedef struct keymap_s {
 	int start;
+	int startDown;
+	
 	int select;
+	int selectDown;
+	
 	int left;
+	int leftDown;
+	
 	int up;
+	int upDown;
+	
 	int right;
+	int rightDown;
+	
 	int down;
+	int downDown;
+	
 	int b;
+	int bDown;
+	
 	int a;
+	int aDown;
 } keymap_t;
 
 typedef struct settings_s {
@@ -54,9 +69,19 @@ typedef struct regs_s {
 	uint16_t sp;	// stack pointer
 } regs_t;
 
+typedef enum interrupts_s {
+	INT_VBLANK = 0x01,
+	INT_LCDSTAT = 0x02,
+	INT_TIMER = 0x04,
+	INT_SERIAL = 0x08,
+	INT_JOYPAD = 0x10
+} interrupts_t;
+
 typedef struct cpu_s {
 	regs_t r;
-	int ints;
+	uint8_t intsOn; // bool
+	uint8_t intFlags;
+	uint8_t ints;
 	int c;
 	int dc;
 } cpu_t;
@@ -81,14 +106,14 @@ typedef enum gpumode_s {
 } gpumode_t;
 
 typedef enum gpuflags_s {
-	GPU_FLAG_BG,
-	GPU_FLAG_SPRITES,
-	GPU_FLAG_SPRITESIZE,
-	GPU_FLAG_TILEMAP,
-	GPU_FLAG_TILESET,
-	GPU_FLAG_WINDOW,
-	GPU_FLAG_WINDOWTILEMAP,
-	GPU_FLAG_LCD
+	GPU_FLAG_BG = 0x01,
+	GPU_FLAG_SPRITES = 0x02,
+	GPU_FLAG_SPRITESIZE = 0x04,
+	GPU_FLAG_TILEMAP = 0x08,
+	GPU_FLAG_TILESET = 0x10,
+	GPU_FLAG_WINDOW = 0x20,
+	GPU_FLAG_WINDOWTILEMAP = 0x40,
+	GPU_FLAG_LCD = 0x80
 } gpuflags_t;
 
 typedef struct gpuregs_s {
@@ -98,11 +123,27 @@ typedef struct gpuregs_s {
 	uint8_t scy;
 } gpuregs_t;
 
+typedef struct sprite_s {
+	uint8_t x;
+	uint8_t y;
+	uint8_t tile;
+	uint8_t flags;
+} sprite_t;
+
+typedef enum spriteflags_s {
+	SPRITE_FLAG_PALETTE = 0x10,
+	SPRITE_FLAG_XFLIP = 0x20,
+	SPRITE_FLAG_YFLIP = 0x40,
+	SPRITE_FLAG_PRIORITY = 0x80
+} spriteflags_t;
+
 typedef struct gpu_s {
 	uint8_t ***tileset;
+	sprite_t *spritedata;
 	uint8_t *vram;
 	uint8_t *oam;
-	uint8_t palette[4];
+	uint8_t bgpalette[4];
+	uint8_t objpalette[2][4];
 	gpuregs_t r;
 	gpumode_t mode;
 	int mclock;

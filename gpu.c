@@ -5,6 +5,7 @@
 
 #define SCREEN_WIDTH  160
 #define SCREEN_HEIGHT 144
+#define WINDOW_SCALE  3
 
 extern settings_t settings;
 extern mem_t mem;
@@ -21,7 +22,7 @@ void initDisplay() {
 		exit(1);
 	}
 	
-	surface = SDL_SetVideoMode(SCREEN_WIDTH, SCREEN_HEIGHT, 8, SDL_HWPALETTE);
+	surface = SDL_SetVideoMode(WINDOW_SCALE * SCREEN_WIDTH, WINDOW_SCALE * SCREEN_HEIGHT, 8, SDL_HWPALETTE);
 	if(!surface) {
 		printf("Failed to create a window.\n");
 		exit(1);
@@ -50,12 +51,20 @@ void initGPU() {
 	gpu.vram = (uint8_t *)calloc(0x2000, sizeof(uint8_t));
 	gpu.oam = (uint8_t *)calloc(0xA0, sizeof(uint8_t));
 	
-	gpu.tileset = malloc(0x200 * sizeof(uint8_t **));
+	gpu.tileset = malloc(0x200 * sizeof(uint8_t **)); // = 512 dec
 	for(i=0; i<512; i++) {
 		gpu.tileset[i] = malloc(8 * sizeof(uint8_t *));
 		for(j=0; j<8; j++) {
 			gpu.tileset[i][j] = calloc(8, sizeof(uint8_t));
 		}
+	}
+	
+	gpu.spritedata = malloc(0x28 * sizeof(sprite_t)); // = 40 dec
+	for(i=0; i<40; i++) {
+		gpu.spritedata[i].x = -8;
+		gpu.spritedata[i].y = -16;
+		gpu.spritedata[i].tile = 0;
+		gpu.spritedata[i].flags = 0;
 	}
 }
 
@@ -71,7 +80,9 @@ void freeGPU() {
 		}
 		free(gpu.tileset[i]);
 	}
-	free(gpu.tileset);	
+	free(gpu.tileset);
+	
+	free(gpu.spritedata);
 }
 
 uint8_t gpuReadIOByte(uint16_t addr) {
@@ -111,11 +122,31 @@ void gpuWriteIOByte(uint8_t b, uint16_t addr) {
 			gpu.r.scx = b;
 			break;
 			
-		case 7:
-			for(i=0; i<4; i++) {
-				gpu.palette[i] = (b >> (i * 2)) & 3;
+		case 6: // DMA from XX00-XX9F to FE00-FE9F
+			for(i=0; i<=0x9F; i++) {
+				writeByte(readByte((b << 8) + i), 0xFE00 + i);
 			}
 			break;
+			
+		case 7: // Background palette
+			for(i=0; i<4; i++) {
+				gpu.bgpalette[i] = (b >> (i * 2)) & 3;
+			}
+			break;
+			
+		case 8: // Object palette 0
+			for(i=0; i<4; i++) {
+				gpu.objpalette[0][i] = (b >> (i * 2)) & 3;
+			}
+			break;
+			
+		case 9: // Object palette 1
+			for(i=0; i<4; i++) {
+				gpu.objpalette[1][i] = (b >> (i * 2)) & 3;
+			}
+			break;
+			
+		
 			
 		default:
 			// Do nothing
@@ -124,19 +155,33 @@ void gpuWriteIOByte(uint8_t b, uint16_t addr) {
 }
 
 inline void setPixelColor(int x, int y, uint8_t color) {
-	//printf("Setting (%d,%d) to (%d).\n", x, y, color);
-	((uint8_t*)surface->pixels)[y*SCREEN_WIDTH + x] = color;
+	int i, j, drawx, drawy;
+	
+	for(i=0; i<WINDOW_SCALE; i++) {
+		for(j=0; j<WINDOW_SCALE; j++) {
+			drawx = WINDOW_SCALE * x + i;
+			drawy = WINDOW_SCALE * y + j;
+			
+			((uint8_t*)surface->pixels)[drawy*(SCREEN_WIDTH * WINDOW_SCALE) + drawx] = color;
+		}
+	}
+
+	
 }
 
 void printGPUDebug() {
-	printf("bgtoggle=%d,lcdtoggle=%d,bgmap=%d,tileset=%d,scx=%d,scy=%d\n",
-		(gpu.r.flags | GPU_FLAG_BG) ? 1 : 0, 
-		(gpu.r.flags | GPU_FLAG_LCD) ? 1 : 0,
-		(gpu.r.flags | GPU_FLAG_TILEMAP) ? 1 : 0,
-		(gpu.r.flags | GPU_FLAG_TILESET) ? 1 : 0,
+	printf("bgtoggle=%d,spritetoggle=%d,lcdtoggle=%d,bgmap=%d,tileset=%d,scx=%d,scy=%d\n",
+		(gpu.r.flags & GPU_FLAG_BG) ? 1 : 0, 
+		(gpu.r.flags & GPU_FLAG_SPRITES) ? 1 : 0, 
+		(gpu.r.flags & GPU_FLAG_LCD) ? 1 : 0,
+		(gpu.r.flags & GPU_FLAG_TILEMAP) ? 1 : 0,
+		(gpu.r.flags & GPU_FLAG_TILESET) ? 1 : 0,
 		gpu.r.scx, gpu.r.scy);
-
-	
+		
+	printf("gpu.spritedata[0].x = 0x%02X.\n", gpu.spritedata[0].x);
+	printf("0xC000: %02X %02X %02X %02X.\n", readByte(0xC000), readByte(0xC001), readByte(0xC002), readByte(0xC003));
+	printf("0xFE00: %02X %02X %02X %02X.\n", readByte(0xFE00), readByte(0xFE01), readByte(0xFE02), readByte(0xFE03));
+	/*
 	int base = 0x1800;
 	int i;
 	
@@ -145,53 +190,99 @@ void printGPUDebug() {
 		printf("%02X ", gpu.vram[i]);
 	}
 	printf("\n");
+	*/
 }
 
 void renderScanline() {
 	uint16_t yoff, xoff, tilenr;
 	uint8_t row, col, i;
 	uint8_t color;
+	uint8_t bgScanline[160];
 	int bit, offset;
-	
-	// Use tilemap 1 or tilemap 0?
-	yoff = (gpu.r.flags | GPU_FLAG_TILEMAP) ? GPU_TILEMAP_ADDR1 : GPU_TILEMAP_ADDR0;
-	
-	// divide y offset by 8 (to get whole tile)
-	// then multiply by 32 (= amount of tiles in a row)
-	yoff += (((gpu.r.line + gpu.r.scy) & 255) >> 3) << 5;
-	
-	// divide x offset by 8 (to get whole tile)
-	xoff = gpu.r.scx >> 3;
-	
-	// row number inside our tile, we only need 3 bits
-	row = (gpu.r.line + gpu.r.scy) & 0x07;
-	
-	// same with column number
-	col = gpu.r.scx & 0x07;
-	
-	// tile number from bgmap
-	tilenr = gpu.vram[yoff + xoff];
 
-	// TODO: tilemap signed stuff
 	
-	for(i=0; i<160; i++) {
-		color = gpu.palette[gpu.tileset[tilenr][row][col]];
+	if(gpu.r.flags & GPU_FLAG_BG) {
+		// Use tilemap 1 or tilemap 0?
+		yoff = (gpu.r.flags & GPU_FLAG_TILEMAP) ? GPU_TILEMAP_ADDR1 : GPU_TILEMAP_ADDR0;
+	
+		// divide y offset by 8 (to get whole tile)
+		// then multiply by 32 (= amount of tiles in a row)
+		yoff += (((gpu.r.line + gpu.r.scy) & 255) >> 3) << 5;
+	
+		// divide x offset by 8 (to get whole tile)
+		xoff = gpu.r.scx >> 3;
+	
+		// row number inside our tile, we only need 3 bits
+		row = (gpu.r.line + gpu.r.scy) & 0x07;
+	
+		// same with column number
+		col = gpu.r.scx & 0x07;
+	
+		// tile number from bgmap
+		tilenr = gpu.vram[yoff + xoff];
+
+		// TODO: tilemap signed stuff
+	
+		for(i=0; i<160; i++) {
+			bgScanline[i] = gpu.tileset[tilenr][row][col];
+			color = gpu.bgpalette[gpu.tileset[tilenr][row][col]];
 		
-		/*
-		bit = 1 << (7 - col);
-		offset = tilenr * 16 + row * 2;
-		color = gpu.palette[((gpu.vram[offset] & bit) ? 0x01 : 0x00)
-							| ((gpu.vram[offset+1] & bit) ? 0x02 : 0x00)];
-		*/
-		setPixelColor(i, gpu.r.line, color);
+			/*
+			bit = 1 << (7 - col);
+			offset = tilenr * 16 + row * 2;
+			color = gpu.bgpalette[((gpu.vram[offset] & bit) ? 0x01 : 0x00)
+								| ((gpu.vram[offset+1] & bit) ? 0x02 : 0x00)];
+			*/
+			
+			setPixelColor(i, gpu.r.line, color);
 		
-		col++;
-		if(col == 8) {
-			col = 0;
-			xoff = (xoff + 1) & 0x1F;
-			tilenr = gpu.vram[yoff + xoff];
+			col++;
+			if(col == 8) {
+				col = 0;
+				xoff = (xoff + 1) & 0x1F;
+				tilenr = gpu.vram[yoff + xoff];
+			}
 		}
 	}
+	
+	if(gpu.r.flags & GPU_FLAG_SPRITES) {
+		for(i=0; i < 40; i++) {
+			// do we need to draw the sprite?
+			//printf("sprite x: %d, sprite y: %d, gpu line: %d\n", gpu.spritedata[i].x, gpu.spritedata[i].y, gpu.r.line);
+			if(gpu.spritedata[i].y <= gpu.r.line && gpu.spritedata[i].y > gpu.r.line - 8) {
+				// determine row, flip y if wanted
+				if(gpu.spritedata[i].flags & SPRITE_FLAG_YFLIP) {
+					row = 7 - (gpu.r.line - gpu.spritedata[i].y);
+				} else {
+					row = gpu.r.line - gpu.spritedata[i].y;
+				}
+				
+				// loop through the collumns
+				for(col=0; col<8; col++) {
+				
+					// only draw if this pixel's on the screen
+					if(gpu.spritedata[i].x + col >= 0 && gpu.spritedata[i].x + col < 160) {
+						
+						// only draw pixel when color is not 0 and (sprite has priority or background pixel is 0)
+						if(gpu.tileset[gpu.spritedata[i].tile][row][col] != 0 && (!(gpu.spritedata[i].flags & SPRITE_FLAG_PRIORITY) || bgScanline[gpu.spritedata[i].x + col] == 0)) {
+						
+							// get color from correct palette
+							if(gpu.spritedata[i].flags & SPRITE_FLAG_XFLIP) {
+								color = gpu.objpalette[(gpu.spritedata[i].flags & SPRITE_FLAG_PALETTE) ? 1 : 0]
+									                  [gpu.tileset[gpu.spritedata[i].tile][row][7 - col]];
+							} else {
+								color = gpu.objpalette[(gpu.spritedata[i].flags & SPRITE_FLAG_PALETTE) ? 1 : 0]
+									                  [gpu.tileset[gpu.spritedata[i].tile][row][col]];
+							}
+							
+							setPixelColor(gpu.spritedata[i].x + col, gpu.r.line, color);
+						}
+					}
+				}
+			}
+		}
+	}
+	
 	
 }
 
@@ -210,6 +301,32 @@ void updateTile(uint8_t b, uint16_t addr) {
 	}
 }
 
+void gpuBuildSpriteData(uint8_t b, uint16_t addr) {
+	uint16_t spriteNum = addr >> 2;
+	
+	if(spriteNum < 40) { // Only 40 sprites
+		switch(addr & 0x03) {
+			case 0: // Y-coord
+				gpu.spritedata[spriteNum].y = b - 16;
+				//printf("Sprite #%d to Y of %d.\n", spriteNum, b-16);
+				break;
+				
+			case 1: // X-coord
+				gpu.spritedata[spriteNum].x = b - 8;
+				//printf("Sprite #%d to X of %d.\n", spriteNum, b-8);
+				break;
+			
+			case 2: // Tile
+				gpu.spritedata[spriteNum].tile = b;
+				break;
+				
+			case 3: // Flags
+				gpu.spritedata[spriteNum].flags = b;
+				break;
+		}
+	}
+}
+
 void stepGPU() {
 	gpu.mclock += cpu.dc;
 	switch(gpu.mode) {
@@ -221,6 +338,7 @@ void stepGPU() {
 				if(gpu.r.line == 144) { // last line
 					gpu.mode = GPU_MODE_VBLANK;
 					SDL_Flip(surface);
+					cpu.intFlags |= INT_VBLANK;
 				}
 				else {
 					gpu.mode = GPU_MODE_OAM;

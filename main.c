@@ -10,7 +10,7 @@ mem_t mem;
 
 int readROMFromFile(char *filename, uint8_t **buffer, size_t *romsize) {
 	FILE *romfile;
-	int read;
+	size_t read;
 	
 	// Open the file
 	romfile = fopen(filename, "r");	
@@ -40,7 +40,7 @@ int readROMFromFile(char *filename, uint8_t **buffer, size_t *romsize) {
 void initEmulation(uint8_t *rombuffer, size_t romlen) {
 	// Initialize stuff
 	initCPU();
-	//cpu.r.pc = 0x0100; // Jump over bios, not sure if anything important is happening in bios
+	cpu.r.pc = 0x0100; // Jump over bios, not sure if anything important is happening in bios
 	initMemory(rombuffer, romlen);
 	initGPU();
 }
@@ -83,13 +83,13 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 			if(settings.debug) {
-				printRegisters();
+				//printRegisters();
 			}
 			stepGPU();
 		}
 		
 		// SDL event loop
-		while(SDL_PollEvent(&event)) {;
+		while(SDL_PollEvent(&event)) {
 			if(event.type == SDL_KEYDOWN) {
 				switch(event.key.keysym.sym) {
 					case SDLK_F1: // toggle: debugging on every instruction
