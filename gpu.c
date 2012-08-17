@@ -265,25 +265,21 @@ void renderScanline() {
 						
 						// only draw pixel when color is not 0 and (sprite has priority or background pixel is 0)
 						if(gpu.tileset[gpu.spritedata[i].tile][row][col] != 0 && (!(gpu.spritedata[i].flags & SPRITE_FLAG_PRIORITY) || bgScanline[gpu.spritedata[i].x + col] == 0)) {
-						
+							color = gpu.objpalette[(gpu.spritedata[i].flags & SPRITE_FLAG_PALETTE) ? 1 : 0]
+									[gpu.tileset[gpu.spritedata[i].tile][row][col]];
+									                  
 							// get color from correct palette
 							if(gpu.spritedata[i].flags & SPRITE_FLAG_XFLIP) {
-								color = gpu.objpalette[(gpu.spritedata[i].flags & SPRITE_FLAG_PALETTE) ? 1 : 0]
-									                  [gpu.tileset[gpu.spritedata[i].tile][row][7 - col]];
+								setPixelColor(gpu.spritedata[i].x + (7 - col), gpu.r.line, color);
 							} else {
-								color = gpu.objpalette[(gpu.spritedata[i].flags & SPRITE_FLAG_PALETTE) ? 1 : 0]
-									                  [gpu.tileset[gpu.spritedata[i].tile][row][col]];
+								setPixelColor(gpu.spritedata[i].x + col, gpu.r.line, color);
 							}
-							
-							setPixelColor(gpu.spritedata[i].x + col, gpu.r.line, color);
 						}
 					}
 				}
 			}
 		}
 	}
-	
-	
 }
 
 void updateTile(uint8_t b, uint16_t addr) {
