@@ -157,6 +157,10 @@ void gpuWriteIOByte(uint8_t b, uint16_t addr) {
 inline void setPixelColor(int x, int y, uint8_t color) {
 	int i, j, drawx, drawy;
 	
+	if(x >= SCREEN_WIDTH || y >= SCREEN_HEIGHT || x < 0 || y < 0) {
+		return;
+	}
+	
 	for(i=0; i<WINDOW_SCALE; i++) {
 		for(j=0; j<WINDOW_SCALE; j++) {
 			drawx = WINDOW_SCALE * x + i;
@@ -195,7 +199,7 @@ void printGPUDebug() {
 
 void renderScanline() {
 	uint16_t yoff, xoff, tilenr;
-	uint8_t row, col, i;
+	uint8_t row, col, i, px;
 	uint8_t color;
 	uint8_t bgScanline[160];
 	int bit, offset;
@@ -259,21 +263,20 @@ void renderScanline() {
 				
 				// loop through the collumns
 				for(col=0; col<8; col++) {
-				
+					if(gpu.spritedata[i].flags & SPRITE_FLAG_XFLIP) {
+						px = gpu.spritedata[i].x + (7 - col);
+					} else {
+						px = gpu.spritedata[i].x + col;
+					}
+					
 					// only draw if this pixel's on the screen
-					if(gpu.spritedata[i].x + col >= 0 && gpu.spritedata[i].x + col < 160) {
-						
+					if(px >= 0 && px < 160) {
 						// only draw pixel when color is not 0 and (sprite has priority or background pixel is 0)
-						if(gpu.tileset[gpu.spritedata[i].tile][row][col] != 0 && (!(gpu.spritedata[i].flags & SPRITE_FLAG_PRIORITY) || bgScanline[gpu.spritedata[i].x + col] == 0)) {
+						if(gpu.tileset[gpu.spritedata[i].tile][row][col] != 0 && (!(gpu.spritedata[i].flags & SPRITE_FLAG_PRIORITY) || bgScanline[px] == 0)) {
 							color = gpu.objpalette[(gpu.spritedata[i].flags & SPRITE_FLAG_PALETTE) ? 1 : 0]
 									[gpu.tileset[gpu.spritedata[i].tile][row][col]];
 									                  
-							// get color from correct palette
-							if(gpu.spritedata[i].flags & SPRITE_FLAG_XFLIP) {
-								setPixelColor(gpu.spritedata[i].x + (7 - col), gpu.r.line, color);
-							} else {
-								setPixelColor(gpu.spritedata[i].x + col, gpu.r.line, color);
-							}
+							setPixelColor(px, gpu.r.line, color);
 						}
 					}
 				}
