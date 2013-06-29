@@ -139,7 +139,7 @@ void doOpcodeCP(uint8_t val) {
 }
 
 void doOpcodeRST(uint8_t val) {
-	//printf("RST (0x%02X) called.\n", val);
+	printf("RST (0x%02X) called.\n", val);
 	
 	// backup registers
 	storeRegisters();
@@ -159,9 +159,10 @@ void doOpcodeUNIMP() {
 	//exit(1);
 }
 
+int lastInst;
 void printRegisters() {
-	printf("{a=%02X,b=%02X,c=%02X,d=%02X,e=%02X,h=%02X,l=%02X,pc=%04X,sp=%04X}, cycles=%d\n",
-		cpu.r.a, cpu.r.b, cpu.r.c, cpu.r.d, cpu.r.e, cpu.r.h, cpu.r.l, cpu.r.pc, cpu.r.sp, cpu.c);
+	//printf("{a=%02X,b=%02X,c=%02X,d=%02X,e=%02X,h=%02X,l=%02X,pc=%04X,sp=%04X,inst=%02X}\n",
+	//	cpu.r.a, cpu.r.b, cpu.r.c, cpu.r.d, cpu.r.e, cpu.r.h, cpu.r.l, cpu.r.pc, cpu.r.sp, lastInst);
 }
 
 uint8_t *numToRegPtr(uint8_t num) {
@@ -309,6 +310,7 @@ int executeInstruction() {
 	uint8_t interrupts;
 	
 	inst = readByte(cpu.r.pc);
+	lastInst = inst;
 	if(settings.debug) {
 		if(cpu.r.pc == 0x0245) {
 			printf("Read instruction 0x%02X at 0x%04X. (%d)\n", inst, cpu.r.pc, cpu.r.pc);
@@ -1081,7 +1083,7 @@ int executeInstruction() {
 			break;
 
 		case 0x7E: // LD A, (HL)
-			writeByte(cpu.r.a, (cpu.r.h << 8) + cpu.r.l);
+			cpu.r.a = readByte((cpu.r.h << 8) + cpu.r.l);
 			cpu.c += 2;
 			break;
 
@@ -1363,11 +1365,11 @@ int executeInstruction() {
 			break;
 
 		case 0xC0: // RET NZ
-			cpu.r.c += 1;
+			cpu.c += 1;
 			if(!(cpu.r.f & F_ZERO)) {
 				cpu.r.pc = readWord(cpu.r.sp);
 				cpu.r.sp += 2;
-				cpu.r.c += 2;
+				cpu.c += 2;
 			}
 			break;
 
@@ -1426,18 +1428,18 @@ int executeInstruction() {
 			break;
 
 		case 0xC8: // RET Z
-			cpu.r.c += 1;
+			cpu.c += 1;
 			if(cpu.r.f & F_ZERO) {
 				cpu.r.pc = readWord(cpu.r.sp);
 				cpu.r.sp += 2;
-				cpu.r.c += 2;
+				cpu.c += 2;
 			}
 			break;
 
 		case 0xC9: // RET
 			cpu.r.pc = readWord(cpu.r.sp);
 			cpu.r.sp += 2;
-			cpu.r.c += 3;
+			cpu.c += 3;
 			break;
 
 		case 0xCA: // JP Z, nn
@@ -1487,11 +1489,11 @@ int executeInstruction() {
 			break;
 
 		case 0xD0: // RET NC
-			cpu.r.c += 1;
+			cpu.c += 1;
 			if(!(cpu.r.f & F_CARRY)) {
 				cpu.r.pc = readWord(cpu.r.sp);
 				cpu.r.sp += 2;
-				cpu.r.c += 2;
+				cpu.c += 2;
 			}
 			break;
 
@@ -1549,11 +1551,11 @@ int executeInstruction() {
 			break;
 
 		case 0xD8: // RET C
-			cpu.r.c += 1;
+			cpu.c += 1;
 			if(cpu.r.f & F_CARRY) {
 				cpu.r.pc = readWord(cpu.r.sp);
 				cpu.r.sp += 2;
-				cpu.r.c += 2;
+				cpu.c += 2;
 			}
 			break;
 
@@ -1565,7 +1567,7 @@ int executeInstruction() {
 			cpu.r.pc = readWord(cpu.r.sp);
 			cpu.r.sp += 2;
 			
-			cpu.r.c += 3;
+			cpu.c += 3;
 			break;
 
 		case 0xDA: // JP C, nn
@@ -1689,6 +1691,7 @@ int executeInstruction() {
 
 		case 0xF0: // LDH A, (n)
 			cpu.r.a = readByte(0xFF00 + readByte(cpu.r.pc));
+			//printf("Loading from 0x%02X into A gives 0x%02X.\n", 0xFF00 + readByte(cpu.r.pc), cpu.r.a);
 			cpu.r.pc++;
 			cpu.c += 3;
 			break;
@@ -1816,6 +1819,8 @@ int executeInstruction() {
 		}
 		
 	}
+
+	printRegisters();
 	
 	return 1;
 }

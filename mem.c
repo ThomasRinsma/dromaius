@@ -39,6 +39,9 @@ void initMemory(uint8_t *rombuffer, size_t romlen) {
 	mem.inputWire = 0x10;
 	mem.inputRow[0] = 0x0F;
 	mem.inputRow[1] = 0x0F;
+
+	// debug, set right key as pressed
+	mem.inputRow[1] &= ~0x01 & 0x0F;
 	
 	mem.rom = rombuffer;
 	mem.romlen = romlen;
@@ -63,7 +66,7 @@ uint8_t readByte(uint16_t addr) {
 			if(mem.biosLoaded) {
 				if(addr < 0x0100) return mem.bios[addr];
 				else if(addr == 0x0100) {
-					printf("End of bios reached!\n");
+					//printf("End of bios reached!\n");
 					mem.biosLoaded = 0;
 				}
 			}

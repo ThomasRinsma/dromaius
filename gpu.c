@@ -91,7 +91,16 @@ uint8_t gpuReadIOByte(uint16_t addr) {
 	switch(addr) {
 		case 0:
 			return gpu.r.flags;
-			
+
+		case 1: // LCD status
+			//printf("  gpu.r.line = %d, gpu.r.lineComp = %d.\n", gpu.r.line, gpu.r.lineComp);
+			return (gpu.mode & 0x03) +
+				(gpu.r.line == gpu.r.lineComp ? 0x04 : 0x00) +
+				(gpu.hBlankInt ? 0x08 : 0x00) +
+				(gpu.vBlankInt ? 0x10 : 0x00) +
+				(gpu.OAMInt ? 0x20 : 0x00) +
+				(gpu.CoinInt ? 0x40 : 0x00);
+
 		case 2:
 			return gpu.r.scy;
 			
@@ -100,8 +109,12 @@ uint8_t gpuReadIOByte(uint16_t addr) {
 			
 		case 4:
 			return gpu.r.line;
+
+		case 5:
+			return gpu.r.lineComp;
 			
 		default:
+			printf("TODO! read from unimplemented 0x%02X\n", addr + 0xFF40);
 			return 0x00; // TODO: Unhandled I/O, no idea what GB does here
 	}
 }
@@ -113,6 +126,14 @@ void gpuWriteIOByte(uint8_t b, uint16_t addr) {
 		case 0:
 			gpu.r.flags = b;
 			break;
+
+		case 1: // LCD status, writing is only allowed on the interrupt enable flags
+			gpu.hBlankInt = (b & 0x08 ? 1 : 0);
+			gpu.vBlankInt = (b & 0x10 ? 1 : 0);	
+			gpu.OAMInt = (b & 0x20 ? 1 : 0);	
+			gpu.CoinInt = (b & 0x40 ? 1 : 0);
+			printf("written 0x%02X to lcd STAT\n", b);
+			break;
 		
 		case 2:
 			gpu.r.scy = b;
@@ -120,6 +141,15 @@ void gpuWriteIOByte(uint8_t b, uint16_t addr) {
 			
 		case 3:
 			gpu.r.scx = b;
+			break;
+
+		case 4:
+			printf("written to read-only 0xFF44!\n");
+			break;
+
+		case 5:
+			gpu.r.lineComp = b;
+			printf("written %d to lineComp\n", b);
 			break;
 			
 		case 6: // DMA from XX00-XX9F to FE00-FE9F
@@ -146,10 +176,8 @@ void gpuWriteIOByte(uint8_t b, uint16_t addr) {
 			}
 			break;
 			
-		
-			
 		default:
-			// Do nothing
+			printf("TODO! write to unimplemented 0x%02X\n", addr + 0xFF40);
 			break;
 	}
 }
@@ -333,14 +361,28 @@ void stepGPU() {
 			if(gpu.mclock >= 51) {
 				gpu.mclock = 0;
 				gpu.r.line++;
+
+				//printf("coinInt = %d, line = %d, lineComp = %d\n", gpu.CoinInt, gpu.r.line, gpu.r.lineComp);
+				if(gpu.CoinInt && gpu.r.line == gpu.r.lineComp) {
+						cpu.intFlags |= INT_LCDSTAT;
+				}
+
 				
 				if(gpu.r.line == 144) { // last line
 					gpu.mode = GPU_MODE_VBLANK;
 					SDL_Flip(surface);
 					cpu.intFlags |= INT_VBLANK;
+
+					if(gpu.vBlankInt) {
+						cpu.intFlags |= INT_LCDSTAT;
+					}
 				}
 				else {
 					gpu.mode = GPU_MODE_OAM;
+
+					if(gpu.OAMInt) {
+						cpu.intFlags |= INT_LCDSTAT;
+					}
 				}
 			}
 			break;
@@ -353,6 +395,10 @@ void stepGPU() {
 				if(gpu.r.line > 153) {
 					gpu.mode = GPU_MODE_OAM;
 					gpu.r.line = 0;
+
+					if(gpu.OAMInt) {
+						cpu.intFlags |= INT_LCDSTAT;
+					}
 				}
 			}
 			break;
@@ -369,6 +415,10 @@ void stepGPU() {
 				gpu.mclock = 0;
 				gpu.mode = GPU_MODE_HBLANK;
 				renderScanline();
+
+				if(gpu.hBlankInt) {
+					cpu.intFlags |= INT_LCDSTAT;
+				}
 			}
 	}
 }

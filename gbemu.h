@@ -119,6 +119,7 @@ typedef enum gpuflags_s {
 typedef struct gpuregs_s {
 	gpuflags_t flags;
 	uint8_t line;
+	uint8_t lineComp;
 	uint8_t scx;
 	uint8_t scy;
 } gpuregs_t;
@@ -147,6 +148,10 @@ typedef struct gpu_s {
 	gpuregs_t r;
 	gpumode_t mode;
 	int mclock;
+	int hBlankInt;
+	int vBlankInt;
+	int OAMInt;
+	int CoinInt;
 } gpu_t;
 
 
