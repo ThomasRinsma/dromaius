@@ -114,7 +114,7 @@ uint8_t gpuReadIOByte(uint16_t addr) {
 			return gpu.r.lineComp;
 			
 		default:
-			printf("TODO! read from unimplemented 0x%02X\n", addr + 0xFF40);
+			//printf("TODO! read from unimplemented 0x%02X\n", addr + 0xFF40);
 			return 0x00; // TODO: Unhandled I/O, no idea what GB does here
 	}
 }
@@ -144,7 +144,10 @@ void gpuWriteIOByte(uint8_t b, uint16_t addr) {
 			break;
 
 		case 4:
-			printf("written to read-only 0xFF44!\n");
+			//printf("written to read-only 0xFF44!\n");
+			// Actually this resets LY, if I understand the specs correctly.
+			//gpu.r.line = 0;
+			//printf("reset GPU line counter.\n");
 			break;
 
 		case 5:

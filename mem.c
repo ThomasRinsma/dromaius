@@ -41,7 +41,7 @@ void initMemory(uint8_t *rombuffer, size_t romlen) {
 	mem.inputRow[1] = 0x0F;
 
 	// debug, set right key as pressed
-	mem.inputRow[1] &= ~0x01 & 0x0F;
+	//mem.inputRow[1] &= ~0x01 & 0x0F;
 	
 	mem.rom = rombuffer;
 	mem.romlen = romlen;

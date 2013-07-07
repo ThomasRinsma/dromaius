@@ -33,7 +33,7 @@ void initCPU() {
 }
 
 void storeRegisters() {
-	registerStore.a = cpu.r.a;
+	/*registerStore.a = cpu.r.a;
 	registerStore.b = cpu.r.b;
 	registerStore.c = cpu.r.c;
 	registerStore.d = cpu.r.d;
@@ -41,10 +41,10 @@ void storeRegisters() {
 	registerStore.f = cpu.r.f;
 	registerStore.h = cpu.r.h;
 	registerStore.l = cpu.r.l;
-}
+*/}
 
 void loadRegisters() {
-	cpu.r.a = registerStore.a;
+/*	cpu.r.a = registerStore.a;
 	cpu.r.b = registerStore.b;
 	cpu.r.c = registerStore.c;
 	cpu.r.d = registerStore.d;
@@ -52,7 +52,7 @@ void loadRegisters() {
 	cpu.r.f = registerStore.f;
 	cpu.r.h = registerStore.h;
 	cpu.r.l = registerStore.l;
-}
+*/}
 
 void doOpcodeADD(uint8_t val) {
 	uint8_t tmp = cpu.r.a;
@@ -125,6 +125,7 @@ void doOpcodeOR(uint8_t val) {
 }
 
 void doOpcodeCP(uint8_t val) {
+	/*
 	uint8_t tmp;
 	tmp = cpu.r.a;
 	tmp -= val;
@@ -136,10 +137,33 @@ void doOpcodeCP(uint8_t val) {
 		cpu.r.f |= F_HCARRY;
 	}
 	cpu.c += 1;
+	*/
+
+	uint16_t tmp = cpu.r.a - val;
+
+	if (tmp & 0x0100)
+		cpu.r.f |= F_CARRY;
+	else
+		cpu.r.f &= ~F_CARRY;
+
+	if (tmp & 0xFF)
+		cpu.r.f &= ~F_ZERO;
+	else
+		cpu.r.f |= F_ZERO;
+
+	if ((tmp & 0x0F) > (cpu.r.a & 0x0F))
+		cpu.r.f |= F_HCARRY;
+	else
+		cpu.r.f &= ~F_HCARRY;
+
+	cpu.r.f |= F_SUBSTRACT;
+
+
+	cpu.c += 1;
 }
 
 void doOpcodeRST(uint8_t val) {
-	printf("RST (0x%02X) called.\n", val);
+	//printf("RST (0x%02X) called.\n", val);
 	
 	// backup registers
 	storeRegisters();
@@ -1776,6 +1800,7 @@ int executeInstruction() {
 			cpu.r.pc++;
 			doOpcodeCP(utmp8);
 			cpu.c += 1;
+			//printf("did opcode CP\n");
 			break;
 
 		case 0xFF: // RST 38
@@ -1786,8 +1811,7 @@ int executeInstruction() {
 			printf("There's a glitch in the matrix, this shouldn't happen.\n");
 			return 0;
 	}
-	
-	cpu.dc = cpu.c - cpu.dc; // delta cycles
+	cpu.dc = cpu.c - cpu.dc; // delta cycles, TODO: after interrupts?
 	
 	// Interrupts
 	if(cpu.intsOn && cpu.ints && cpu.intFlags) {
@@ -1819,6 +1843,7 @@ int executeInstruction() {
 		}
 		
 	}
+
 
 	printRegisters();
 	

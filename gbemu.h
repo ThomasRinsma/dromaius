@@ -9,7 +9,7 @@
 #define GPU_TILEMAP_ADDR0   0x1800
 #define GPU_TILEMAP_ADDR1   0x1C00
 
-#define CPU_CLOCKS_PER_FRAME 17556
+#define CPU_CLOCKS_PER_FRAME 17556 // 70224 / 4 clock cycles
 
 typedef struct keymap_s {
 	int start;
