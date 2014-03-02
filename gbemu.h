@@ -96,6 +96,11 @@ typedef struct mem_s {
 	uint8_t inputWire;
 	size_t romlen;
 	int biosLoaded;
+
+	int ramEnabled;
+	uint8_t bankMode; // 0 = ROM, 1 = RAM
+	uint8_t ramBank;
+	uint8_t romBank;
 } mem_t;
 
 typedef enum gpumode_s {

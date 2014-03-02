@@ -50,6 +50,7 @@ int main(int argc, char *argv[]) {
 	uint8_t *rombuffer;
 	size_t romlen;
 	SDL_Event event;
+	romheader_t *romheader;
 	
 	settings.debug = 0;
 	settings.keymap.start = SDLK_RETURN;
@@ -67,8 +68,19 @@ int main(int argc, char *argv[]) {
 	} else {
 		exit(1);
 	}
+
 	
 	initEmulation(rombuffer, romlen);
+
+	// Read the ROM header
+	romheader = (romheader_t *)(&mem.rom[HEADER_START]);
+	printf("CGB: 0x%02X, SGB: 0x%02X, OLIC: 0x%02X, NLIC: 0x%04X, country: 0x%02X\n",
+		romheader->colorbyte, romheader->sgbfeatures, romheader->oldlicensee,
+		romheader->newlicensee, romheader->country);
+	printf("type: 0x%02X, romsize: 0x%02X, ramsize: 0x%02X\n\n",
+		romheader->type, romheader->romsize, romheader->ramsize);
+
+	
 	initDisplay();
 	
 	// Instruction loop
@@ -87,6 +99,8 @@ int main(int argc, char *argv[]) {
 			}
 			stepGPU();
 		}
+
+		renderDebugBackground();
 		
 		// SDL event loop
 		while(SDL_PollEvent(&event)) {

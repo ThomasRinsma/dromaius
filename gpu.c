@@ -3,9 +3,12 @@
 #include <stdint.h>
 #include "gbemu.h"
 
-#define SCREEN_WIDTH  160
-#define SCREEN_HEIGHT 144
-#define WINDOW_SCALE  3
+#define GB_SCREEN_WIDTH  160
+#define GB_SCREEN_HEIGHT 144
+
+#define SCREEN_WIDTH  (GB_SCREEN_WIDTH + 256)
+#define SCREEN_HEIGHT (GB_SCREEN_HEIGHT + 256)
+#define WINDOW_SCALE  2
 
 extern settings_t settings;
 extern mem_t mem;
@@ -146,8 +149,8 @@ void gpuWriteIOByte(uint8_t b, uint16_t addr) {
 		case 4:
 			//printf("written to read-only 0xFF44!\n");
 			// Actually this resets LY, if I understand the specs correctly.
-			//gpu.r.line = 0;
-			//printf("reset GPU line counter.\n");
+			gpu.r.line = 0;
+			printf("reset GPU line counter.\n");
 			break;
 
 		case 5:
@@ -226,6 +229,32 @@ void printGPUDebug() {
 	}
 	printf("\n");
 	*/
+}
+
+void renderDebugBackground() {
+	int x, y, i, j, tilenr, color;
+
+	for (y = 0; y < 32; ++y)
+	{
+		for (x = 0; x < 32; ++x)
+		{
+			tilenr = gpu.vram[GPU_TILEMAP_ADDR0 + 32*y + x];
+
+			for (i = 0; i < 8; ++i)
+			{
+				for (j = 0; j < 8; ++j)
+				{
+					if (i == 0 || j == 0)
+						setPixelColor(160 + x * 8 + j, 144 + y * 8 + i, 3);
+					else
+					{
+						color = gpu.bgpalette[gpu.tileset[tilenr][i][j]];
+						setPixelColor(160 + x * 8 + j, 144 + y * 8 + i, color);
+					}
+				}
+			}
+		}
+	}
 }
 
 void renderScanline() {

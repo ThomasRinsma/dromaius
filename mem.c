@@ -22,7 +22,7 @@ uint8_t biosBytes[] = {
 	0x05, 0x20, 0xF5, 0x22, 0x23, 0x22, 0x23, 0xC9, 0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B,
 	0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D, 0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E,
 	0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99, 0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC,
-	0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E, 0x3c, 0x42, 0xB9, 0xA5, 0xB9, 0xA5, 0x42, 0x4C,
+	0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E, 0x3C, 0x42, 0xB9, 0xA5, 0xB9, 0xA5, 0x42, 0x3C,
 	0x21, 0x04, 0x01, 0x11, 0xA8, 0x00, 0x1A, 0x13, 0xBE, 0x20, 0xFE, 0x23, 0x7D, 0xFE, 0x34, 0x20,
 	0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50
 };
@@ -32,9 +32,9 @@ void initMemory(uint8_t *rombuffer, size_t romlen) {
 	mem.bios = biosBytes;
 	
 	// This changes the BIOS to jump over logo check
-	mem.bios[0x00E0] = 0xC3; // JP nn
-	mem.bios[0x00E1] = 0x00; // 0x0100 (low byte)
-	mem.bios[0x00E2] = 0x01; // 0x0100 (high byte)
+	//mem.bios[0x00E0] = 0xC3; // JP nn
+	//mem.bios[0x00E1] = 0x00; // 0x0100 (low byte)
+	//mem.bios[0x00E2] = 0x01; // 0x0100 (high byte)
 	
 	mem.inputWire = 0x10;
 	mem.inputRow[0] = 0x0F;
@@ -49,6 +49,11 @@ void initMemory(uint8_t *rombuffer, size_t romlen) {
 	mem.workram = (uint8_t *)calloc(0x2000, sizeof(uint8_t));
 	mem.extram = (uint8_t *)calloc(0x2000, sizeof(uint8_t));
 	mem.zeropageram = (uint8_t *)calloc(127, sizeof(uint8_t));
+
+	mem.ramEnabled = 0;
+	mem.bankMode = 0;
+	mem.ramBank = 0;
+	mem.romBank = 1;
 }
 
 void freeMemory() {
@@ -78,12 +83,12 @@ uint8_t readByte(uint16_t addr) {
 		case 0x3000:
 			return mem.rom[addr];
 			
-		// ROM1, no bank
+		// ROM1, bank
 		case 0x4000:
 		case 0x5000:
 		case 0x6000:
 		case 0x7000:
-			return mem.rom[addr];
+			return mem.rom[((mem.romBank - 1) * 0x4000) + addr];
 			
 		// VRAM
 		case 0x8000:
@@ -93,6 +98,9 @@ uint8_t readByte(uint16_t addr) {
 		// External RAM
 		case 0xA000:
 		case 0xB000:
+			if (!mem.ramEnabled)
+				printf("Read from disabled external RAM.\n");
+			// TODO: banking
 			return mem.extram[addr & 0x1FFF];
 			
 		// Working RAM
@@ -150,46 +158,55 @@ uint16_t readWord(uint16_t addr) {
 
 void writeByte(uint8_t b, uint16_t addr) {
 	switch(addr & 0xF000) {
-		// BIOS / ROM0
-		case 0x0000:
-			if(mem.biosLoaded) {
-				if(addr < 0x0100) {
-					mem.bios[addr] = b;
-					return;
-				}
-				else if(addr == 0x0100) {
-					mem.biosLoaded = 0;
-				}
-			}
-			
-			mem.rom[addr] = b;
-			return;
-		
-		// ROM0
+		// Enable or disable external RAM
+		case 0x0000:  // TODO: don't assume MBC1
 		case 0x1000:
+			mem.ramEnabled = ((b & 0xF) == 0xA);
+			break;
+
+		// Set the lower 5 bits of ROM bank nr
 		case 0x2000:
-		case 0x3000:
-			mem.rom[addr] = b;
+		case 0x3000: 
+			if ((b & 0x1F) == 0x00)
+				b = 0x01;
+
+			mem.romBank = (b & 0x1F) | (mem.romBank & 0xE0);
 			return;
 			
-		// ROM1, no bank
+		// Set RAM bank nr or upper 2 bits of ROM bank nr
 		case 0x4000:
 		case 0x5000:
+			if (mem.bankMode) // RAM
+				mem.ramBank = (b & 0x3);
+			else // ROM, upper 2 bits
+				mem.romBank = (mem.romBank & 0x1F) | ((b & 0x3) << 5);
+			return;
+
+		// ROM or RAM banking mode select
 		case 0x6000:
 		case 0x7000:
-			mem.rom[addr] = b;
+			mem.bankMode = (b & 0x1);
 			return;
 			
 		// VRAM
 		case 0x8000:
 		case 0x9000:
 			gpu.vram[addr & 0x1FFF] = b;
+			if (b == 0 && addr >= 0x9800 && addr < 0x9C00)
+			{
+				printf("wrote b=%d to vram @ 0x%04X.\n", b, addr);
+
+				printRegisters();
+			}
 			updateTile(b, addr & 0x1FFE);
 			return;
 			
 		// External RAM
 		case 0xA000:
 		case 0xB000:
+			if (!mem.ramEnabled)
+				printf("Write to disabled external RAM.\n");
+
 			mem.extram[addr & 0x1FFF] = b;
 			return;
 			
@@ -198,6 +215,7 @@ void writeByte(uint8_t b, uint16_t addr) {
 		case 0xD000:
 		case 0xE000:
 			mem.workram[addr & 0x1FFF] = b;
+			//if(addr == 0xC0AC && b == 0) printf("wrote 0x%02X to 0xC0AC!\n", b);
 			return;
 			
 		case 0xF000:

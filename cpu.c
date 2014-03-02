@@ -16,17 +16,17 @@ regs_t registerStore;
 
 void initCPU() {
 	cpu.r.a = 0x01;
-	cpu.r.b = 0;
+	cpu.r.b = 0x00;
 	cpu.r.c = 0x13;
-	cpu.r.d = 0;
+	cpu.r.d = 0x00;
 	cpu.r.e = 0xD8;
 	cpu.r.h = 0x01;
 	cpu.r.l = 0x4D;
-	cpu.r.f = 0;
-	cpu.r.pc = 0;
+	cpu.r.f = 0xB0;//0;
+	cpu.r.pc = 0x0000;
 	cpu.r.sp = 0xFFFE;
 	
-	cpu.intsOn = 1;
+	cpu.intsOn = 0;//1;
 	cpu.intFlags = 0;
 	cpu.ints = 0;
 	cpu.c = 0;
@@ -55,6 +55,16 @@ void loadRegisters() {
 */}
 
 void doOpcodeADD(uint8_t val) {
+	cpu.r.f = 0;
+
+	cpu.r.f |= ((cpu.r.a & 0x0F) + (val & 0x0F)) > 0x0F ? F_HCARRY : 0;
+	cpu.r.f |= ((cpu.r.a) + val) > 0xFF ? F_CARRY : 0;
+
+	cpu.r.a = cpu.r.a + val;
+
+	cpu.r.f |= (cpu.r.a == 0) ? F_ZERO : 0;
+
+	/*
 	uint8_t tmp = cpu.r.a;
 	cpu.r.a += val;
 	cpu.r.f = (cpu.r.a < tmp) ? F_CARRY : 0;
@@ -64,10 +74,24 @@ void doOpcodeADD(uint8_t val) {
 	if((cpu.r.a ^ val ^ tmp) & F_CARRY) {
 		cpu.r.f |= F_HCARRY;
 	}
+	*/
+
 	cpu.c += 1;
 }
 
 void doOpcodeADC(uint8_t val) {
+	uint8_t tmp = (cpu.r.f & F_CARRY) ? 1 : 0;
+
+	cpu.r.f = 0;
+
+	cpu.r.f |= ((cpu.r.a & 0x0F) + ((val & 0x0F) + tmp)) > 0x0F ? F_HCARRY : 0;
+	cpu.r.f |= ((cpu.r.a) + (val + tmp)) > 0xFF ? F_CARRY : 0;
+
+	cpu.r.a = cpu.r.a + val + tmp;
+
+	cpu.r.f |= (cpu.r.a == 0) ? F_ZERO : 0;
+
+	/*
 	uint8_t tmp = cpu.r.a;
 	cpu.r.a += val + ((cpu.r.f & F_CARRY) ? 1 : 0);
 	cpu.r.f = (cpu.r.a < tmp) ? F_CARRY : 0;
@@ -77,10 +101,23 @@ void doOpcodeADC(uint8_t val) {
 	if((cpu.r.a ^ val ^ tmp) & F_CARRY) {
 		cpu.r.f |= F_HCARRY;
 	}
+	*/
+
 	cpu.c += 1;
 }
 
 void doOpcodeSUB(uint8_t val) {
+	cpu.r.f = 0;
+
+	cpu.r.f |= ((cpu.r.a & 0x0F) < (val & 0x0F)) ? F_HCARRY : 0;
+	cpu.r.f |= ((cpu.r.a) < val) ? F_CARRY : 0;
+
+	cpu.r.a = cpu.r.a - val; 
+
+	cpu.r.f |= (cpu.r.a == 0) ? F_ZERO : 0;
+	cpu.r.f |= F_SUBSTRACT;
+
+	/*
 	uint8_t tmp = cpu.r.a;
 	cpu.r.a -= val;
 	cpu.r.f = (cpu.r.a > tmp) ? (F_CARRY | F_SUBSTRACT) : F_CARRY;
@@ -90,10 +127,25 @@ void doOpcodeSUB(uint8_t val) {
 	if((cpu.r.a ^ val ^ tmp) & F_CARRY) {
 		cpu.r.f |= F_HCARRY;
 	}
+	*/
+
 	cpu.c += 1;
 }
 
 void doOpcodeSBC(uint8_t val) {
+	uint8_t tmp = (cpu.r.f & F_CARRY) ? 1 : 0;
+
+	cpu.r.f = 0;
+
+	cpu.r.f |= ((cpu.r.a & 0x0F) < ((val & 0x0F) + tmp)) ? F_HCARRY : 0;
+	cpu.r.f |= ((cpu.r.a) < (val + tmp)) ? F_CARRY : 0;
+
+	cpu.r.a = cpu.r.a - val - tmp;
+
+	cpu.r.f |= (cpu.r.a == 0) ? F_ZERO : 0;
+	cpu.r.f |= F_SUBSTRACT;
+
+	/*
 	uint8_t tmp = cpu.r.a;
 	cpu.r.a -= val + ((cpu.r.f & F_CARRY) ? 1 : 0);
 	cpu.r.f = (cpu.r.a > tmp) ? (F_CARRY | F_SUBSTRACT) : F_CARRY;
@@ -103,12 +155,15 @@ void doOpcodeSBC(uint8_t val) {
 	if((cpu.r.a ^ val ^ tmp) & F_CARRY) {
 		cpu.r.f |= F_HCARRY;
 	}
+	*/
+
 	cpu.c += 1;
 }
 
 void doOpcodeAND(uint8_t val) {
 	cpu.r.a &= val;
 	cpu.r.f = cpu.r.a ? 0x00 : F_ZERO;
+	cpu.r.f |= F_HCARRY;
 	cpu.c += 1;
 }
 
@@ -185,8 +240,8 @@ void doOpcodeUNIMP() {
 
 int lastInst;
 void printRegisters() {
-	//printf("{a=%02X,b=%02X,c=%02X,d=%02X,e=%02X,h=%02X,l=%02X,pc=%04X,sp=%04X,inst=%02X}\n",
-	//	cpu.r.a, cpu.r.b, cpu.r.c, cpu.r.d, cpu.r.e, cpu.r.h, cpu.r.l, cpu.r.pc, cpu.r.sp, lastInst);
+	printf("{a=%02X,f=%02X,b=%02X,c=%02X,d=%02X,e=%02X,h=%02X,l=%02X,pc=%04X,sp=%04X,inst=%02X}\n",
+		cpu.r.a, cpu.r.f, cpu.r.b, cpu.r.c, cpu.r.d, cpu.r.e, cpu.r.h, cpu.r.l, cpu.r.pc, cpu.r.sp, lastInst);
 }
 
 uint8_t *numToRegPtr(uint8_t num) {
@@ -335,12 +390,11 @@ int executeInstruction() {
 	
 	inst = readByte(cpu.r.pc);
 	lastInst = inst;
-	if(settings.debug) {
-		if(cpu.r.pc == 0x0245) {
-			printf("Read instruction 0x%02X at 0x%04X. (%d)\n", inst, cpu.r.pc, cpu.r.pc);
-			printRegisters();
-		}
-	}
+	//if(settings.debug) {
+			//printf("Read instruction 0x%02X at 0x%04X. (%d)\n", inst, cpu.r.pc, cpu.r.pc);
+			//printRegisters();
+	//}
+
 	
 	cpu.r.pc++;
 	cpu.dc = cpu.c;
@@ -446,8 +500,13 @@ int executeInstruction() {
 			
 		case 0x0F: // RRC A
 			utmp8 = (cpu.r.a & 1);
-			cpu.r.a = (cpu.r.a >> 1) + (utmp8 ? 0x80 : 0);
-			cpu.r.f = (cpu.r.f & ~F_CARRY) & (utmp8 ? F_CARRY : 0);
+			cpu.r.a = (cpu.r.a >> 1) + (utmp8 << 7);
+
+			cpu.r.f = 0;
+			cpu.r.f |= utmp8 ? F_CARRY : 0;
+			cpu.r.f |= (cpu.r.a == 0) ? F_ZERO : 0;
+
+			//cpu.r.f = (cpu.r.f & ~F_CARRY) & (utmp8 ? F_CARRY : 0);
 			cpu.c += 1;
 			break;
 			
@@ -610,6 +669,8 @@ int executeInstruction() {
 			
 		case 0x27: // DAA
 			utmp8 = cpu.r.a;
+			utmp16 = cpu.r.a;
+			/*
 			if((cpu.r.f & F_HCARRY) || (cpu.r.a & 0x0F) > 0x09) {
 				cpu.r.a += 0x06;
 			}
@@ -618,6 +679,39 @@ int executeInstruction() {
 				cpu.r.a += 0x60;
 				cpu.r.f |= F_CARRY;
 			}
+			*/
+
+			if (!(cpu.r.f & F_SUBSTRACT)) {
+				if (cpu.r.f & F_HCARRY || (utmp8 & 0x0F) > 9) {
+					utmp16 += 0x06;
+				}
+
+				if (cpu.r.f & F_CARRY || utmp8 > 0x9F) {
+					utmp16 += 0x60;
+				}
+			}
+			else {
+				if (cpu.r.f & F_HCARRY) {
+					utmp16 = (cpu.r.a - 6) & 0xFF;
+				}
+
+				if (cpu.r.f & F_CARRY) {
+					utmp16 -= 0x60;
+				}
+			}
+
+			cpu.r.f &= ~(F_HCARRY | F_ZERO);
+
+			if ((utmp16 & 0x100) == 0x100) {
+				cpu.r.f |= F_CARRY;
+			}
+
+			cpu.r.a = utmp16 & 0xFF;
+
+			if (cpu.r.a == 0) {
+				cpu.r.f |= F_ZERO;
+			}
+
 			cpu.c += 1;
 			break;
 			
@@ -1721,7 +1815,7 @@ int executeInstruction() {
 			break;
 
 		case 0xF1: // POP AF
-			cpu.r.f = readByte(cpu.r.sp);
+			cpu.r.f = readByte(cpu.r.sp) & 0xF0;
 			cpu.r.sp++;
 			cpu.r.a = readByte(cpu.r.sp);
 			cpu.r.sp++;
@@ -1811,7 +1905,6 @@ int executeInstruction() {
 			printf("There's a glitch in the matrix, this shouldn't happen.\n");
 			return 0;
 	}
-	cpu.dc = cpu.c - cpu.dc; // delta cycles, TODO: after interrupts?
 	
 	// Interrupts
 	if(cpu.intsOn && cpu.ints && cpu.intFlags) {
@@ -1844,8 +1937,9 @@ int executeInstruction() {
 		
 	}
 
+	cpu.dc = cpu.c - cpu.dc; // delta cycles, TODO: after interrupts?
 
-	printRegisters();
+	//printRegisters();
 	
 	return 1;
 }
