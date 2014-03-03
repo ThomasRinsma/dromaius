@@ -172,7 +172,7 @@ void doSubReg(uint8_t *regp, uint8_t val) {
 		resetFlag(F_ZERO);
 	}
 
-	if ((*regp * 0x0F) < (val & 0x0F)) {
+	if ((*regp & 0x0F) < (val & 0x0F)) {
 		setFlag(F_HCARRY);
 	} else {
 		resetFlag(F_HCARRY);
