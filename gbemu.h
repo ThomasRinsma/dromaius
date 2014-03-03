@@ -77,11 +77,23 @@ typedef enum interrupts_s {
 	INT_JOYPAD = 0x10
 } interrupts_t;
 
+typedef struct timer_s {
+	uint8_t div;
+	uint8_t tima;
+	uint8_t tma;
+	uint8_t tac;
+	int cycleCount;
+	int cycleCountDiv;
+	int maxCount[4];
+} cputimer_t;
+
 typedef struct cpu_s {
 	regs_t r;
 	uint8_t intsOn; // bool
 	uint8_t intFlags;
 	uint8_t ints;
+	cputimer_t timer;
+	int halted;
 	int c;
 	int dc;
 } cpu_t;

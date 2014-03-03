@@ -135,6 +135,18 @@ uint8_t readByte(uint16_t addr) {
 				else if(addr == 0xFF0F) { // interrupt flags
 					return cpu.intFlags;
 				}
+				else if (addr == 0xFF04) {
+					return cpu.timer.div;
+				}
+				else if (addr == 0xFF05) {
+					return cpu.timer.tima;
+				}
+				else if (addr == 0xFF06) {
+					return cpu.timer.tma;
+				}
+				else if (addr == 0xFF07) {
+					return cpu.timer.tac;
+				}
 				else if(addr == 0xFF00) { 
 					if(mem.inputWire == 0x10) {
 						return mem.inputRow[0];
@@ -192,12 +204,12 @@ void writeByte(uint8_t b, uint16_t addr) {
 		case 0x8000:
 		case 0x9000:
 			gpu.vram[addr & 0x1FFF] = b;
-			if (b == 0 && addr >= 0x9800 && addr < 0x9C00)
-			{
-				printf("wrote b=%d to vram @ 0x%04X.\n", b, addr);
+			//if (b == 0 && addr >= 0x9800 && addr < 0x9C00)
+			//{
+			//	printf("wrote b=%d to vram @ 0x%04X.\n", b, addr);
 
-				printRegisters();
-			}
+			//	printRegisters();
+			//}
 			updateTile(b, addr & 0x1FFE);
 			return;
 			
@@ -249,6 +261,22 @@ void writeByte(uint8_t b, uint16_t addr) {
 				}
 				else if(addr == 0xFF0F) {
 					cpu.intFlags = b; // TODO: Can we allow program to set these?
+					return;
+				}
+				else if(addr == 0xFF04) {
+					cpu.timer.div = 0x00; // writing resets the timer
+					return;
+				}
+				else if(addr == 0xFF05) {
+					cpu.timer.tima = b;
+					return;
+				}
+				else if(addr == 0xFF06) {
+					cpu.timer.tma = b;
+					return;
+				}
+				else if(addr == 0xFF07) {
+					cpu.timer.tac = b;
 					return;
 				}
 				else if(addr == 0xFF00) {
