@@ -99,7 +99,7 @@ void doDecReg(uint8_t *regp) {
 		--(*regp);
 	}
 
-	if ((tmp * 0x0F) < (*regp & 0x0F)) {
+	if ((tmp & 0x0F) < (*regp & 0x0F)) {
 		setFlag(F_HCARRY);
 	} else {
 		resetFlag(F_HCARRY);
@@ -2168,7 +2168,24 @@ int executeInstruction() {
 			case 0xE8: // ADD SP, n
 				tmp8 = (int8_t)readByte(cpu.r.pc);
 				cpu.r.pc++;
-				cpu.r.sp += tmp8;
+
+				utmp16 = cpu.r.sp + tmp8;
+				if ((utmp16 & 0xFF) < (cpu.r.sp & 0xFF)) {
+					setFlag(F_CARRY);
+				} else {
+					resetFlag(F_CARRY);
+				}
+
+				if ((utmp16 & 0x0F) < (cpu.r.sp & 0x0F)) {
+					setFlag(F_HCARRY);
+				} else {
+					resetFlag(F_HCARRY);
+				}
+
+				cpu.r.sp = utmp16;
+				resetFlag(F_ZERO);
+				resetFlag(F_SUBSTRACT);
+
 				cpu.c += 4;
 				break;
 

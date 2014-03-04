@@ -50,7 +50,7 @@ void initMemory(uint8_t *rombuffer, size_t romlen) {
 	mem.extram = (uint8_t *)calloc(0x8000, sizeof(uint8_t)); // TODO allocate exact needed amount
 	mem.zeropageram = (uint8_t *)calloc(127, sizeof(uint8_t));
 
-	mem.ramEnabled = 0;
+	mem.ramEnabled = 1;
 	mem.bankMode = 0;
 	mem.ramBank = 0;
 	mem.romBank = 1;
