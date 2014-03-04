@@ -26,7 +26,7 @@ void initCPU() {
 	cpu.r.pc = 0x0000;
 	cpu.r.sp = 0xFFFE;
 	
-	cpu.intsOn = 0;//1;
+	cpu.intsOn = 1;//1;
 	cpu.intFlags = 0;
 	cpu.ints = 0;
 
@@ -744,7 +744,7 @@ int executeInstruction() {
 	
 	cpu.dc = cpu.c;
 
-	if(settings.debug || cpu.halted) {
+	if(settings.debug) {
 		//printf("Read instruction 0x%02X at 0x%04X. (%d)\n", inst, cpu.r.pc, cpu.r.pc);
 		printRegisters();
 	}
@@ -1502,8 +1502,11 @@ int executeInstruction() {
 				break;
 
 			case 0x76: // HALT
-				cpu.halted = 1;
-				printf("HALT instruction");
+				if (cpu.intsOn) {
+					cpu.halted = 1;
+					cpu.r.pc--;
+				}
+				printf("HALT instruction\n");
 				break;
 
 			case 0x77: // LD (HL), A
@@ -2068,6 +2071,7 @@ int executeInstruction() {
 
 			case 0xD9: // RETI
 				cpu.intsOn = 1;
+				//printf("reti, intsOn = 1\n");
 				
 				cpu.r.pc = readWord(cpu.r.sp);
 				cpu.r.sp += 2;
@@ -2170,7 +2174,7 @@ int executeInstruction() {
 
 			case 0xE9: // JP (HL)
 				cpu.r.pc = (cpu.r.h << 8) + cpu.r.l;
-				cpu.c += 2;
+				cpu.c += 1;
 				break;
 
 			case 0xEA: // LD (nn), A
@@ -2219,6 +2223,7 @@ int executeInstruction() {
 
 			case 0xF3: // DI
 				cpu.intsOn = 0;
+				//printf("DI, intsOn = 0\n");
 				cpu.c += 1;
 				break;
 
@@ -2248,17 +2253,17 @@ int executeInstruction() {
 				break;
 
 			case 0xF8: // LDHL SP, d
-				tmp16 = (int8_t)readByte(cpu.r.pc);
+				tmp8 = (int8_t)readByte(cpu.r.pc);
 				cpu.r.pc++;
-				tmp16_2 = (cpu.r.sp + tmp16) & 0xFFFF;
+				utmp16 = (cpu.r.sp + tmp8) & 0xFFFF;
 
-				if ((tmp16_2 & 0x0F) < (cpu.r.sp & 0x0F)) {
+				if ((utmp16 & 0x0F) < (cpu.r.sp & 0x0F)) {
 					setFlag(F_HCARRY);
 				} else {
 					resetFlag(F_HCARRY);
 				}
 
-				if ((tmp16_2 & 0xFF) < (cpu.r.sp & 0xFF)) {
+				if ((utmp16 & 0xFF) < (cpu.r.sp & 0xFF)) {
 					setFlag(F_CARRY);
 				} else {
 					resetFlag(F_CARRY);
@@ -2267,8 +2272,8 @@ int executeInstruction() {
 				resetFlag(F_ZERO);
 				resetFlag(F_SUBSTRACT);
 
-				cpu.r.h = tmp16_2 >> 8;
-				cpu.r.l = tmp16_2 & 0xFF;
+				cpu.r.h = utmp16 >> 8;
+				cpu.r.l = utmp16 & 0xFF;
 
 				cpu.c += 3;
 				break;
@@ -2286,6 +2291,7 @@ int executeInstruction() {
 
 			case 0xFB: // EI
 				cpu.intsOn = 1;
+				//printf("EI, intsOn = 1\n");
 				cpu.c += 1;
 				break;
 
@@ -2311,6 +2317,9 @@ int executeInstruction() {
 				printf("There's a glitch in the matrix, this shouldn't happen.\n");
 				return 0;
 		}
+	} else {
+		// Halted, still increase clock
+		cpu.c += 1;
 	}
 
 	// Timer
@@ -2320,69 +2329,55 @@ int executeInstruction() {
 		if (cpu.timer.cycleCountDiv >= 64) {
 			cpu.timer.cycleCountDiv -= 64;
 			cpu.timer.div++;
+			//printf("div = %d.\n", cpu.timer.div);
 		}
 		if (cpu.timer.cycleCount >= cpu.timer.maxCount[cpu.timer.tac & 0x03]) {
 			cpu.timer.tima++;
+			//printf("tima = %d.\n", cpu.timer.tima);
 			if (cpu.timer.tima == 0) {
 				cpu.timer.tima = cpu.timer.tma;
 				cpu.intFlags |= INT_TIMER;
+				printf("tima = tma = %d. cpu.intsOn=%d, cpu.ints=%d, cpu.intFlags=%d (int flag set)\n", 
+					cpu.timer.tima, cpu.intsOn, cpu.ints, cpu.intFlags);
 			}
 			cpu.timer.cycleCount -= cpu.timer.maxCount[cpu.timer.tac & 0x03];
 		}
 	}
 	
 	// Interrupts
-	if (cpu.intsOn && cpu.ints && cpu.intFlags) {
+	if (cpu.intsOn && (cpu.ints & cpu.intFlags)) {
 		interrupts = cpu.intFlags & cpu.ints; // mask enabled interrupt(s)
 		cpu.intsOn = 0;
 
 		cpu.halted = 0;
 		
-		if(interrupts & INT_VBLANK) {
-			cpu.intFlags &= ~INT_VBLANK;
+		// Push PC;
+		cpu.r.sp -= 2;
+		writeWord(cpu.r.pc, cpu.r.sp);
 
-			cpu.r.sp -= 2;
-			writeWord(cpu.r.pc, cpu.r.sp);
+		if (interrupts & INT_VBLANK) {
+			cpu.intFlags &= ~INT_VBLANK;
 			cpu.r.pc = 0x40;
-			cpu.c += 8;
 		}
-		else if(interrupts & INT_LCDSTAT) {
+		else if (interrupts & INT_LCDSTAT) {
 			cpu.intFlags &= ~INT_LCDSTAT;
-			
-			cpu.r.sp -= 2;
-			writeWord(cpu.r.pc, cpu.r.sp);
 			cpu.r.pc = 0x48;
-			cpu.c += 8;
 		}
-		else if(interrupts & INT_TIMER) {
+		else if (interrupts & INT_TIMER) {
 			printf("timer interrupt!\n");
 			cpu.intFlags &= ~INT_TIMER;
-			
-			cpu.r.sp -= 2;
-			writeWord(cpu.r.pc, cpu.r.sp);
 			cpu.r.pc = 0x50;
-			cpu.c += 8;
 		}
-		else if(interrupts & INT_SERIAL) {
+		else if (interrupts & INT_SERIAL) {
 			cpu.intFlags &= ~INT_SERIAL;
-			
-			cpu.r.sp -= 2;
-			writeWord(cpu.r.pc, cpu.r.sp);
 			cpu.r.pc = 0x58;
-			cpu.c += 8;
 		}
-		else if(interrupts & INT_JOYPAD) {
+		else if (interrupts & INT_JOYPAD) {
 			cpu.intFlags &= ~INT_JOYPAD;
-			
-			cpu.r.sp -= 2;
-			writeWord(cpu.r.pc, cpu.r.sp);
 			cpu.r.pc = 0x60;
-			cpu.c += 8;
-		} 
-		else {
-			cpu.intsOn = 1;
-		}
-		
+		}	
+
+		cpu.c += 8;
 	}
 
 	cpu.dc = cpu.c - cpu.dc; // delta cycles, TODO: after interrupts?

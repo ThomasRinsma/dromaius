@@ -98,6 +98,57 @@ typedef struct cpu_s {
 	int dc;
 } cpu_t;
 
+typedef enum mbc_e {
+	MTYPE_NONE,
+	MTYPE_MBC1,
+	MTYPE_MBC2,
+	MTYPE_MBC3,
+	MTYPE_MBC4,
+	MTYPE_MBC5,
+	MTYPE_MMM01,
+	MTYPE_OTHER,
+} mbc_t;
+
+/*
+	00  ROM ONLY                 
+	01  MBC1                     
+	02  MBC1+RAM                 
+	03  MBC1+RAM+BATTERY       
+
+	05  MBC2                     
+	06  MBC2+BATTERY  
+
+	08  ROM+RAM                  
+	09  ROM+RAM+BATTERY  
+
+	0B  MMM01                    
+	0C  MMM01+RAM                
+	0D  MMM01+RAM+BATTERY    
+
+	0F  MBC3+TIMER+BATTERY       
+	10  MBC3+TIMER+RAM+BATTERY   
+	11  MBC3                     
+	12  MBC3+RAM
+	13  MBC3+RAM+BATTERY
+
+	15  MBC4
+	16  MBC4+RAM
+	17  MBC4+RAM+BATTERY
+
+	19  MBC5
+	1A  MBC5+RAM
+	1B  MBC5+RAM+BATTERY
+	1C  MBC5+RUMBLE
+	1D  MBC5+RUMBLE+RAM
+	1E  MBC5+RUMBLE+RAM+BATTERY
+
+
+	FC  POCKET CAMERA
+	FD  BANDAI TAMA5
+	FE  HuC3
+	FF  HuC1+RAM+BATTERY
+*/
+
 typedef struct mem_s {
 	uint8_t *bios;
 	uint8_t *rom;
@@ -106,8 +157,18 @@ typedef struct mem_s {
 	uint8_t *zeropageram;
 	uint8_t inputRow[2];
 	uint8_t inputWire;
-	size_t romlen;
 	int biosLoaded;
+
+	size_t romlen;
+	uint8_t ramSize;
+	/*
+		00h - None
+		01h - 2 KBytes
+		02h - 8 Kbytes
+		03h - 32 KBytes (4 banks of 8KBytes each)
+	*/
+
+	mbc_t mbc;
 
 	int ramEnabled;
 	uint8_t bankMode; // 0 = ROM, 1 = RAM

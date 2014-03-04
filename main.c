@@ -80,6 +80,26 @@ int main(int argc, char *argv[]) {
 	printf("type: 0x%02X, romsize: 0x%02X, ramsize: 0x%02X\n\n",
 		romheader->type, romheader->romsize, romheader->ramsize);
 
+	// Set ram size (2/8/32 KByte)
+	mem.ramSize = romheader->ramsize;
+
+	// Set MBC type
+	if (romheader->type == 0x00) {
+		mem.mbc = MTYPE_NONE;
+	} else if (romheader->type < 0x05) {
+		mem.mbc = MTYPE_MBC1;
+	} else if (romheader->type == 0x05 || romheader->type == 0x06) {
+		mem.mbc = MTYPE_MBC2;
+	} else if (romheader->type >= 0x0F && romheader->type < 0x15) {
+		mem.mbc = MTYPE_MBC3;
+	} else if (romheader->type >= 0x15 && romheader->type < 0x19) {
+		mem.mbc = MTYPE_MBC4;
+	} else if (romheader->type >= 0x19 && romheader->type < 0x1E) {
+		mem.mbc = MTYPE_MBC5;
+	} else {
+		mem.mbc = MTYPE_OTHER;
+	}
+
 	
 	initDisplay();
 	

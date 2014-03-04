@@ -47,7 +47,7 @@ void initMemory(uint8_t *rombuffer, size_t romlen) {
 	mem.romlen = romlen;
 	
 	mem.workram = (uint8_t *)calloc(0x2000, sizeof(uint8_t));
-	mem.extram = (uint8_t *)calloc(0x2000, sizeof(uint8_t));
+	mem.extram = (uint8_t *)calloc(0x8000, sizeof(uint8_t)); // TODO allocate exact needed amount
 	mem.zeropageram = (uint8_t *)calloc(127, sizeof(uint8_t));
 
 	mem.ramEnabled = 0;
@@ -65,12 +65,14 @@ void freeMemory() {
 
 // Read a byte from memory
 uint8_t readByte(uint16_t addr) {
-	switch(addr & 0xF000) {
+	switch (addr & 0xF000) {
 		// BIOS / ROM0
 		case 0x0000:
-			if(mem.biosLoaded) {
-				if(addr < 0x0100) return mem.bios[addr];
-				else if(addr == 0x0100) {
+			if (mem.biosLoaded) {
+				if (addr < 0x0100) {
+					return mem.bios[addr];
+				}
+				else if (addr == 0x0100) {
 					//printf("End of bios reached!\n");
 					mem.biosLoaded = 0;
 				}
@@ -88,7 +90,13 @@ uint8_t readByte(uint16_t addr) {
 		case 0x5000:
 		case 0x6000:
 		case 0x7000:
-			return mem.rom[((mem.romBank - 1) * 0x4000) + addr];
+			if (mem.mbc == MTYPE_NONE) {
+				return mem.rom[addr];
+			}
+			else {
+				// TODO: is this the same for all MBCs?
+				return mem.rom[((mem.romBank - 1) * 0x4000) + addr];
+			}
 			
 		// VRAM
 		case 0x8000:
@@ -98,10 +106,31 @@ uint8_t readByte(uint16_t addr) {
 		// External RAM
 		case 0xA000:
 		case 0xB000:
-			if (!mem.ramEnabled)
+			if (!mem.ramEnabled) {
 				printf("Read from disabled external RAM.\n");
-			// TODO: banking
-			return mem.extram[addr & 0x1FFF];
+			}
+
+			if (mem.mbc == MTYPE_NONE) {
+				return mem.extram[addr & 0x1FFF];
+			}
+			else if (mem.mbc == MTYPE_MBC1) {
+				if (mem.ramSize == 0x03) { // 4 banks of 8kb
+					return mem.extram[(mem.ramBank * 0x2000) + (addr & 0x1FFF)];
+				}
+				else { // either 2KB or 8KB total, no banks
+					return mem.extram[addr & 0x1FFF];
+				}
+			}
+			else if (mem.mbc == MTYPE_MBC2) {
+				if (addr <= 0xA1FF) {
+					// TODO: not sure how to handle only using the lower nibble
+					return mem.extram[addr & 0x1FFF] & 0x0F;
+				}
+				else {
+					printf("Read from MBC2 RAM outside limit.\n");
+				}
+			}
+			
 			
 		// Working RAM
 		case 0xC000:
@@ -110,12 +139,12 @@ uint8_t readByte(uint16_t addr) {
 			return mem.workram[addr & 0x1FFF];
 			
 		case 0xF000:
-			if(addr < 0xFE00) { // Working RAM shadow
+			if (addr < 0xFE00) { // Working RAM shadow
 				return mem.workram[addr & 0x1FFF];
 			}
 			
-			if((addr & 0x0F00) == 0x0E00) {
-				if(addr < 0xFEA0) { // Object Attribute Memory
+			if ((addr & 0x0F00) == 0x0E00) {
+				if (addr < 0xFEA0) { // Object Attribute Memory
 			    	return gpu.oam[addr & 0xFF];
 			    }
 			    else {
@@ -123,16 +152,16 @@ uint8_t readByte(uint16_t addr) {
 			    }
 			}
 			else {
-				if(addr == 0xFFFF) { // interrupt enable
+				if (addr == 0xFFFF) { // interrupt enable
 					return cpu.ints;
 				}
-				else if(addr >= 0xFF80) { // Zero page
+				else if (addr >= 0xFF80) { // Zero page
 					return mem.zeropageram[addr & 0x7F];
 				}
-				else if(addr >= 0xFF40) { // I/O
+				else if (addr >= 0xFF40) { // I/O
 					return gpuReadIOByte(addr - 0xFF40);
 				}
-				else if(addr == 0xFF0F) { // interrupt flags
+				else if (addr == 0xFF0F) { // interrupt flags
 					return cpu.intFlags;
 				}
 				else if (addr == 0xFF04) {
@@ -147,11 +176,11 @@ uint8_t readByte(uint16_t addr) {
 				else if (addr == 0xFF07) {
 					return cpu.timer.tac;
 				}
-				else if(addr == 0xFF00) { 
-					if(mem.inputWire == 0x10) {
+				else if (addr == 0xFF00) { 
+					if (mem.inputWire == 0x10) {
 						return mem.inputRow[0];
 					}
-					if(mem.inputWire == 0x20) {
+					if (mem.inputWire == 0x20) {
 						return mem.inputRow[1];
 					}
 					return 0;
@@ -171,33 +200,86 @@ uint16_t readWord(uint16_t addr) {
 void writeByte(uint8_t b, uint16_t addr) {
 	switch(addr & 0xF000) {
 		// Enable or disable external RAM
-		case 0x0000:  // TODO: don't assume MBC1
+		case 0x0000:
 		case 0x1000:
-			mem.ramEnabled = ((b & 0xF) == 0xA);
+			if (mem.mbc == MTYPE_NONE) {
+				printf("write to < 0x1FFFF without MBC\n");
+			}
+			else if (mem.mbc == MTYPE_MBC1) {
+				mem.ramEnabled = ((b & 0xF) == 0xA);
+			}
+			else if (mem.mbc == MTYPE_MBC2) {
+				// Least sign. bit of upper addr. byte should be 0
+				if (!(addr & 0x0100)) {
+					mem.ramEnabled = ((b & 0xF) == 0xA);
+				}
+				else {
+					printf("MBC2 RAM enable with wrong bit.\n");
+				}
+			}
 			break;
 
 		// Set the lower 5 bits of ROM bank nr
 		case 0x2000:
 		case 0x3000: 
-			if ((b & 0x1F) == 0x00)
-				b = 0x01;
+			if (mem.mbc == MTYPE_NONE) {
+				printf("write to 0x2000-0x3FFF without MBC\n");
+			}
+			else if (mem.mbc == MTYPE_MBC1) {
+				// Set lower 5 bits
+				mem.romBank = (b & 0x1F) | (mem.romBank & 0xE0);
 
-			mem.romBank = (b & 0x1F) | (mem.romBank & 0xE0);
+				// Apply rom bank glitch
+				if (mem.romBank == 0x00 || mem.romBank == 0x20 ||
+					mem.romBank == 0x40 || mem.romBank == 0x60) {
+					mem.romBank++;
+				}
+			}
+			else if (mem.mbc == MTYPE_MBC2) {
+				// Least sign. bit of upper addr. byte should be 1
+				if (addr & 0x0100) {
+					// Only 16 banks for MBC2
+					mem.romBank = (b & 0x0F);
+				}
+				else {
+					printf("MBC2 ROM bank select with wrong bit.\n");
+				}
+			}
 			return;
 			
 		// Set RAM bank nr or upper 2 bits of ROM bank nr
 		case 0x4000:
 		case 0x5000:
-			if (mem.bankMode) // RAM
-				mem.ramBank = (b & 0x3);
-			else // ROM, upper 2 bits
-				mem.romBank = (mem.romBank & 0x1F) | ((b & 0x3) << 5);
+			if (mem.mbc == MTYPE_NONE) {
+				printf("write to 0x4000-0x5FFF without MBC\n");
+			}
+			else {
+				if (mem.bankMode) { // RAM
+					mem.ramBank = (b & 0x3);
+				}
+				else { // ROM, upper 2 bits
+					mem.romBank = (mem.romBank & 0x1F) | ((b & 0x3) << 5);
+
+					// Apply rom bank glitch
+					// TODO: only for MBC1 or also for 2?
+					if (mem.romBank == 0x00 || mem.romBank == 0x20 ||
+						mem.romBank == 0x40 || mem.romBank == 0x60) {
+						mem.romBank++;
+					}
+				}
+				
+			}
 			return;
 
 		// ROM or RAM banking mode select
 		case 0x6000:
 		case 0x7000:
-			mem.bankMode = (b & 0x1);
+			if (mem.mbc == MTYPE_NONE) {
+				printf("write to 0x6000-0x7FFF without MBC\n");
+			}
+			else {
+				mem.bankMode = (b & 0x1);
+			}
 			return;
 			
 		// VRAM
@@ -219,7 +301,30 @@ void writeByte(uint8_t b, uint16_t addr) {
 			if (!mem.ramEnabled)
 				printf("Write to disabled external RAM.\n");
 
-			mem.extram[addr & 0x1FFF] = b;
+			if (mem.mbc == MTYPE_NONE) {
+				mem.extram[addr & 0x1FFF] = b;
+			}
+			else if (mem.mbc == MTYPE_MBC1) {
+				if (mem.ramSize == 0x03) { // 4 banks of 8kb
+					mem.extram[(mem.ramBank * 0x2000) + (addr & 0x1FFF)] = b;
+				}
+				else { // either 2KB or 8KB total, no banks
+					mem.extram[addr & 0x1FFF] = b;
+				}
+			}
+			else if (mem.mbc == MTYPE_MBC2) {
+				if (addr <= 0xA1FF) {
+					// TODO: not sure how to handle only using the lower nibble
+					mem.extram[addr & 0x1FFF] = (b & 0x0F);
+				}
+				else {
+					printf("Write to MBC2 RAM outside limit.\n");
+				}
+			}
+			else {
+				printf("0xA000-0xBFFF unimplemented else, TODO\n");
+			}
+
 			return;
 			
 		// Working RAM
@@ -227,16 +332,15 @@ void writeByte(uint8_t b, uint16_t addr) {
 		case 0xD000:
 		case 0xE000:
 			mem.workram[addr & 0x1FFF] = b;
-			//if(addr == 0xC0AC && b == 0) printf("wrote 0x%02X to 0xC0AC!\n", b);
 			return;
 			
 		case 0xF000:
-			if(addr < 0xFE00) { // Working RAM shadow
+			if (addr < 0xFE00) { // Working RAM shadow
 				mem.workram[addr & 0x1FFF] = b;
 				return;
 			}
-			if((addr & 0x0F00) == 0x0E00) {
-				if(addr < 0xFEA0) { // Object Attribute Memory
+			if ((addr & 0x0F00) == 0x0E00) {
+				if (addr < 0xFEA0) { // Object Attribute Memory
 			    	gpu.oam[addr & 0xFF] = b;
 			    	gpuBuildSpriteData(b, addr - 0xFE00);
 			    	return;
@@ -247,39 +351,41 @@ void writeByte(uint8_t b, uint16_t addr) {
 			    }
 			}
 			else {
-				if(addr == 0xFFFF) { // interrupt enable
+				if (addr == 0xFFFF) { // interrupt enable
+					//printf("cpu.ints = %d\n", b);
 					cpu.ints = b;
 					return;
 				}
-				else if(addr >= 0xFF80) { // Zero page
+				else if (addr >= 0xFF80) { // Zero page
 					mem.zeropageram[addr & 0x7F] = b;
 					return;
 				}
-				else if(addr >= 0xFF40) { // I/O
+				else if (addr >= 0xFF40) { // I/O
 					gpuWriteIOByte(b, addr - 0xFF40);
 					return;
 				}
-				else if(addr == 0xFF0F) {
+				else if (addr == 0xFF0F) {
+					//printf("cpu.intFlags = %d\n", b);
 					cpu.intFlags = b; // TODO: Can we allow program to set these?
 					return;
 				}
-				else if(addr == 0xFF04) {
+				else if (addr == 0xFF04) {
 					cpu.timer.div = 0x00; // writing resets the timer
 					return;
 				}
-				else if(addr == 0xFF05) {
+				else if (addr == 0xFF05) {
 					cpu.timer.tima = b;
 					return;
 				}
-				else if(addr == 0xFF06) {
+				else if (addr == 0xFF06) {
 					cpu.timer.tma = b;
 					return;
 				}
-				else if(addr == 0xFF07) {
+				else if (addr == 0xFF07) {
 					cpu.timer.tac = b;
 					return;
 				}
-				else if(addr == 0xFF00) {
+				else if (addr == 0xFF00) {
 					mem.inputWire = b & 0x30;
 					return;
 				}
