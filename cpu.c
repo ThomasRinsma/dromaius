@@ -2020,7 +2020,6 @@ int executeInstruction() {
 				break;
 
 			case 0xC8: // RET Z
-				cpu.c += 1;
 				if(getFlag(F_ZERO)) {
 					cpu.r.pc = readWord(cpu.r.sp);
 					cpu.r.sp += 2;
@@ -2084,7 +2083,6 @@ int executeInstruction() {
 				break;
 
 			case 0xD0: // RET NC
-				cpu.c += 1;
 				if (!getFlag(F_CARRY)) {
 					cpu.r.pc = readWord(cpu.r.sp);
 					cpu.r.sp += 2;
@@ -2149,7 +2147,6 @@ int executeInstruction() {
 				break;
 
 			case 0xD8: // RET C
-				cpu.c += 1;
 				if (getFlag(F_CARRY)) {
 					cpu.r.pc = readWord(cpu.r.sp);
 					cpu.r.sp += 2;
