@@ -91,6 +91,7 @@ typedef struct cpu_s {
 	regs_t r;
 	uint8_t intsOn; // bool
 	uint8_t intFlags;
+	uint8_t oldIntFlags;
 	uint8_t ints;
 	cputimer_t timer;
 	int halted;

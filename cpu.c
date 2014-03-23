@@ -737,22 +737,26 @@ void handleTimers() {
 	// Timer
 	cpu.timer.cycleCountDiv += cpu.c - cpu.dc;
 	cpu.timer.cycleCount += cpu.c - cpu.dc;
+
 	if (cpu.timer.tac & 0x04) { // started
 		if (cpu.timer.cycleCountDiv >= 64) {
 			cpu.timer.cycleCountDiv -= 64;
+
 			cpu.timer.div++;
 			//printf("div = %d.\n", cpu.timer.div);
 		}
 		if (cpu.timer.cycleCount >= cpu.timer.maxCount[cpu.timer.tac & 0x03]) {
+			cpu.timer.cycleCount -= cpu.timer.maxCount[cpu.timer.tac & 0x03];
+
 			cpu.timer.tima++;
 			//printf("tima = %d.\n", cpu.timer.tima);
 			if (cpu.timer.tima == 0) {
 				cpu.timer.tima = cpu.timer.tma;
+
 				cpu.intFlags |= INT_TIMER;
-				printf("tima = tma = %d. cpu.intsOn=%d, cpu.ints=%d, cpu.intFlags=%d (int flag set)\n", 
-					cpu.timer.tima, cpu.intsOn, cpu.ints, cpu.intFlags);
+				//printf("tima = tma = %d. cpu.intsOn=%d, cpu.ints=%d, cpu.intFlags=%d (int flag set)\n", 
+				//	cpu.timer.tima, cpu.intsOn, cpu.ints, cpu.intFlags);
 			}
-			cpu.timer.cycleCount -= cpu.timer.maxCount[cpu.timer.tac & 0x03];
 		}
 	}
 }
@@ -763,7 +767,11 @@ void handleInterrupts() {
 		uint8_t interrupts = cpu.intFlags & cpu.ints; // mask enabled interrupt(s)
 		cpu.intsOn = 0;
 
-		cpu.halted = 0;
+		//if (cpu.halted)
+		//{
+		//	printf("halted was 1\n");
+		//	cpu.halted = 0;
+		//}
 		
 		// Push PC;
 		cpu.r.sp -= 2;
@@ -806,7 +814,6 @@ int executeInstruction() {
 	
 	cpu.dc = cpu.c;
 
-	handleTimers();
 
 	handleInterrupts();
 
@@ -821,6 +828,7 @@ int executeInstruction() {
 
 
 		cpu.r.pc++;
+
 
 		switch (inst) {
 			case 0x00: // NOP
@@ -1568,11 +1576,12 @@ int executeInstruction() {
 				break;
 
 			case 0x76: // HALT
-				if (cpu.intsOn) {
-					cpu.halted = 1;
-					cpu.r.pc--;
-				}
-				printf("HALT instruction\n");
+				// store interrupt flags
+				cpu.oldIntFlags = cpu.intFlags;
+				cpu.halted = 1;
+				
+				//cpu.intsOn = 1;
+				printf("HALT instruction, intsOn=%d, IF=%02X\n", cpu.intsOn, cpu.intFlags);
 				break;
 
 			case 0x77: // LD (HL), A
@@ -2401,10 +2410,16 @@ int executeInstruction() {
 				return 0;
 		}
 	} else {
-		// Halted, still increase clock
+		// IF has changed, stop halting
+		if (cpu.intFlags != cpu.oldIntFlags) {
+			cpu.halted = 0;
+		}
+
+		// still increase clock
 		cpu.c += 1;
 	}
 
+	handleTimers();
 
 	cpu.dc = cpu.c - cpu.dc; // delta cycles, TODO: after interrupts?
 
