@@ -43,14 +43,14 @@ void initCPU() {
 
 		Bit 2    - Timer Stop  (0=Stop, 1=Start)
 		Bits 1-0 - Input Clock Select
-		           00:   4096 Hz  (every 1024|128 cycles)
+		           00:   4096 Hz  (every 1024|256 cycles)
 		           01: 262144 Hz  (every 16|4 cycles)
 		           10:  65536 Hz  (every 64|16 cycles)
 		           11:  16384 Hz  (every 256|64 cycles)
 
 		(DMG runs at 4194304 Hz)
 	*/
-	cpu.timer.maxCount[0] = 128;
+	cpu.timer.maxCount[0] = 256;
 	cpu.timer.maxCount[1] = 4;
 	cpu.timer.maxCount[2] = 16;
 	cpu.timer.maxCount[3] = 64;
@@ -733,6 +733,69 @@ void doExtraOP(uint8_t op) {
 }
 
 
+void handleTimers() {
+	// Timer
+	cpu.timer.cycleCountDiv += cpu.c - cpu.dc;
+	cpu.timer.cycleCount += cpu.c - cpu.dc;
+	if (cpu.timer.tac & 0x04) { // started
+		if (cpu.timer.cycleCountDiv >= 64) {
+			cpu.timer.cycleCountDiv -= 64;
+			cpu.timer.div++;
+			//printf("div = %d.\n", cpu.timer.div);
+		}
+		if (cpu.timer.cycleCount >= cpu.timer.maxCount[cpu.timer.tac & 0x03]) {
+			cpu.timer.tima++;
+			//printf("tima = %d.\n", cpu.timer.tima);
+			if (cpu.timer.tima == 0) {
+				cpu.timer.tima = cpu.timer.tma;
+				cpu.intFlags |= INT_TIMER;
+				printf("tima = tma = %d. cpu.intsOn=%d, cpu.ints=%d, cpu.intFlags=%d (int flag set)\n", 
+					cpu.timer.tima, cpu.intsOn, cpu.ints, cpu.intFlags);
+			}
+			cpu.timer.cycleCount -= cpu.timer.maxCount[cpu.timer.tac & 0x03];
+		}
+	}
+}
+
+void handleInterrupts() {
+	// Interrupts
+	if (cpu.intsOn && (cpu.ints & cpu.intFlags)) {
+		uint8_t interrupts = cpu.intFlags & cpu.ints; // mask enabled interrupt(s)
+		cpu.intsOn = 0;
+
+		cpu.halted = 0;
+		
+		// Push PC;
+		cpu.r.sp -= 2;
+		writeWord(cpu.r.pc, cpu.r.sp);
+
+		if (interrupts & INT_VBLANK) {
+			cpu.intFlags &= ~INT_VBLANK;
+			cpu.r.pc = 0x40;
+		}
+		else if (interrupts & INT_LCDSTAT) {
+			cpu.intFlags &= ~INT_LCDSTAT;
+			cpu.r.pc = 0x48;
+		}
+		else if (interrupts & INT_TIMER) {
+			printf("timer interrupt!\n");
+			cpu.intFlags &= ~INT_TIMER;
+			cpu.r.pc = 0x50;
+		}
+		else if (interrupts & INT_SERIAL) {
+			cpu.intFlags &= ~INT_SERIAL;
+			cpu.r.pc = 0x58;
+		}
+		else if (interrupts & INT_JOYPAD) {
+			cpu.intFlags &= ~INT_JOYPAD;
+			cpu.r.pc = 0x60;
+		}	
+
+		cpu.c += 8;
+	}
+}
+
+
 int executeInstruction() {
 	uint8_t inst;
 	uint32_t utmp32, utmp32_2;
@@ -740,9 +803,12 @@ int executeInstruction() {
 	uint16_t utmp16, utmp16_2;
 	int8_t tmp8, tmp8_2;
 	uint8_t utmp8, utmp8_2;
-	uint8_t interrupts;
 	
 	cpu.dc = cpu.c;
+
+	handleTimers();
+
+	handleInterrupts();
 
 	if(settings.debug) {
 		//printf("Read instruction 0x%02X at 0x%04X. (%d)\n", inst, cpu.r.pc, cpu.r.pc);
@@ -2339,63 +2405,6 @@ int executeInstruction() {
 		cpu.c += 1;
 	}
 
-	// Timer
-	cpu.timer.cycleCountDiv += cpu.c - cpu.dc;
-	cpu.timer.cycleCount += cpu.c - cpu.dc;
-	if (cpu.timer.tac & 0x04) { // started
-		if (cpu.timer.cycleCountDiv >= 64) {
-			cpu.timer.cycleCountDiv -= 64;
-			cpu.timer.div++;
-			//printf("div = %d.\n", cpu.timer.div);
-		}
-		if (cpu.timer.cycleCount >= cpu.timer.maxCount[cpu.timer.tac & 0x03]) {
-			cpu.timer.tima++;
-			//printf("tima = %d.\n", cpu.timer.tima);
-			if (cpu.timer.tima == 0) {
-				cpu.timer.tima = cpu.timer.tma;
-				cpu.intFlags |= INT_TIMER;
-				printf("tima = tma = %d. cpu.intsOn=%d, cpu.ints=%d, cpu.intFlags=%d (int flag set)\n", 
-					cpu.timer.tima, cpu.intsOn, cpu.ints, cpu.intFlags);
-			}
-			cpu.timer.cycleCount -= cpu.timer.maxCount[cpu.timer.tac & 0x03];
-		}
-	}
-	
-	// Interrupts
-	if (cpu.intsOn && (cpu.ints & cpu.intFlags)) {
-		interrupts = cpu.intFlags & cpu.ints; // mask enabled interrupt(s)
-		cpu.intsOn = 0;
-
-		cpu.halted = 0;
-		
-		// Push PC;
-		cpu.r.sp -= 2;
-		writeWord(cpu.r.pc, cpu.r.sp);
-
-		if (interrupts & INT_VBLANK) {
-			cpu.intFlags &= ~INT_VBLANK;
-			cpu.r.pc = 0x40;
-		}
-		else if (interrupts & INT_LCDSTAT) {
-			cpu.intFlags &= ~INT_LCDSTAT;
-			cpu.r.pc = 0x48;
-		}
-		else if (interrupts & INT_TIMER) {
-			printf("timer interrupt!\n");
-			cpu.intFlags &= ~INT_TIMER;
-			cpu.r.pc = 0x50;
-		}
-		else if (interrupts & INT_SERIAL) {
-			cpu.intFlags &= ~INT_SERIAL;
-			cpu.r.pc = 0x58;
-		}
-		else if (interrupts & INT_JOYPAD) {
-			cpu.intFlags &= ~INT_JOYPAD;
-			cpu.r.pc = 0x60;
-		}	
-
-		cpu.c += 8;
-	}
 
 	cpu.dc = cpu.c - cpu.dc; // delta cycles, TODO: after interrupts?
 
