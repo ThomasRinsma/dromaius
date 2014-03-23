@@ -685,7 +685,7 @@ void doExtraOP(uint8_t op) {
 
 		if ((op & 0x07) == 0x06) {
 			writeByte(tmp, (cpu.r.h << 8) + cpu.r.l);
-			cpu.c += 2;
+			cpu.c += 1;
 		}
 
 		cpu.c += 2;
@@ -852,7 +852,7 @@ int executeInstruction() {
 				if (!cpu.r.c) {
 					cpu.r.b++;
 				}
-				cpu.c += 1;
+				cpu.c += 2;
 				break;
 				
 			case 0x04: // INC B
@@ -1004,7 +1004,7 @@ int executeInstruction() {
 				tmp8 = (int8_t)readByte(cpu.r.pc);
 				cpu.r.pc++;
 				cpu.r.pc += tmp8;
-				cpu.c += 2;
+				cpu.c += 3;
 				break;
 				
 			case 0x19: // ADD HL, DE
@@ -1052,6 +1052,7 @@ int executeInstruction() {
 				cpu.r.pc++;
 				if (!getFlag(F_ZERO)) {
 					cpu.r.pc += tmp8;
+					cpu.c += 1;
 				}
 				cpu.c += 2;
 				break;
@@ -1077,7 +1078,7 @@ int executeInstruction() {
 				if (cpu.r.l == 0x00) {
 					cpu.r.h++;
 				}
-				cpu.c += 1;
+				cpu.c += 2;
 				break;
 				
 			case 0x24: // INC H
@@ -1141,6 +1142,7 @@ int executeInstruction() {
 				cpu.r.pc++;
 				if (getFlag(F_ZERO)) {
 					cpu.r.pc += tmp8;
+					cpu.c += 1;
 				}
 				cpu.c += 2;
 				break;
@@ -1197,6 +1199,7 @@ int executeInstruction() {
 				cpu.r.pc++;
 				if (!getFlag(F_CARRY)) {
 					cpu.r.pc += tmp8;
+					cpu.c += 1;
 				}
 				cpu.c += 2;
 				break;
@@ -1253,6 +1256,7 @@ int executeInstruction() {
 				cpu.r.pc++;
 				if (getFlag(F_CARRY)) {
 					cpu.r.pc += tmp8;
+					cpu.c += 1;
 				}
 				cpu.c += 2;
 				break;
@@ -1953,6 +1957,7 @@ int executeInstruction() {
 				if (!getFlag(F_ZERO)) {
 					cpu.r.pc = readWord(cpu.r.sp);
 					cpu.r.sp += 2;
+					cpu.c += 3;
 				}
 				cpu.c += 2;
 				break;
@@ -1968,6 +1973,7 @@ int executeInstruction() {
 			case 0xC2: // JP NZ, nn
 				if (!getFlag(F_ZERO)) {
 					cpu.r.pc = readWord(cpu.r.pc);
+					cpu.c += 1;
 				} else {
 					cpu.r.pc += 2;
 				}
@@ -1976,7 +1982,7 @@ int executeInstruction() {
 
 			case 0xC3: // JP nn
 				cpu.r.pc = readWord(cpu.r.pc);
-				cpu.c += 3;
+				cpu.c += 4;
 				break;
 
 			case 0xC4: // CALL NZ, nn
@@ -1984,6 +1990,7 @@ int executeInstruction() {
 					cpu.r.sp -= 2;
 					writeWord(cpu.r.pc + 2, cpu.r.sp);
 					cpu.r.pc = readWord(cpu.r.pc);
+					cpu.c += 3;
 				} else {
 					cpu.r.pc += 2;
 				}
@@ -2009,7 +2016,7 @@ int executeInstruction() {
 				cpu.r.sp -= 2;
 				writeWord(cpu.r.pc, cpu.r.sp);
 				cpu.r.pc = 0x00;
-				cpu.c += 8;
+				cpu.c += 4;
 				break;
 
 			case 0xC8: // RET Z
@@ -2017,6 +2024,7 @@ int executeInstruction() {
 				if(getFlag(F_ZERO)) {
 					cpu.r.pc = readWord(cpu.r.sp);
 					cpu.r.sp += 2;
+					cpu.c += 3;
 				}
 				cpu.c += 2;
 				break;
@@ -2024,12 +2032,13 @@ int executeInstruction() {
 			case 0xC9: // RET
 				cpu.r.pc = readWord(cpu.r.sp);
 				cpu.r.sp += 2;
-				cpu.c += 2;
+				cpu.c += 4;
 				break;
 
 			case 0xCA: // JP Z, nn
 				if (getFlag(F_ZERO)) {
 					cpu.r.pc = readWord(cpu.r.pc);
+					cpu.c += 1;
 				} else {
 					cpu.r.pc += 2;
 				}
@@ -2047,6 +2056,7 @@ int executeInstruction() {
 					cpu.r.sp -= 2;
 					writeWord(cpu.r.pc + 2, cpu.r.sp);
 					cpu.r.pc = readWord(cpu.r.pc);
+					cpu.c += 3;
 				} else {
 					cpu.r.pc += 2;
 				}
@@ -2057,7 +2067,7 @@ int executeInstruction() {
 				cpu.r.sp -= 2;
 				writeWord(cpu.r.pc + 2, cpu.r.sp);
 				cpu.r.pc = readWord(cpu.r.pc);
-				cpu.c += 3;
+				cpu.c += 6;
 				break;
 
 			case 0xCE: // ADC A, n
@@ -2070,7 +2080,7 @@ int executeInstruction() {
 				cpu.r.sp -= 2;
 				writeWord(cpu.r.pc, cpu.r.sp);
 				cpu.r.pc = 0x08;
-				cpu.c += 8;
+				cpu.c += 4;
 				break;
 
 			case 0xD0: // RET NC
@@ -2078,6 +2088,7 @@ int executeInstruction() {
 				if (!getFlag(F_CARRY)) {
 					cpu.r.pc = readWord(cpu.r.sp);
 					cpu.r.sp += 2;
+					cpu.c += 3;
 				}
 				cpu.c += 2;
 				break;
@@ -2093,6 +2104,7 @@ int executeInstruction() {
 			case 0xD2: // JP NC, nn
 				if (!getFlag(F_CARRY)) {
 					cpu.r.pc = readWord(cpu.r.pc);
+					cpu.c += 1;
 				} else {
 					cpu.r.pc += 2;
 				}
@@ -2108,6 +2120,7 @@ int executeInstruction() {
 					cpu.r.sp -= 2;
 					writeWord(cpu.r.pc + 2, cpu.r.sp);
 					cpu.r.pc = readWord(cpu.r.pc);
+					cpu.c += 3;
 				} else {
 					cpu.r.pc += 2;
 				}
@@ -2132,7 +2145,7 @@ int executeInstruction() {
 				cpu.r.sp -= 2;
 				writeWord(cpu.r.pc, cpu.r.sp);
 				cpu.r.pc = 0x10;
-				cpu.c += 8;
+				cpu.c += 4;
 				break;
 
 			case 0xD8: // RET C
@@ -2140,6 +2153,7 @@ int executeInstruction() {
 				if (getFlag(F_CARRY)) {
 					cpu.r.pc = readWord(cpu.r.sp);
 					cpu.r.sp += 2;
+					cpu.c += 3;
 				}
 				cpu.c += 2;
 				break;
@@ -2151,12 +2165,13 @@ int executeInstruction() {
 				cpu.r.pc = readWord(cpu.r.sp);
 				cpu.r.sp += 2;
 				
-				cpu.c += 2;
+				cpu.c += 4;
 				break;
 
 			case 0xDA: // JP C, nn
 				if (getFlag(F_CARRY)) {
 					cpu.r.pc = readWord(cpu.r.pc);
+					cpu.c += 1;
 				} else {
 					cpu.r.pc += 2;
 				}
@@ -2172,6 +2187,7 @@ int executeInstruction() {
 					cpu.r.sp -= 2;
 					writeWord(cpu.r.pc + 2, cpu.r.sp);
 					cpu.r.pc = readWord(cpu.r.pc);
+					cpu.c += 3;
 				} else {
 					cpu.r.pc += 2;
 				}
@@ -2192,7 +2208,7 @@ int executeInstruction() {
 				cpu.r.sp -= 2;
 				writeWord(cpu.r.pc, cpu.r.sp);
 				cpu.r.pc = 0x18;
-				cpu.c += 8;
+				cpu.c += 4;
 				break;
 
 			case 0xE0: // LDH (n), A
@@ -2237,7 +2253,7 @@ int executeInstruction() {
 				cpu.r.sp -= 2;
 				writeWord(cpu.r.pc, cpu.r.sp);
 				cpu.r.pc = 0x20;
-				cpu.c += 8;
+				cpu.c += 4;
 				break;
 
 			case 0xE8: // ADD SP, n
@@ -2291,7 +2307,7 @@ int executeInstruction() {
 				cpu.r.sp -= 2;
 				writeWord(cpu.r.pc, cpu.r.sp);
 				cpu.r.pc = 0x28;
-				cpu.c += 8;
+				cpu.c += 4;
 				break;
 
 			case 0xF0: // LDH A, (n)
@@ -2341,7 +2357,7 @@ int executeInstruction() {
 				cpu.r.sp -= 2;
 				writeWord(cpu.r.pc, cpu.r.sp);
 				cpu.r.pc = 0x30;
-				cpu.c += 8;
+				cpu.c += 4;
 				break;
 
 			case 0xF8: // LDHL SP, d
@@ -2402,7 +2418,7 @@ int executeInstruction() {
 				cpu.r.sp -= 2;
 				writeWord(cpu.r.pc, cpu.r.sp);
 				cpu.r.pc = 0x38;
-				cpu.c += 8;
+				cpu.c += 4;
 				break;
 				
 			default:
