@@ -95,6 +95,7 @@ uint8_t readByte(uint16_t addr) {
 			}
 			else {
 				// TODO: is this the same for all MBCs?
+				// At least MBC1, 2 (only 16 banks) and 3
 				return mem.rom[((mem.romBank - 1) * 0x4000) + addr];
 			}
 			
@@ -128,6 +129,22 @@ uint8_t readByte(uint16_t addr) {
 				}
 				else {
 					printf("Read from MBC2 RAM outside limit.\n");
+				}
+			}
+			else if (mem.mbc == MTYPE_MBC3) {
+				// Ram mode
+				if (mem.rtcReg == 0) {
+					if (mem.ramSize == 0x03) { // 4 banks of 8kb
+						return mem.extram[(mem.ramBank * 0x2000) + (addr & 0x1FFF)];
+					}
+					// TODO: not sure if this else is needed here for MBC3
+					else { // either 2KB or 8KB total, no banks
+						return mem.extram[addr & 0x1FFF];
+					}
+				} 
+				// RTC reg mode
+				else {
+					return mem.rtc[mem.rtcReg - 0x08];
 				}
 			}
 			
@@ -217,7 +234,7 @@ void writeByte(uint8_t b, uint16_t addr) {
 				mem.rom[addr] = b;
 				return;
 			}
-			else if (mem.mbc == MTYPE_MBC1) {
+			else if (mem.mbc == MTYPE_MBC1 || mem.mbc == MTYPE_MBC3) {
 				mem.ramEnabled = ((b & 0xF) == 0xA);
 			}
 			else if (mem.mbc == MTYPE_MBC2) {
@@ -258,6 +275,15 @@ void writeByte(uint8_t b, uint16_t addr) {
 					printf("MBC2 ROM bank select with wrong bit.\n");
 				}
 			}
+			else if (mem.mbc == MTYPE_MBC3) {
+				// lower 7 bits select rom bank
+				mem.romBank = (b & 0x7F);
+
+				// Fix rom bank glitch (bank 0 --> bank 1)
+				if (mem.romBank == 0x00) {
+					mem.romBank++;
+				}
+			}
 			return;
 			
 		// Set RAM bank nr or upper 2 bits of ROM bank nr
@@ -267,7 +293,7 @@ void writeByte(uint8_t b, uint16_t addr) {
 				printf("write to 0x4000-0x5FFF without MBC\n");
 				mem.rom[addr] = b;
 			}
-			else {
+			else if (mem.mbc == MTYPE_MBC1) {
 				if (mem.bankMode) { // RAM
 					mem.ramBank = (b & 0x3);
 				}
@@ -283,6 +309,19 @@ void writeByte(uint8_t b, uint16_t addr) {
 				}
 				
 			}
+			else if (mem.mbc == MTYPE_MBC3) {
+				// Either select ram bank or select RTC register
+				if (b <= 0x03) {
+					mem.ramBank = b;
+					mem.rtcReg = 0;
+				}
+				else if (b >= 0x08 && b <= 0x0C) {
+					mem.rtcReg = b;
+				}
+				else {
+					printf("invalid selector written (MBC3) (%x)\n", b);
+				}
+			}
 			return;
 
 		// ROM or RAM banking mode select
@@ -292,8 +331,11 @@ void writeByte(uint8_t b, uint16_t addr) {
 				printf("write to 0x6000-0x7FFF without MBC\n");
 				mem.rom[addr] = b;
 			}
-			else {
+			else if (mem.mbc == MTYPE_MBC1) {
 				mem.bankMode = (b & 0x1);
+			}
+			else if (mem.mbc == MTYPE_MBC3) {
+				printf("TODO: latch RTC time");
 			}
 			return;
 			
@@ -334,6 +376,22 @@ void writeByte(uint8_t b, uint16_t addr) {
 				}
 				else {
 					printf("Write to MBC2 RAM outside limit.\n");
+				}
+			}
+			else if (mem.mbc == MTYPE_MBC3) {
+				// Ram mode
+				if (mem.rtcReg == 0) {
+					if (mem.ramSize == 0x03) { // 4 banks of 8kb
+						mem.extram[(mem.ramBank * 0x2000) + (addr & 0x1FFF)] = b;
+					}
+					// TODO: not sure if this else is needed here for MBC3
+					else { // either 2KB or 8KB total, no banks
+						mem.extram[addr & 0x1FFF] = b;
+					}
+				}
+				// RTC reg mode
+				else {
+					mem.rtc[mem.rtcReg - 0x08] = b;
 				}
 			}
 			else {

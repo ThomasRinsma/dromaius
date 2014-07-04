@@ -175,6 +175,8 @@ typedef struct mem_s {
 	uint8_t bankMode; // 0 = ROM, 1 = RAM
 	uint8_t ramBank;
 	uint8_t romBank;
+	uint8_t rtcReg;
+	uint8_t rtc[5];
 } mem_t;
 
 typedef enum gpumode_s {
