@@ -2424,9 +2424,13 @@ int executeInstruction() {
 		}
 	} else {
 		// IF has changed, stop halting
-		if (cpu.intFlags != cpu.oldIntFlags) {
+		//if (cpu.intFlags != cpu.oldIntFlags) {
+		if (cpu.intFlags) {
 			cpu.halted = 0;
+			printf("Done halting\n");
 		}
+
+		//printf("halting: intFlags=%d, oldIntFlags=%d.\n", cpu.intFlags, cpu.oldIntFlags);
 
 		// still increase clock
 		cpu.c += 1;
