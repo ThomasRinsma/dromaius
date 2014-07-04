@@ -26,7 +26,7 @@ void initCPU() {
 	cpu.r.pc = 0x0000;
 	cpu.r.sp = 0xFFFE;
 	
-	cpu.intsOn = 1;//1;
+	cpu.intsOn = 0;//1;
 	cpu.intFlags = 0;
 	cpu.ints = 0;
 
