@@ -1585,7 +1585,7 @@ int executeInstruction() {
 				cpu.halted = 1;
 				
 				//cpu.intsOn = 1;
-				printf("HALT instruction, intsOn=%d, IF=%02X\n", cpu.intsOn, cpu.intFlags);
+				//printf("HALT instruction, intsOn=%d, IF=%02X\n", cpu.intsOn, cpu.intFlags);
 				break;
 
 			case 0x77: // LD (HL), A
@@ -2427,7 +2427,7 @@ int executeInstruction() {
 		//if (cpu.intFlags != cpu.oldIntFlags) {
 		if (cpu.intFlags) {
 			cpu.halted = 0;
-			printf("Done halting\n");
+			//printf("Done halting\n");
 		}
 
 		//printf("halting: intFlags=%d, oldIntFlags=%d.\n", cpu.intFlags, cpu.oldIntFlags);

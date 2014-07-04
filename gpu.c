@@ -7,7 +7,7 @@
 #define GB_SCREEN_HEIGHT 144
 
 #define SCREEN_WIDTH  (GB_SCREEN_WIDTH + 256)
-#define SCREEN_HEIGHT (GB_SCREEN_HEIGHT + 256)
+#define SCREEN_HEIGHT (GB_SCREEN_HEIGHT)
 #define WINDOW_SCALE  2
 
 extern settings_t settings;
@@ -234,22 +234,30 @@ void printGPUDebug() {
 void renderDebugBackground() {
 	int x, y, i, j, tilenr, color;
 
-	for (y = 0; y < 32; ++y)
+	for (y = 0; y < 16; ++y)
 	{
 		for (x = 0; x < 32; ++x)
 		{
-			tilenr = gpu.vram[GPU_TILEMAP_ADDR0 + 32*y + x];
 
 			for (i = 0; i < 8; ++i)
 			{
 				for (j = 0; j < 8; ++j)
 				{
 					if (i == 0 || j == 0)
-						setPixelColor(160 + x * 8 + j, 144 + y * 8 + i, 3);
+					{
+						setPixelColor(160 + x * 8 + j, 8 + y * 8 + i, 3);
+						//setPixelColor(160 + x * 8 + j, 40 + 8 + y * 8 + i, 3);
+					}
+
 					else
 					{
-						color = gpu.bgpalette[gpu.tileset[tilenr][i][j]];
-						setPixelColor(160 + x * 8 + j, 144 + y * 8 + i, color);
+						//color = gpu.bgpalette[gpu.tileset[tilenr][i][j]];
+						
+						color = gpu.bgpalette[gpu.tileset[y*32 + x][i][j]];
+						setPixelColor(160 + x * 8 + j, 8 + y * 8 + i, color);
+
+						//color = gpu.bgpalette[gpu.tileset[y*32 + x][i][j]];
+						//setPixelColor(160 + x * 8 + j, 8 + y * 8 + i, color);
 					}
 				}
 			}
@@ -261,7 +269,7 @@ void renderScanline() {
 	uint16_t yoff, xoff, tilenr;
 	uint8_t row, col, i, px;
 	uint8_t color;
-	uint8_t bgScanline[160];
+	uint8_t bgScanline[161];
 	int bit, offset;
 
 	
@@ -273,8 +281,8 @@ void renderScanline() {
 		// then multiply by 32 (= amount of tiles in a row)
 		yoff += (((gpu.r.line + gpu.r.scy) & 255) >> 3) << 5;
 	
-		// divide x offset by 8 (to get whole tile)
-		xoff = gpu.r.scx >> 3;
+		// divide x scroll by 8 (to get whole tile)
+		xoff = (gpu.r.scx >> 3) & 0x1F;
 	
 		// row number inside our tile, we only need 3 bits
 		row = (gpu.r.line + gpu.r.scy) & 0x07;
@@ -286,9 +294,16 @@ void renderScanline() {
 		tilenr = gpu.vram[yoff + xoff];
 
 		// TODO: tilemap signed stuff
+		//printf("TEST: signed (int8_t)tilenr = %d\n", (int8_t)tilenr);
+		if (!(gpu.r.flags & GPU_FLAG_TILESET) && tilenr < 128)
+		{
+			tilenr = tilenr + 256;
+		}
+		
+		
 	
 		for(i=0; i<160; i++) {
-			bgScanline[i] = gpu.tileset[tilenr][row][col];
+			bgScanline[160 - col] = gpu.tileset[tilenr][row][col];
 			color = gpu.bgpalette[gpu.tileset[tilenr][row][col]];
 		
 			/*
@@ -305,6 +320,11 @@ void renderScanline() {
 				col = 0;
 				xoff = (xoff + 1) & 0x1F;
 				tilenr = gpu.vram[yoff + xoff];
+
+				if (!(gpu.r.flags & GPU_FLAG_TILESET) && tilenr < 128)
+				{
+					tilenr = tilenr + 256;
+				}
 			}
 		}
 	}
