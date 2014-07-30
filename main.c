@@ -40,7 +40,7 @@ int readROMFromFile(char *filename, uint8_t **buffer, size_t *romsize) {
 void initEmulation(uint8_t *rombuffer, size_t romlen) {
 	// Initialize stuff
 	initCPU();
-	cpu.r.pc = 0x0100; // Jump over bios, not sure if anything important is happening in bios
+	//cpu.r.pc = 0x0100; // Jump over bios, not sure if anything important is happening in bios
 	initMemory(rombuffer, romlen);
 	initGPU();
 }
