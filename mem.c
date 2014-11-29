@@ -253,7 +253,7 @@ void writeByte(uint8_t b, uint16_t addr) {
 		case 0x3000: 
 			if (mem.mbc == MTYPE_NONE) {
 				//printf("write to 0x2000-0x3FFF without MBC\n");
-				mem.rom[addr] = b;
+				//mem.rom[addr] = b;
 			}
 			else if (mem.mbc == MTYPE_MBC1) {
 				// Set lower 5 bits
@@ -291,7 +291,7 @@ void writeByte(uint8_t b, uint16_t addr) {
 		case 0x5000:
 			if (mem.mbc == MTYPE_NONE) {
 				//printf("write to 0x4000-0x5FFF without MBC\n");
-				mem.rom[addr] = b;
+				//mem.rom[addr] = b;
 			}
 			else if (mem.mbc == MTYPE_MBC1) {
 				if (mem.bankMode) { // RAM
@@ -329,7 +329,7 @@ void writeByte(uint8_t b, uint16_t addr) {
 		case 0x7000:
 			if (mem.mbc == MTYPE_NONE) {
 				//printf("write to 0x6000-0x7FFF without MBC\n");
-				mem.rom[addr] = b;
+				//mem.rom[addr] = b;
 			}
 			else if (mem.mbc == MTYPE_MBC1) {
 				mem.bankMode = (b & 0x1);

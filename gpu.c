@@ -6,8 +6,8 @@
 #define GB_SCREEN_WIDTH  160
 #define GB_SCREEN_HEIGHT 144
 
-#define SCREEN_WIDTH  (GB_SCREEN_WIDTH + 256)
-#define SCREEN_HEIGHT (GB_SCREEN_HEIGHT)
+#define SCREEN_WIDTH  (GB_SCREEN_WIDTH + 150)
+#define SCREEN_HEIGHT (GB_SCREEN_HEIGHT + 80)
 #define WINDOW_SCALE  2
 
 extern settings_t settings;
@@ -234,9 +234,9 @@ void printGPUDebug() {
 void renderDebugBackground() {
 	int x, y, i, j, tilenr, color;
 
-	for (y = 0; y < 16; ++y)
+	for (y = 0; y < 24; ++y)
 	{
-		for (x = 0; x < 32; ++x)
+		for (x = 0; x < 16; ++x)
 		{
 
 			for (i = 0; i < 8; ++i)
@@ -253,7 +253,7 @@ void renderDebugBackground() {
 					{
 						//color = gpu.bgpalette[gpu.tileset[tilenr][i][j]];
 						
-						color = gpu.bgpalette[gpu.tileset[y*32 + x][i][j]];
+						color = gpu.bgpalette[gpu.tileset[y*16 + x][i][j]];
 						setPixelColor(160 + x * 8 + j, 8 + y * 8 + i, color);
 
 						//color = gpu.bgpalette[gpu.tileset[y*32 + x][i][j]];
@@ -272,7 +272,7 @@ void renderScanline() {
 	uint8_t bgScanline[161];
 	int bit, offset;
 
-	
+	// Background
 	if(gpu.r.flags & GPU_FLAG_BG) {
 		// Use tilemap 1 or tilemap 0?
 		yoff = (gpu.r.flags & GPU_FLAG_TILEMAP) ? GPU_TILEMAP_ADDR1 : GPU_TILEMAP_ADDR0;
@@ -329,14 +329,19 @@ void renderScanline() {
 		}
 	}
 	
+	// Sprites
 	if(gpu.r.flags & GPU_FLAG_SPRITES) {
+		uint8_t spriteHeight = (gpu.r.flags & GPU_FLAG_SPRITESIZE) ? 16 : 8;
+
+		// the upper 8x8 tile is "NN AND FEh", and the lower 8x8 tile is "NN OR 01h".
+
 		for(i=0; i < 40; i++) {
 			// do we need to draw the sprite?
 			//printf("sprite x: %d, sprite y: %d, gpu line: %d\n", gpu.spritedata[i].x, gpu.spritedata[i].y, gpu.r.line);
-			if(gpu.spritedata[i].y <= gpu.r.line && gpu.spritedata[i].y > gpu.r.line - 8) {
+			if(gpu.spritedata[i].y <= gpu.r.line && gpu.spritedata[i].y > gpu.r.line - spriteHeight) {
 				// determine row, flip y if wanted
 				if(gpu.spritedata[i].flags & SPRITE_FLAG_YFLIP) {
-					row = 7 - (gpu.r.line - gpu.spritedata[i].y);
+					row = (spriteHeight - 1) - (gpu.r.line - gpu.spritedata[i].y);
 				} else {
 					row = gpu.r.line - gpu.spritedata[i].y;
 				}
@@ -351,10 +356,24 @@ void renderScanline() {
 					
 					// only draw if this pixel's on the screen
 					if(px >= 0 && px < 160) {
+						uint8_t spriteTile = gpu.spritedata[i].tile;
+						uint8_t spriteRow = row;
+
+						if (spriteHeight == 16) {
+							if (row < 8) {
+								spriteTile = gpu.spritedata[i].tile & 0xFE;
+							} else {
+								spriteTile = gpu.spritedata[i].tile | 0x01;
+								spriteRow = row % 8;
+							}
+						}
+
+
+
 						// only draw pixel when color is not 0 and (sprite has priority or background pixel is 0)
-						if(gpu.tileset[gpu.spritedata[i].tile][row][col] != 0 && (!(gpu.spritedata[i].flags & SPRITE_FLAG_PRIORITY) || bgScanline[px] == 0)) {
+						if(gpu.tileset[spriteTile][spriteRow][col] != 0 && (!(gpu.spritedata[i].flags & SPRITE_FLAG_PRIORITY) || bgScanline[px] == 0)) {
 							color = gpu.objpalette[(gpu.spritedata[i].flags & SPRITE_FLAG_PALETTE) ? 1 : 0]
-									[gpu.tileset[gpu.spritedata[i].tile][row][col]];
+									[gpu.tileset[spriteTile][spriteRow][col]];
 									                  
 							setPixelColor(px, gpu.r.line, color);
 						}
