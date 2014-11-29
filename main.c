@@ -40,7 +40,7 @@ int readROMFromFile(char *filename, uint8_t **buffer, size_t *romsize) {
 void initEmulation(uint8_t *rombuffer, size_t romlen) {
 	// Initialize stuff
 	initCPU();
-	//cpu.r.pc = 0x0100; // Jump over bios, not sure if anything important is happening in bios
+	cpu.r.pc = 0x0100; // Jump over bios, not sure if anything important is happening in bios
 	initMemory(rombuffer, romlen);
 	initGPU();
 }
@@ -132,6 +132,7 @@ int main(int argc, char *argv[]) {
 						
 					case SDLK_F2: // debug gpu
 						printGPUDebug();
+						printRegisters();
 						break;
 							
 					case SDLK_F3: // dump memory contents to file
