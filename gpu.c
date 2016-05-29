@@ -6,8 +6,12 @@
 #define GB_SCREEN_WIDTH  160
 #define GB_SCREEN_HEIGHT 144
 
-#define SCREEN_WIDTH  (GB_SCREEN_WIDTH + 150)
-#define SCREEN_HEIGHT (GB_SCREEN_HEIGHT + 80)
+#define SCREEN_WIDTH  GB_SCREEN_WIDTH
+#define SCREEN_HEIGHT GB_SCREEN_HEIGHT
+
+#define DEBUG_WIDTH   150
+#define DEBUG_HEIGHT  80
+
 #define WINDOW_SCALE  2
 
 extern settings_t settings;
@@ -15,41 +19,68 @@ extern mem_t mem;
 extern cpu_t cpu;
 extern gpu_t gpu;
 
-SDL_Surface *surface;
+SDL_Window *mainWindow;
+SDL_Window *debugWindow;
+
+SDL_Renderer *screenRenderer;
+SDL_Renderer *debugRenderer;
+
+SDL_Texture *screenTexture;
+SDL_Texture *debugTexture;
+
+uint32_t *screenPixels;
+uint32_t *debugPixels;
 
 void initDisplay() {
-	SDL_Color c[4];
-	
 	if(SDL_Init(SDL_INIT_EVERYTHING) == -1) {
 		printf("Failed to initialize SDL.\n");
 		exit(1);
 	}
+
+	SDL_Window *debugWindow = SDL_CreateWindow("GB Emulator - debug",
+	                      SDL_WINDOWPOS_UNDEFINED,
+	                      SDL_WINDOWPOS_UNDEFINED,
+	                      WINDOW_SCALE * DEBUG_WIDTH, WINDOW_SCALE * DEBUG_HEIGHT,
+	                      SDL_WINDOW_OPENGL);
 	
-	surface = SDL_SetVideoMode(WINDOW_SCALE * SCREEN_WIDTH, WINDOW_SCALE * SCREEN_HEIGHT, 8, SDL_HWPALETTE);
-	if(!surface) {
+	SDL_Window *mainWindow = SDL_CreateWindow("GB Emulator",
+	                      SDL_WINDOWPOS_UNDEFINED,
+	                      SDL_WINDOWPOS_UNDEFINED,
+	                      WINDOW_SCALE * SCREEN_WIDTH, WINDOW_SCALE * SCREEN_HEIGHT,
+	                      SDL_WINDOW_OPENGL);
+
+
+
+	if(!mainWindow || !debugWindow) {
 		printf("Failed to create a window.\n");
 		exit(1);
 	}
-	
-	SDL_WM_SetCaption("GB Emulator", "GB Emulator");
-	
-	// SDL Palette
-	c[0].r = c[0].g = c[0].b = 255;
-	c[1].r = c[1].g = c[1].b = 192;
-	c[2].r = c[2].g = c[2].b = 96;
-	c[3].r = c[3].g = c[3].b = 0;
-	SDL_SetPalette(surface, SDL_LOGPAL|SDL_PHYSPAL, c, 0, 4);
+
+	screenRenderer = SDL_CreateRenderer(mainWindow, -1, SDL_RENDERER_PRESENTVSYNC);
+	debugRenderer = SDL_CreateRenderer(debugWindow, -1, SDL_RENDERER_PRESENTVSYNC);
+
+	SDL_RenderSetLogicalSize(screenRenderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+	SDL_RenderSetLogicalSize(debugRenderer, DEBUG_WIDTH, DEBUG_HEIGHT);
+
+	screenTexture = SDL_CreateTexture(screenRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+	debugTexture = SDL_CreateTexture(debugRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, DEBUG_WIDTH, DEBUG_HEIGHT);
+
+	// filtering
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 }
 
 void initGPU() {
 	int i, j;
-	
+
 	gpu.mode = GPU_MODE_HBLANK;
 	gpu.mclock = 0;
 	gpu.r.line = 0;
 	gpu.r.scx = 0;
 	gpu.r.scy = 0;
 	gpu.r.flags = 0;
+
+	screenPixels = (uint32_t *)calloc(SCREEN_WIDTH * SCREEN_HEIGHT, sizeof(uint32_t));
+	debugPixels = (uint32_t *)calloc(DEBUG_WIDTH * DEBUG_HEIGHT, sizeof(uint32_t));
 
 	gpu.vram = (uint8_t *)calloc(0x2000, sizeof(uint8_t));
 	gpu.oam = (uint8_t *)calloc(0xA0, sizeof(uint8_t));
@@ -73,7 +104,10 @@ void initGPU() {
 
 void freeGPU() {
 	int i, j;
-	
+
+	free(screenPixels);
+	free(debugPixels);
+
 	free(gpu.vram);
 	free(gpu.oam);
 	
@@ -189,22 +223,27 @@ void gpuWriteIOByte(uint8_t b, uint16_t addr) {
 }
 
 inline void setPixelColor(int x, int y, uint8_t color) {
-	int i, j, drawx, drawy;
+	uint8_t palettecols[4] = {255, 192, 96, 0};
 	
 	if(x >= SCREEN_WIDTH || y >= SCREEN_HEIGHT || x < 0 || y < 0) {
 		return;
 	}
 	
-	for(i=0; i<WINDOW_SCALE; i++) {
-		for(j=0; j<WINDOW_SCALE; j++) {
-			drawx = WINDOW_SCALE * x + i;
-			drawy = WINDOW_SCALE * y + j;
-			
-			((uint8_t*)surface->pixels)[drawy*(SCREEN_WIDTH * WINDOW_SCALE) + drawx] = color;
-		}
-	}
+	// rgba
+	uint32_t pixel = palettecols[color] << 16 | palettecols[color] << 8 | palettecols[color];
+	screenPixels[y * SCREEN_WIDTH + x] = pixel;
+}
 
+inline void setDebugPixelColor(int x, int y, uint8_t color) {
+	uint8_t palettecols[4] = {255, 192, 96, 0};
 	
+	if(x >= DEBUG_WIDTH || y >= DEBUG_HEIGHT || x < 0 || y < 0) {
+		return;
+	}
+	
+	// rgba
+	uint32_t pixel = palettecols[color] << 16 | palettecols[color] << 8 | palettecols[color];
+	debugPixels[y * DEBUG_WIDTH + x] = pixel;
 }
 
 void printGPUDebug() {
@@ -245,7 +284,7 @@ void renderDebugBackground() {
 				{
 					if (i == 0 || j == 0)
 					{
-						setPixelColor(160 + x * 8 + j, 8 + y * 8 + i, 3);
+						setDebugPixelColor(x * 8 + j, 8 + y * 8 + i, 3);
 						//setPixelColor(160 + x * 8 + j, 40 + 8 + y * 8 + i, 3);
 					}
 
@@ -254,7 +293,7 @@ void renderDebugBackground() {
 						//color = gpu.bgpalette[gpu.tileset[tilenr][i][j]];
 						
 						color = gpu.bgpalette[gpu.tileset[y*16 + x][i][j]];
-						setPixelColor(160 + x * 8 + j, 8 + y * 8 + i, color);
+						setDebugPixelColor(x * 8 + j, 8 + y * 8 + i, color);
 
 						//color = gpu.bgpalette[gpu.tileset[y*32 + x][i][j]];
 						//setPixelColor(160 + x * 8 + j, 8 + y * 8 + i, color);
@@ -374,7 +413,7 @@ void renderScanline() {
 						if(gpu.tileset[spriteTile][spriteRow][col] != 0 && (!(gpu.spritedata[i].flags & SPRITE_FLAG_PRIORITY) || bgScanline[px] == 0)) {
 							color = gpu.objpalette[(gpu.spritedata[i].flags & SPRITE_FLAG_PALETTE) ? 1 : 0]
 									[gpu.tileset[spriteTile][spriteRow][col]];
-									                  
+													  
 							setPixelColor(px, gpu.r.line, color);
 						}
 					}
@@ -425,6 +464,20 @@ void gpuBuildSpriteData(uint8_t b, uint16_t addr) {
 	}
 }
 
+void renderFrame() {
+	// render main window
+	SDL_UpdateTexture(screenTexture, NULL, screenPixels, SCREEN_WIDTH * sizeof(uint32_t));
+	SDL_RenderClear(screenRenderer);
+	SDL_RenderCopy(screenRenderer, screenTexture, NULL, NULL);
+	SDL_RenderPresent(screenRenderer);
+
+	// render debug window
+	SDL_UpdateTexture(debugTexture, NULL, debugPixels, DEBUG_WIDTH * sizeof(uint32_t));
+	SDL_RenderClear(debugRenderer);
+	SDL_RenderCopy(debugRenderer, debugTexture, NULL, NULL);
+	SDL_RenderPresent(debugRenderer);
+}
+
 void stepGPU() {
 	gpu.mclock += cpu.dc;
 	switch(gpu.mode) {
@@ -441,12 +494,13 @@ void stepGPU() {
 				
 				if(gpu.r.line == 144) { // last line
 					gpu.mode = GPU_MODE_VBLANK;
-					SDL_Flip(surface);
 					cpu.intFlags |= INT_VBLANK;
 
 					if(gpu.vBlankInt) {
 						cpu.intFlags |= INT_LCDSTAT;
 					}
+
+					renderFrame();
 				}
 				else {
 					gpu.mode = GPU_MODE_OAM;

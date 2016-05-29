@@ -472,7 +472,7 @@ void writeWord(uint16_t w, uint16_t addr) {
 	writeByte(w >> 8, addr+1);
 }
 
-void handleGameInput(int state, SDLKey key) {
+void handleGameInput(int state, SDL_Keycode key) {
 	if(state == 1) {
 		// key up
 		if(key == settings.keymap.start && settings.keymap.startDown) {
