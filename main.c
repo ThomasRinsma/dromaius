@@ -163,11 +163,14 @@ int main(int argc, char *argv[]) {
 			}
 		}
 		
+		
 		deltaTime = SDL_GetTicks() - oldTime;
 		
-		if(deltaTime < 17) {
+		if(deltaTime < 16) {
 			SDL_Delay(16 - deltaTime);
 		}
+		
+		
 		
 	}
 	

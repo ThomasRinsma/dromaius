@@ -44,11 +44,15 @@ void initDisplay() {
 	                      SDL_WINDOW_OPENGL);
 	
 	SDL_Window *mainWindow = SDL_CreateWindow("GB Emulator",
-	                      SDL_WINDOWPOS_UNDEFINED,
-	                      SDL_WINDOWPOS_UNDEFINED,
+	                      SDL_WINDOWPOS_CENTERED,
+	                      SDL_WINDOWPOS_CENTERED,
 	                      WINDOW_SCALE * SCREEN_WIDTH, WINDOW_SCALE * SCREEN_HEIGHT,
 	                      SDL_WINDOW_OPENGL);
 
+	// Position the debug window right of the main window
+	int xmain, ymain;
+	SDL_GetWindowPosition(mainWindow, &xmain, &ymain);
+	SDL_SetWindowPosition(debugWindow, xmain + WINDOW_SCALE * SCREEN_WIDTH, ymain);
 
 
 	if(!mainWindow || !debugWindow) {
@@ -56,8 +60,8 @@ void initDisplay() {
 		exit(1);
 	}
 
-	screenRenderer = SDL_CreateRenderer(mainWindow, -1, SDL_RENDERER_PRESENTVSYNC);
-	debugRenderer = SDL_CreateRenderer(debugWindow, -1, SDL_RENDERER_PRESENTVSYNC);
+	screenRenderer = SDL_CreateRenderer(mainWindow, -1, 0);
+	debugRenderer = SDL_CreateRenderer(debugWindow, -1, 0);
 
 	SDL_RenderSetLogicalSize(screenRenderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 	SDL_RenderSetLogicalSize(debugRenderer, DEBUG_WIDTH, DEBUG_HEIGHT);
@@ -310,6 +314,7 @@ void renderScanline() {
 	uint8_t color;
 	uint8_t bgScanline[161];
 	int bit, offset;
+
 
 	// Background
 	if(gpu.r.flags & GPU_FLAG_BG) {
