@@ -9,8 +9,8 @@
 #define SCREEN_WIDTH  GB_SCREEN_WIDTH
 #define SCREEN_HEIGHT GB_SCREEN_HEIGHT
 
-#define DEBUG_WIDTH   150
-#define DEBUG_HEIGHT  80
+#define DEBUG_WIDTH   (8*16)
+#define DEBUG_HEIGHT  (8*24)
 
 #define WINDOW_SCALE  2
 
@@ -281,27 +281,12 @@ void renderDebugBackground() {
 	{
 		for (x = 0; x < 16; ++x)
 		{
-
 			for (i = 0; i < 8; ++i)
 			{
 				for (j = 0; j < 8; ++j)
 				{
-					if (i == 0 || j == 0)
-					{
-						setDebugPixelColor(x * 8 + j, 8 + y * 8 + i, 3);
-						//setPixelColor(160 + x * 8 + j, 40 + 8 + y * 8 + i, 3);
-					}
-
-					else
-					{
-						//color = gpu.bgpalette[gpu.tileset[tilenr][i][j]];
-						
-						color = gpu.bgpalette[gpu.tileset[y*16 + x][i][j]];
-						setDebugPixelColor(x * 8 + j, 8 + y * 8 + i, color);
-
-						//color = gpu.bgpalette[gpu.tileset[y*32 + x][i][j]];
-						//setPixelColor(160 + x * 8 + j, 8 + y * 8 + i, color);
-					}
+					color = gpu.bgpalette[gpu.tileset[y*16 + x][i][j]];
+					setDebugPixelColor(x * 8 + j, y * 8 + i, color);
 				}
 			}
 		}
