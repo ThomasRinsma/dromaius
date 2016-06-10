@@ -11,6 +11,7 @@ extern settings_t settings;
 extern mem_t mem;
 extern cpu_t cpu;
 extern gpu_t gpu;
+extern audio_t audio;
 
 regs_t registerStore;
 

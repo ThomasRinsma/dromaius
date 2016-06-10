@@ -18,6 +18,7 @@ extern settings_t settings;
 extern mem_t mem;
 extern cpu_t cpu;
 extern gpu_t gpu;
+extern audio_t audio;
 
 SDL_Window *mainWindow;
 SDL_Window *debugWindow;
@@ -32,11 +33,6 @@ uint32_t *screenPixels;
 uint32_t *debugPixels;
 
 void initDisplay() {
-	if(SDL_Init(SDL_INIT_EVERYTHING) == -1) {
-		printf("Failed to initialize SDL.\n");
-		exit(1);
-	}
-
 	SDL_Window *debugWindow = SDL_CreateWindow("GB Emulator - debug",
 	                      SDL_WINDOWPOS_UNDEFINED,
 	                      SDL_WINDOWPOS_UNDEFINED,
@@ -375,7 +371,7 @@ void renderScanline() {
 					row = gpu.r.line - gpu.spritedata[i].y;
 				}
 				
-				// loop through the collumns
+				// loop through the columns
 				for(col=0; col<8; col++) {
 					if(gpu.spritedata[i].flags & SPRITE_FLAG_XFLIP) {
 						px = gpu.spritedata[i].x + (7 - col);
@@ -399,10 +395,14 @@ void renderScanline() {
 
 
 
+						color = gpu.objpalette[(gpu.spritedata[i].flags & SPRITE_FLAG_PALETTE) ? 1 : 0]
+								[gpu.tileset[spriteTile][spriteRow][col]];
+
 						// only draw pixel when color is not 0 and (sprite has priority or background pixel is 0)
-						if(gpu.tileset[spriteTile][spriteRow][col] != 0 && (!(gpu.spritedata[i].flags & SPRITE_FLAG_PRIORITY) || bgScanline[px] == 0)) {
-							color = gpu.objpalette[(gpu.spritedata[i].flags & SPRITE_FLAG_PALETTE) ? 1 : 0]
-									[gpu.tileset[spriteTile][spriteRow][col]];
+						if(gpu.tileset[spriteTile][spriteRow][col] != 0 &&
+							(!(gpu.spritedata[i].flags & SPRITE_FLAG_PRIORITY)
+								|| gpu.bgpalette[bgScanline[px]] == 0))
+						{
 													  
 							setPixelColor(px, gpu.r.line, color);
 						}

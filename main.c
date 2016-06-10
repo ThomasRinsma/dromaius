@@ -7,6 +7,7 @@ settings_t settings;
 cpu_t cpu;
 gpu_t gpu;
 mem_t mem;
+audio_t audio;
 
 int readROMFromFile(char *filename, uint8_t **buffer, size_t *romsize) {
 	FILE *romfile;
@@ -43,6 +44,7 @@ void initEmulation(uint8_t *rombuffer, size_t romlen) {
 	cpu.r.pc = 0x0100; // Jump over bios, not sure if anything important is happening in bios
 	initMemory(rombuffer, romlen);
 	initGPU();
+	initAudio();
 }
 
 int main(int argc, char *argv[]) {
@@ -51,6 +53,11 @@ int main(int argc, char *argv[]) {
 	size_t romlen;
 	SDL_Event event;
 	romheader_t *romheader;
+
+	if(SDL_Init(SDL_INIT_EVERYTHING) == -1) {
+		printf("Failed to initialize SDL.\n");
+		exit(1);
+	}
 	
 	settings.debug = 0;
 	settings.keymap.start = SDLK_RETURN;
@@ -158,14 +165,14 @@ int main(int argc, char *argv[]) {
 			else if(event.type == SDL_KEYUP) {
 				handleGameInput(1, event.key.keysym.sym);
 			}
-			else if(event.type == SDL_QUIT) {
+			else if(event.type == SDL_QUIT ||
+				(event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE)) {
 				done = 1;
 			}
 		}
 		
 		
 		deltaTime = SDL_GetTicks() - oldTime;
-		
 		if(deltaTime < 16) {
 			SDL_Delay(16 - deltaTime);
 		}
@@ -177,6 +184,7 @@ int main(int argc, char *argv[]) {
 	// Free things
 	freeGPU();
 	freeMemory();
+	freeAudio();
 	SDL_Quit();
 	return 0;
 }

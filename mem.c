@@ -6,6 +6,7 @@ extern settings_t settings;
 extern mem_t mem;
 extern cpu_t cpu;
 extern gpu_t gpu;
+extern audio_t audio;
 
 // Hardcoded gameboy bios
 uint8_t biosBytes[] = {
@@ -202,6 +203,7 @@ uint8_t readByte(uint16_t addr) {
 					}
 					return 0;
 				}
+
 				
 				return 0;
 			}
@@ -462,7 +464,12 @@ void writeByte(uint8_t b, uint16_t addr) {
 					mem.inputWire = b & 0x30;
 					return;
 				}
-				
+				else if (addr >= 0xFF10 && addr <= 0xFF26) {
+					audioWriteByte(b, addr);
+				}
+				else if (addr >= 0xFF30 && addr <= 0xFF3F) {
+					audio.waveRam[addr - 0xFF30] = b;
+				}			
 			}
 	}
 }

@@ -235,6 +235,92 @@ typedef struct gpu_s {
 	int CoinInt;
 } gpu_t;
 
+typedef struct audio_s {
+	struct channel1_t {
+		uint8_t isEnabled; // bool
+		uint8_t isRestarted; // bool
+		uint32_t ctr;
+
+		// Duty (4 bits)
+		uint8_t duty;
+
+		// Sweep
+		uint8_t sweepTime;
+		uint8_t sweepDir;
+		uint8_t sweepExp;
+		double lastSweep;
+
+		// Envelope
+		uint8_t envVol;
+		uint8_t envDir;
+		uint8_t envSteps;
+
+		// General
+		uint8_t soundLen;
+		uint16_t freq;
+		uint8_t isCont; // bool
+	} ch1;
+
+	struct channel2_t {
+		uint8_t isEnabled; // bool
+		uint8_t isRestarted; // bool
+		uint32_t ctr;
+
+		// Duty (4 bits)
+		uint8_t duty;
+
+		// Envelope
+		uint8_t envVol;
+		uint8_t envDir;
+		uint8_t envSteps;
+
+		// General
+		uint8_t soundLen;
+		uint16_t freq;
+		uint8_t isCont; // bool
+	} ch2;
+
+	struct channel3_t {
+		uint8_t isEnabled; // bool
+		uint8_t isRestarted; // bool
+		uint32_t ctr;
+		uint32_t waveCtr;
+
+		// General
+		uint8_t volume;
+		uint8_t soundLen;
+		uint16_t freq;
+		uint8_t isCont; // bool
+	} ch3;
+
+	struct channel4_t {
+		uint8_t isEnabled; // bool
+		uint8_t isRestarted; // bool
+		uint32_t ctr;
+
+		// Freq spec
+		uint8_t s;
+		uint8_t r;
+		// TODO: bit 3 (softness?)
+
+		// Envelope
+		uint8_t envVol;
+		uint8_t envDir;
+		uint8_t envSteps;
+
+		// General
+		uint8_t soundLen;
+		uint8_t isCont; // bool
+	} ch4;
+
+	uint8_t isEnabled; // bool
+	uint8_t waveRam[16]; // 32 nibbles
+
+	// TODO: channel / sound selection (FF25)
+	// TODO: master channel volumes / Vin (FF24)
+
+} audio_t;
+
 
 // cpu.c
 void initCPU();
@@ -295,5 +381,11 @@ void writeByte(uint8_t b, uint16_t addr);
 void writeWord(uint16_t w, uint16_t addr);
 void handleGameInput(int state, SDL_Keycode key);
 void dumpToFile();
+
+// audio.c
+void initAudio();
+void freeAudio();
+void audioWriteByte(uint8_t b, uint16_t addr);
+void play_audio(void *userdata, uint8_t *stream, int len);
 
 #endif
