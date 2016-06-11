@@ -6,3 +6,5 @@ Currently it is able to start most games (with compatible MBC, not all are imple
 Other games don't make it past the nintendo logo, and some even segfault.
 
 Not (yet) implemented: RTC, battery, proper halting and timers, windows, serial, etc.
+
+![Screenshot](https://bitbucket.org/ThomasRinsma/gameboy-emulator/raw/master/screenshots/screenshot_games.png)
