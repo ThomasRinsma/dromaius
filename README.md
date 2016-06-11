@@ -5,4 +5,4 @@ I've been working on this project off and on for several years, which is visible
 Currently it is able to start most games (with compatible MBC, not all are implemented yet), and some of those games are actually playable.
 Other games don't make it past the nintendo logo, and some even segfault.
 
-Not (yet) implemented: audio, RTC, battery, proper halting and timers, windows, and probably many other things.
+Not (yet) implemented: RTC, battery, proper halting and timers, windows, serial, etc.
