@@ -24,8 +24,10 @@ void initCPU() {
 	cpu.r.h = 0x01;
 	cpu.r.l = 0x4D;
 	cpu.r.f = 0xB0;//0;
-	cpu.r.pc = 0x0000;
 	cpu.r.sp = 0xFFFE;
+	
+	// Jump over bios
+	cpu.r.pc = 0x0100;
 	
 	cpu.intsOn = 0;//1;
 	cpu.intFlags = 0;

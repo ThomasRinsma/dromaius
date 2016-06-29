@@ -1,9 +1,17 @@
-CC=gcc
+CXX=g++ --std=c++11
 CFLAGS=-g -O3 `sdl2-config --cflags`
-LFLAGS=`sdl2-config --libs` -lm
+LDFLAGS=`sdl2-config --libs` -lm
 
-all:
-	$(CC) $(CFLAGS) *.c -o gbemu $(LFLAGS)
+SOURCES=audio.cc cpu.cc graphics.cc input.cc main.cc memory.cc
+
+.PHONY: all
+all: gbemu
+
+gbemu: $(subst .cc,.o,$(SOURCES))
+	$(CXX) $^ -o $@ $(LDFLAGS)
+
+%.o: src/%.cc
+	$(CXX) -c $< $(CFLAGS)
 
 clean:
-	rm gbemu
+	rm *.o gbemu

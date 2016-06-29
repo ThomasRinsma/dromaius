@@ -1,0 +1,115 @@
+#ifndef INCLUDED_GRAPHICS_H
+#define INCLUDED_GRAPHICS_H
+
+#include <cstdint>
+
+#define GB_SCREEN_WIDTH  160
+#define GB_SCREEN_HEIGHT 144
+
+#define SCREEN_WIDTH  GB_SCREEN_WIDTH
+#define SCREEN_HEIGHT GB_SCREEN_HEIGHT
+
+#define DEBUG_WIDTH   (8*16)
+#define DEBUG_HEIGHT  (8*24)
+
+#define WINDOW_SCALE  2
+
+struct Graphics
+{
+	enum class Mode {
+		HBLANK,
+		VBLANK,
+		OAM,
+		VRAM
+	};
+
+	enum class Flag {
+		BG            = 0x01,
+		SPRITES       = 0x02,
+		SPRITESIZE    = 0x04, // (0=8x8, 1=8x16)
+		TILEMAP       = 0x08, // (0=9800-9BFF, 1=9C00-9FFF)
+		TILESET       = 0x10, // (0=8800-97FF, 1=8000-8FFF)
+		WINDOW        = 0x20,
+		WINDOWTILEMAP = 0x40, // (0=9800-9BFF, 1=9C00-9FFF)
+		LCD           = 0x80
+	};
+
+	enum class SpriteFlag {
+		PALETTE  = 0x10,
+		XFLIP    = 0x20,
+		YFLIP    = 0x40,
+		PRIORITY = 0x80
+	};
+
+	struct regs_s {
+		Flag flags;
+		uint8_t line;
+		uint8_t lineComp;
+		uint8_t scx;
+		uint8_t scy;
+	};
+
+	struct sprite_s {
+		uint8_t x;
+		uint8_t y;
+		uint8_t tile;
+		uint8_t flags;
+	};
+
+
+	struct gpu_s {
+		uint8_t ***tileset;
+		sprite_s *spritedata;
+		uint8_t *vram;
+		uint8_t *oam;
+		uint8_t bgpalette[4];
+		uint8_t objpalette[2][4];
+		regs_s r;
+		Mode mode;
+		int mclock;
+		int hBlankInt;
+		int vBlankInt;
+		int OAMInt;
+		int CoinInt;
+	} gpu_t;
+
+
+	// Window stuff
+	SDL_Window *mainWindow;
+	SDL_Window *debugWindow;
+
+	SDL_Renderer *screenRenderer;
+	SDL_Renderer *debugRenderer;
+
+	SDL_Texture *screenTexture;
+	SDL_Texture *debugTexture;
+
+	uint32_t *screenPixels;
+	uint32_t *debugPixels;
+
+
+	Graphics();
+	~Graphics();
+
+	void initialize();
+	void freeBuffers();
+	void initDisplay();
+
+	uint8_t readByte(uint16_t addr);
+	void writeByte(uint8_t b, uint16_t addr);
+
+	void setPixelColor(int x, int y, uint8_t color);
+	void setDebugPixelColor(int x, int y, uint8_t color);
+	void printDebug();
+	void renderDebugBackground();
+	void renderScanline();
+	void updateTile(uint8_t b, uint16_t addr);
+	void buildSpriteData(uint8_t b, uint16_t addr);
+	void renderFrame();
+
+	void step();
+
+
+};
+
+#endif
