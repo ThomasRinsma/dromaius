@@ -7,4 +7,4 @@ Other games don't make it past the nintendo logo, and some even segfault the emu
 
 Not (yet) implemented: RTC, battery, proper halting and timers, windows, serial, etc.
 
-![Screenshot](https://bitbucket.org/ThomasRinsma/gameboy-emulator/raw/master/screenshots/screenshot_games.png)
+![Screenshot](https://raw.githubusercontent.com/ThomasRinsma/dromaius/master/screenshots/screenshot_games.png)
