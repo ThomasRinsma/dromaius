@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <SDL2/SDL.h>
 
-#define HEADER_START        0x134
+#define HEADER_START    0x134
 
 #define TILEMAP_ADDR0   0x1800
 #define TILEMAP_ADDR1   0x1C00
@@ -41,20 +41,6 @@ typedef struct settings_s {
 	int debug;
 	keymap_t keymap;
 } settings_t;
-
-typedef struct romheader_s {
-	char	gamename[15];
-	uint8_t	colorbyte;		// 0x80 = yes
-	uint16_t newlicensee;
-	uint8_t	sgbfeatures;	// 0x03 = yes
-	uint8_t	type;
-	uint8_t	romsize;
-	uint8_t	ramsize;
-	uint8_t	country;		// 0x00 = japan, 0x01 = other
-	uint8_t	oldlicensee;
-	uint8_t	headersum;
-	uint16_t romsum;
-} romheader_t;
 
 
 

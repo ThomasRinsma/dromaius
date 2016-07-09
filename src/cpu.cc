@@ -18,7 +18,7 @@ extern settings_t settings;
 
 CPU::CPU()
 {
-	initialize();
+	// Empty
 }
 
 void CPU::initialize()

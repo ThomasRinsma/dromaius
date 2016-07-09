@@ -17,7 +17,7 @@ extern Memory memory;
 
 Graphics::Graphics()
 {
-	initialize();
+	// Empty
 }
 
 Graphics::~Graphics()
@@ -186,7 +186,7 @@ void Graphics::writeByte(uint8_t b, uint16_t addr)
 			
 		case 6: // DMA from XX00-XX9F to FE00-FE9F
 			for (int i = 0; i <= 0x9F; i++) {
-				writeByte(readByte((b << 8) + i), 0xFE00 + i);
+				memory.writeByte(memory.readByte((b << 8) + i), 0xFE00 + i);
 			}
 			break;
 			

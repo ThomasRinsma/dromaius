@@ -16,7 +16,7 @@ extern CPU cpu;
 
 Audio::Audio()
 {
-	initialize();
+	// Empty
 }
 
 Audio::~Audio()

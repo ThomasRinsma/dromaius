@@ -5,7 +5,7 @@ extern settings_t settings;
 
 Input::Input()
 {
-	initialize();
+	// Empty
 }
 
 void Input::initialize()

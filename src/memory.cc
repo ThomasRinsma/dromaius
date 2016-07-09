@@ -17,7 +17,7 @@ constexpr uint8_t Memory::bios[256];
 
 Memory::Memory()
 {
-	initialize();
+	// Empty
 }
 
 Memory::~Memory()
@@ -80,6 +80,35 @@ bool Memory::loadRom(std::string const &filename)
 	romFile.close();
 
 	romLoaded = true;
+
+	// Read the ROM header
+	romheader_s *romheader = (romheader_s *)(&rom[HEADER_START]);
+	//printf("CGB: 0x%02X, SGB: 0x%02X, OLIC: 0x%02X, NLIC: 0x%04X, country: 0x%02X\n",
+	//	romheader->colorbyte, romheader->sgbfeatures, romheader->oldlicensee,
+	//	romheader->newlicensee, romheader->country);
+	//printf("type: 0x%02X, romsize: 0x%02X, ramsize: 0x%02X\n\n",
+	//	romheader->type, romheader->romsize, romheader->ramsize);
+
+	// Set ram size (2/8/32 KByte)
+	ramSize = romheader->ramsize;
+
+	// Set MBC type
+	if (romheader->type == 0x00) {
+		mbc = MBC::NONE;
+	} else if (romheader->type < 0x05) {
+		mbc = MBC::MBC1;
+	} else if (romheader->type == 0x05 || romheader->type == 0x06) {
+		mbc = MBC::MBC2;
+	} else if (romheader->type >= 0x0F && romheader->type < 0x15) {
+		mbc = MBC::MBC3;
+	} else if (romheader->type >= 0x15 && romheader->type < 0x19) {
+		mbc = MBC::MBC4;
+	} else if (romheader->type >= 0x19 && romheader->type < 0x1E) {
+		mbc = MBC::MBC5;
+	} else {
+		mbc = MBC::OTHER;
+	}
+
 	return true;
 }
 

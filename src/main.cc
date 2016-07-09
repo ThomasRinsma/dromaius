@@ -11,37 +11,35 @@
 #include "memory.h"
 
 // Global structs
-Audio audio;
 CPU cpu;
 Graphics graphics;
 Input input;
 Memory memory;
+Audio audio;
 
 settings_t settings;
+
+bool initEmulation(std::string const &filename)
+{
+	cpu.initialize();
+	graphics.initialize();
+	input.initialize();
+	memory.initialize();
+	audio.initialize();
+
+	return memory.loadRom(filename);
+}
 
 void resetEmulation(std::string const &filename)
 {
 	graphics.freeBuffers();
 	memory.freeBuffers();
 
-	memory.initialize();
-	memory.loadRom(filename);
-	cpu.initialize();
-	graphics.initialize();
-	audio.initialize();
-	input.initialize();
+	initEmulation(filename);
 }
 
-int main(int argc, char *argv[])
+void initSettings()
 {
-	SDL_Event event;
-	romheader_t *romheader;
-
-	if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
-		std::cout << "Failed to initialize SDL.\n";
-		exit(1);
-	}
-	
 	settings.debug = 0;
 	settings.keymap.start = SDLK_RETURN;
 	settings.keymap.select = SDLK_RSHIFT;
@@ -51,9 +49,18 @@ int main(int argc, char *argv[])
 	settings.keymap.down = SDLK_DOWN;
 	settings.keymap.b = SDLK_z;
 	settings.keymap.a = SDLK_x;
-	
-	// Load ROM file
-	if (argc > 1 && memory.loadRom(argv[1])) {
+}
+
+int main(int argc, char *argv[])
+{
+
+	if (argc != 2) {
+		std::cerr << "No rom provided, exiting.\n";
+		exit(1);
+	}
+
+	// Initialize components and try to load ROM file.
+	if (initEmulation(argv[1])) {
 		std::cout << "Succesfully loaded ROM '" << argv[1]
 		          << "' of size " << memory.romLen << " into memory.\n";
 	} else {
@@ -61,35 +68,16 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	// TODO: move to Memory
-	// Read the ROM header
-	romheader = (romheader_t *)(&memory.rom[HEADER_START]);
-	printf("CGB: 0x%02X, SGB: 0x%02X, OLIC: 0x%02X, NLIC: 0x%04X, country: 0x%02X\n",
-		romheader->colorbyte, romheader->sgbfeatures, romheader->oldlicensee,
-		romheader->newlicensee, romheader->country);
-	printf("type: 0x%02X, romsize: 0x%02X, ramsize: 0x%02X\n\n",
-		romheader->type, romheader->romsize, romheader->ramsize);
-
-	// Set ram size (2/8/32 KByte)
-	memory.ramSize = romheader->ramsize;
-
-	// Set MBC type
-	if (romheader->type == 0x00) {
-		memory.mbc = Memory::MBC::NONE;
-	} else if (romheader->type < 0x05) {
-		memory.mbc = Memory::MBC::MBC1;
-	} else if (romheader->type == 0x05 || romheader->type == 0x06) {
-		memory.mbc = Memory::MBC::MBC2;
-	} else if (romheader->type >= 0x0F && romheader->type < 0x15) {
-		memory.mbc = Memory::MBC::MBC3;
-	} else if (romheader->type >= 0x15 && romheader->type < 0x19) {
-		memory.mbc = Memory::MBC::MBC4;
-	} else if (romheader->type >= 0x19 && romheader->type < 0x1E) {
-		memory.mbc = Memory::MBC::MBC5;
-	} else {
-		memory.mbc = Memory::MBC::OTHER;
+	// All fine, initialize SDL.
+	if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
+		std::cerr << "Failed to initialize SDL.\n";
+		exit(1);
 	}
 
+	// Setup keymap and debug settings
+	initSettings();
+
+	// Create windows and buffers
 	graphics.initDisplay();
 	
 	// Instruction loop
@@ -112,6 +100,7 @@ int main(int argc, char *argv[])
 		graphics.renderDebugBackground();
 		
 		// SDL event loop
+		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			if (event.type == SDL_KEYDOWN) {
 				switch (event.key.keysym.sym) {

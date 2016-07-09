@@ -38,6 +38,20 @@ struct Memory
 		OTHER,
 	} mbc;
 
+	struct romheader_s {
+		char	gamename[15];
+		uint8_t	colorbyte;		// 0x80 = yes
+		uint16_t newlicensee;
+		uint8_t	sgbfeatures;	// 0x03 = yes
+		uint8_t	type;
+		uint8_t	romsize;
+		uint8_t	ramsize;
+		uint8_t	country;		// 0x00 = japan, 0x01 = other
+		uint8_t	oldlicensee;
+		uint8_t	headersum;
+		uint16_t romsum;
+	};
+
 	// Memory buffers
 	uint8_t *rom;
 	size_t romLen;
