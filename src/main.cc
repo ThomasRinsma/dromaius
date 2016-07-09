@@ -34,6 +34,7 @@ void resetEmulation(std::string const &filename)
 {
 	graphics.freeBuffers();
 	memory.freeBuffers();
+	audio.freeBuffers();
 
 	initEmulation(filename);
 }
@@ -59,6 +60,12 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	// Try to initialize SDL.
+	if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
+		std::cerr << "Failed to initialize SDL.\n";
+		exit(1);
+	}
+
 	// Initialize components and try to load ROM file.
 	if (initEmulation(argv[1])) {
 		std::cout << "Succesfully loaded ROM '" << argv[1]
@@ -68,17 +75,11 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	// All fine, initialize SDL.
-	if (SDL_Init(SDL_INIT_EVERYTHING) == -1) {
-		std::cerr << "Failed to initialize SDL.\n";
-		exit(1);
-	}
+	// Create windows and buffers
+	graphics.initDisplay();
 
 	// Setup keymap and debug settings
 	initSettings();
-
-	// Create windows and buffers
-	graphics.initDisplay();
 	
 	// Instruction loop
 	bool done = false;
