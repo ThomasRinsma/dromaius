@@ -16,14 +16,14 @@
 
 struct Graphics
 {
-	enum class Mode {
+	enum Mode {
 		HBLANK,
 		VBLANK,
 		OAM,
 		VRAM
 	};
 
-	enum class Flag {
+	enum Flag {
 		BG            = 0x01,
 		SPRITES       = 0x02,
 		SPRITESIZE    = 0x04, // (0=8x8, 1=8x16)
@@ -34,7 +34,8 @@ struct Graphics
 		LCD           = 0x80
 	};
 
-	enum class SpriteFlag {
+
+	enum SpriteFlag {
 		PALETTE  = 0x10,
 		XFLIP    = 0x20,
 		YFLIP    = 0x40,
@@ -42,7 +43,7 @@ struct Graphics
 	};
 
 	struct regs_s {
-		Flag flags;
+		uint8_t flags;
 		uint8_t line;
 		uint8_t lineComp;
 		uint8_t scx;
@@ -57,22 +58,19 @@ struct Graphics
 	};
 
 
-	struct gpu_s {
-		uint8_t ***tileset;
-		sprite_s *spritedata;
-		uint8_t *vram;
-		uint8_t *oam;
-		uint8_t bgpalette[4];
-		uint8_t objpalette[2][4];
-		regs_s r;
-		Mode mode;
-		int mclock;
-		int hBlankInt;
-		int vBlankInt;
-		int OAMInt;
-		int CoinInt;
-	} gpu_t;
-
+	uint8_t ***tileset;
+	sprite_s *spritedata;
+	uint8_t *vram;
+	uint8_t *oam;
+	uint8_t bgpalette[4];
+	uint8_t objpalette[2][4];
+	regs_s r;
+	uint8_t mode;
+	int mclock;
+	int hBlankInt;
+	int vBlankInt;
+	int OAMInt;
+	int CoinInt;
 
 	// Window stuff
 	SDL_Window *mainWindow;

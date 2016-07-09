@@ -13,6 +13,8 @@ extern Audio audio;
 extern Input input;
 extern CPU cpu;
 
+constexpr uint8_t Memory::bios[256];
+
 Memory::Memory()
 {
 	initialize();
@@ -48,10 +50,6 @@ void Memory::initialize()
 	romBank = 1;
 
 	biosLoaded = true;
-
-	inputWire = 0x10;
-	inputRow[0] = 0x0F;
-	inputRow[1] = 0x0F;
 }
 
 bool Memory::loadRom(std::string const &filename)
@@ -61,12 +59,12 @@ bool Memory::loadRom(std::string const &filename)
 	}
 
 	// Read rom file
-	ifstream romFile(filename, ios::in | ios::binary | ios::ate);
+	std::ifstream romFile(filename, std::ios::in | std::ios::binary | std::ios::ate);
 
 	if (not romFile)
 	{
 		// TODO: exceptions
-		cerr << "Failed to open rom \"" << filename << "\"." << endl;
+		std::cerr << "Failed to open rom \"" << filename << "\"." << std::endl;
 		return false;
 	}
 
@@ -74,7 +72,7 @@ bool Memory::loadRom(std::string const &filename)
 	romLen = romFile.tellg();
 
 	// Allocate buffer and copy rom into buffer
-	romFile.seekg(0, ios::beg);
+	romFile.seekg(0, std::ios::beg);
 	rom = new uint8_t[romLen];
 	romFile.read((char *)rom, romLen);
 
@@ -197,7 +195,7 @@ uint8_t Memory::readByte(uint16_t addr)
 					return zeropageram[addr & 0x7F];
 				}
 				else if (addr >= 0xFF40) { // I/O
-					return graphicsReadIOByte(addr - 0xFF40);
+					return graphics.readByte(addr - 0xFF40);
 				}
 				else if (addr == 0xFF0F) { // interrupt flags
 					return cpu.intFlags;
@@ -215,11 +213,11 @@ uint8_t Memory::readByte(uint16_t addr)
 					return cpu.timer.tac;
 				}
 				else if (addr == 0xFF00) { 
-					if (inputWire == 0x10) {
-						return inputRow[0];
+					if (input.wire == 0x10) {
+						return input.row[0];
 					}
-					if (inputWire == 0x20) {
-						return inputRow[1];
+					if (input.wire == 0x20) {
+						return input.row[1];
 					}
 					return 0;
 				}
@@ -243,11 +241,11 @@ void Memory::writeByte(uint8_t b, uint16_t addr)
 		// Enable or disable external RAM
 		case 0x0000:
 		case 0x1000:
-			if (mem.mbc == MBC::NONE) {
-				if (mem.biosLoaded) {
+			if (mbc == MBC::NONE) {
+				if (biosLoaded) {
 					if (addr < 0x0100) {
 						printf("Writing to BIOS!\n");
-						bios[addr] = b;
+						//bios[addr] = b;
 						return;
 					}
 					else if (addr == 0x0100) {
@@ -483,7 +481,7 @@ void Memory::writeByte(uint8_t b, uint16_t addr)
 					return;
 				}
 				else if (addr == 0xFF00) {
-					inputWire = b & 0x30;
+					input.wire = b & 0x30;
 					return;
 				}
 				else if (addr >= 0xFF10 && addr <= 0xFF26) {
@@ -502,8 +500,8 @@ void Memory::writeWord(uint16_t w, uint16_t addr)
 	writeByte(w >> 8, addr + 1);
 }
 
-void dumpToFile(std::string const &filename) const {
-	std::ofstream outFile(filename, ofstream::binary);
+void Memory::dumpToFile(std::string const &filename) {
+	std::ofstream outFile(filename, std::ofstream::binary);
 	
 	for (int i = 0; i < 0xFFFF; ++i) {
 		outFile << readByte(i);

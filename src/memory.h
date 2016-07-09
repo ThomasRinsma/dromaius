@@ -41,6 +41,7 @@ struct Memory
 	// Memory buffers
 	uint8_t *rom;
 	size_t romLen;
+	size_t ramSize;
 
 	uint8_t *workram;
 	uint8_t *extram;
@@ -66,14 +67,13 @@ struct Memory
 	void writeByte(uint8_t b, uint16_t addr);
 	void writeWord(uint16_t w, uint16_t addr);
 	
-	void dumpToFile() const;
+	void dumpToFile(std::string const &filename);
 
 	// TODO: operator[]() overload?
 
-	private:
-		bool loadRom(std::string const &filename);
-		void initialize();
-		void freeBuffers();
+	bool loadRom(std::string const &filename);
+	void initialize();
+	void freeBuffers();
 
 };
 

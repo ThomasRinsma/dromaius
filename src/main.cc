@@ -1,8 +1,14 @@
 #include <iostream>
 #include <cstdio>
-#include <stdlib>
+#include <cstdlib>
 #include <string>
 #include "gbemu.h"
+
+#include "audio.h"
+#include "cpu.h"
+#include "graphics.h"
+#include "input.h"
+#include "memory.h"
 
 // Global structs
 Audio audio;
@@ -84,7 +90,7 @@ int main(int argc, char *argv[])
 		memory.mbc = Memory::MBC::OTHER;
 	}
 
-	graphics.initWindow();
+	graphics.initDisplay();
 	
 	// Instruction loop
 	bool done = false;
@@ -145,7 +151,7 @@ int main(int argc, char *argv[])
 			}
 		}
 		
-		deltaTime = SDL_GetTicks() - oldTime;
+		uint32_t deltaTime = SDL_GetTicks() - oldTime;
 		if (deltaTime < 16) {
 			SDL_Delay(16 - deltaTime);
 		}

@@ -25,7 +25,7 @@ Graphics::~Graphics()
 	freeBuffers();
 }
 
-void Graphics::initialise()
+void Graphics::initialize()
 {
 	mode = Mode::HBLANK;
 	mclock = 0;
@@ -48,7 +48,7 @@ void Graphics::initialise()
 		}
 	}
 	
-	spritedata = new sprite_t[0x28]; // = 40 dec
+	spritedata = new sprite_s[0x28]; // = 40 dec
 	for (int i = 0; i < 40; i++) {
 		spritedata[i].x = -8;
 		spritedata[i].y = -16;
@@ -111,7 +111,7 @@ void Graphics::initDisplay()
 	debugTexture = SDL_CreateTexture(debugRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, DEBUG_WIDTH, DEBUG_HEIGHT);
 
 	// filtering
-	SDL_SetHint(SDL_HCPU::Int::RENDER_SCALE_QUALITY, "nearest");
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 }
 
 uint8_t Graphics::readByte(uint16_t addr)
@@ -288,7 +288,7 @@ void Graphics::renderDebugBackground()
 void Graphics::renderScanline()
 {
 	uint16_t yoff, xoff, tilenr;
-	uint8_t row, px;
+	uint8_t row, col, px;
 	uint8_t color;
 	uint8_t bgScanline[161];
 	int bit, offset;
