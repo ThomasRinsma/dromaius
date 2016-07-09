@@ -1,4 +1,4 @@
-# GameBoy Emulator
+# Dromaius, a gameboy emulator
 This is an emulator for the original Nintendo GameBoy (aka DMG).
 I've been working on this project off and on for several years, which is visible in the code because my style preferences have changed during this period.
 
@@ -7,4 +7,4 @@ Other games don't make it past the nintendo logo, and some even segfault.
 
 Not (yet) implemented: RTC, battery, proper halting and timers, windows, serial, etc.
 
-![Screenshot](https://bitbucket.org/ThomasRinsma/gameboy-emulator/raw/master/screenshots/screenshot_games.png)
+![Screenshot](https://raw.githubusercontent.com/ThomasRinsma/dromaius/master/screenshots/screenshot_games.png)
