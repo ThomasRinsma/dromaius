@@ -69,6 +69,7 @@ struct Memory
 	uint8_t rtc[5];
 
 	// Flags
+	bool initialized = false;
 	bool romLoaded = false;
 	bool biosLoaded = true;
 

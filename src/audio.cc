@@ -21,7 +21,9 @@ Audio::Audio()
 
 Audio::~Audio()
 {
-	freeBuffers();
+	if (initialized) {
+		freeBuffers();
+	}
 }
 
 void Audio::initialize()
@@ -44,6 +46,8 @@ void Audio::initialize()
 
     // Reset sample counter
     sample_ctr = 0;
+
+    initialized = true;
 }
 
 void Audio::writeByte(uint8_t b, uint16_t addr)

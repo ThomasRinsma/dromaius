@@ -22,12 +22,17 @@ Memory::Memory()
 
 Memory::~Memory()
 {
-	freeBuffers();
+	if (initialized) {
+		freeBuffers();
+	}
 }
 
 void Memory::freeBuffers()
 {
-	delete[] rom;
+	if (romLoaded) {
+		delete[] rom;
+	}
+	
 	delete[] workram;
 	delete[] extram;
 	delete[] zeropageram;
@@ -50,6 +55,8 @@ void Memory::initialize()
 	romBank = 1;
 
 	biosLoaded = true;
+
+	initialized = true;
 }
 
 bool Memory::loadRom(std::string const &filename)

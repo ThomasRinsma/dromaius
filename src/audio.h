@@ -93,6 +93,8 @@ struct Audio
 	uint8_t waveRam[16]; // 32 nibbles
 	uint32_t sample_ctr;
 
+	bool initialized = false;
+
 	Audio();
 	~Audio();
 

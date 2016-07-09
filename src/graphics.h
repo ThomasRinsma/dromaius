@@ -85,6 +85,8 @@ struct Graphics
 	uint32_t *screenPixels;
 	uint32_t *debugPixels;
 
+	bool initialized = false;
+
 
 	Graphics();
 	~Graphics();

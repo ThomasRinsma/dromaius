@@ -22,7 +22,9 @@ Graphics::Graphics()
 
 Graphics::~Graphics()
 {
-	freeBuffers();
+	if (initialized) {
+		freeBuffers();
+	}
 }
 
 void Graphics::initialize()
@@ -55,6 +57,8 @@ void Graphics::initialize()
 		spritedata[i].tile = 0;
 		spritedata[i].flags = 0;
 	}
+
+	initialized = true;
 }
 
 void Graphics::freeBuffers()
