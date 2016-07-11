@@ -84,7 +84,7 @@ bool Memory::loadRom(std::string const &filename)
 	romLoaded = true;
 
 	// Read the ROM header
-	romheader_s *romheader = (romheader_s *)(&rom[HEADER_START]);
+	romheader = (romheader_s *)(&rom[HEADER_START]);
 	//printf("CGB: 0x%02X, SGB: 0x%02X, OLIC: 0x%02X, NLIC: 0x%04X, country: 0x%02X\n",
 	//	romheader->colorbyte, romheader->sgbfeatures, romheader->oldlicensee,
 	//	romheader->newlicensee, romheader->country);

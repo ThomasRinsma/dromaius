@@ -7,7 +7,7 @@
 #define GB_SCREEN_HEIGHT 144
 
 #define WINDOW_WIDTH  (400 + (160 * 2))
-#define WINDOW_HEIGHT (144 * 2 + 50)
+#define WINDOW_HEIGHT (144 * 2 + 60)
 
 #define DEBUG_WIDTH   (8*16)
 #define DEBUG_HEIGHT  (8*24)

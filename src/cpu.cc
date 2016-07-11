@@ -62,6 +62,7 @@ void CPU::initialize()
 	timer.maxCount[3] = 64;
 
 	halted = false;
+	emulationPaused = false;
 
 	c = 0;
 }

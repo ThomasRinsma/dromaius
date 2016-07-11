@@ -91,7 +91,7 @@ void Graphics::initDisplay()
 	SDL_DisplayMode current;
 	SDL_GetCurrentDisplayMode(0, &current);
 	
-	mainWindow = SDL_CreateWindow("GB Emulator",
+	mainWindow = SDL_CreateWindow(memory.romheader->gamename,
 	                      SDL_WINDOWPOS_CENTERED,
 	                      SDL_WINDOWPOS_CENTERED,
 	                      WINDOW_WIDTH, WINDOW_HEIGHT,
@@ -477,22 +477,37 @@ void Graphics::buildSpriteData(uint8_t b, uint16_t addr)
 
 void Graphics::renderGUI()
 {
+	// Window positions and sizes
 	auto vecSettingsPos = ImVec2(0,0);
-	auto vecSettingsSize = ImVec2(200, GB_SCREEN_HEIGHT * screenScale + 50);
+	auto vecSettingsSize = ImVec2(200, GB_SCREEN_HEIGHT * screenScale + 60);
 
 	auto vecInfoPos = ImVec2(vecSettingsPos.x + vecSettingsSize.x, 0);
-	auto vecInfoSize = ImVec2(GB_SCREEN_WIDTH * screenScale, 50);
+	auto vecInfoSize = ImVec2(GB_SCREEN_WIDTH * screenScale, 60);
 
 	auto vecScreenPos = ImVec2(vecSettingsPos.x + vecSettingsSize.x, vecInfoSize.y);
 	auto vecScreenSize = ImVec2(GB_SCREEN_WIDTH * screenScale, GB_SCREEN_HEIGHT * screenScale);
 
 	auto vecDebugPos = ImVec2(vecScreenPos.x + vecScreenSize.x, 0);
-	auto vecDebugSize = ImVec2(200, GB_SCREEN_HEIGHT * screenScale + 50);
+	auto vecDebugSize = ImVec2(200, GB_SCREEN_HEIGHT * screenScale + 60);
 
 	// Set global style
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.WindowRounding = 0.0f;
 
+
+	// Info window
+	ImGui::SetNextWindowPos(vecInfoPos);
+	ImGui::SetNextWindowSize(vecInfoSize);
+	ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoSavedSettings
+		| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
+		| ImGuiWindowFlags_NoResize);
+	ImGui::Text("%s, MBC: %s, Country: %s\nRom size: %d, Ram size: %d",
+		memory.romheader->gamename,
+		memory.mbcAsString().c_str(),
+		memory.romheader->country ? "Other" : "Japan",
+		memory.romheader->romsize,
+		memory.romheader->ramsize);
+	ImGui::End();
 
 	// Settings window
 	ImGui::SetNextWindowPos(vecSettingsPos);
@@ -510,16 +525,30 @@ void Graphics::renderGUI()
 	ImGui::Begin("Debug stuffs", nullptr, ImGuiWindowFlags_NoSavedSettings
 		| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
 		| ImGuiWindowFlags_NoResize);
-	ImGui::Text("Hello, world!");
-	ImGui::End();
 
-	// Info window
-	ImGui::SetNextWindowPos(vecInfoPos);
-	ImGui::SetNextWindowSize(vecInfoSize);
-	ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoSavedSettings
-		| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
-		| ImGuiWindowFlags_NoResize);
-	ImGui::Text("ROM NAME, etc");
+	if (ImGui::CollapsingHeader("CPU Registers", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::Text(
+				"a: %02X       hl: %04X\n"
+				"b: %02X\n"
+				"c: %02X       pc: %04X\n"
+				"d: %02X       sp: %04X\n"
+				"e: %02X   \n"
+				"f: %c,%c,%c,%c",
+			cpu.r.a, (cpu.r.h << 8) | cpu.r.l, cpu.r.b, cpu.r.c,
+			cpu.r.pc, cpu.r.d, cpu.r.sp, cpu.r.e,
+			cpu.getFlag(CPU::Flag::ZERO) ? 'Z' : '_',
+			cpu.getFlag(CPU::Flag::SUBTRACT) ? 'N' : '_',
+			cpu.getFlag(CPU::Flag::HCARRY) ? 'H' : '_',
+			cpu.getFlag(CPU::Flag::CARRY) ? 'C' : '_'
+		);
+
+		ImGui::Text("cycles: %d", cpu.c);
+
+
+
+	}
+
+
 	ImGui::End();
 
 	// GB Screen window (borderless, no padding)

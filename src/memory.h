@@ -38,6 +38,19 @@ struct Memory
 		OTHER,
 	} mbc;
 
+	inline std::string mbcAsString() {
+		switch (mbc) {
+			case MBC::NONE: return "NONE";
+			case MBC::MBC1: return "MBC1";
+			case MBC::MBC2: return "MBC2";
+			case MBC::MBC3: return "MBC3";
+			case MBC::MBC4: return "MBC4";
+			case MBC::MBC5: return "MBC5";
+			case MBC::MMM01: return "MMM01";
+			case MBC::OTHER: return "OTHER";
+		}
+	}
+
 	struct romheader_s {
 		char	gamename[15];
 		uint8_t	colorbyte;		// 0x80 = yes
@@ -56,6 +69,8 @@ struct Memory
 	uint8_t *rom;
 	size_t romLen;
 	size_t ramSize;
+
+	romheader_s *romheader;
 
 	uint8_t *workram;
 	uint8_t *extram;

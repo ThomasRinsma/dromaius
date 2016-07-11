@@ -54,6 +54,8 @@ struct CPU
 
 	bool halted;
 
+	bool emulationPaused;
+
 	// Cycle count
 	int c;
 	int dc;
