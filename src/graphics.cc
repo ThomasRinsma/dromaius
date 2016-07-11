@@ -118,6 +118,9 @@ void Graphics::initDisplay()
     // Create texture for video mem debug
     glGenTextures(1, &debugTexture);
 
+    // Disable vsync, we do our own syncing
+    SDL_GL_SetSwapInterval(0);
+
 
 //	screenRenderer = SDL_CreateRenderer(mainWindow, -1, 0);
 //	debugRenderer = SDL_CreateRenderer(debugWindow, -1, 0);
@@ -526,6 +529,7 @@ void Graphics::renderGUI()
 	ImGui::Begin("Contols", nullptr, ImGuiWindowFlags_NoSavedSettings
 		| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
 		| ImGuiWindowFlags_NoResize);
+	ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 	if (ImGui::Button("Reset ROM")) {
 		// hacky, sorry
 		SDL_Event resetEvent;
@@ -537,6 +541,7 @@ void Graphics::renderGUI()
 		memory.dumpToFile("memdump.bin");
 	}
 	ImGui::SliderInt("Scale", &screenScale, 1, 8);
+	ImGui::Checkbox("Fast forward", &cpu.fastForward);
 	ImGui::End();
 
 
@@ -573,6 +578,7 @@ void Graphics::renderGUI()
 	}
 
 	if (ImGui::CollapsingHeader("Video memory", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::Text("Background tilemap + set:");
 		ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
 		ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(DEBUG_WIDTH, DEBUG_HEIGHT),
 		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));

@@ -63,6 +63,7 @@ void CPU::initialize()
 
 	halted = false;
 	emulationPaused = false;
+	fastForward = false;
 
 	c = 0;
 }

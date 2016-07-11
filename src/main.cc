@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 		}
 		
 		uint32_t deltaTime = SDL_GetTicks() - oldTime;
-		if (deltaTime < 16) {
+		if (deltaTime < 16 and not cpu.fastForward) {
 			SDL_Delay(16 - deltaTime);
 		}
 	}
