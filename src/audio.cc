@@ -14,11 +14,6 @@ extern Audio audio;
 extern Input input;
 extern CPU cpu;
 
-Audio::Audio()
-{
-	// Empty
-}
-
 Audio::~Audio()
 {
 	if (initialized) {
@@ -48,6 +43,11 @@ void Audio::initialize()
     sample_ctr = 0;
 
     initialized = true;
+}
+
+void Audio::freeBuffers() {
+	SDL_CloseAudioDevice(dev);
+	SDL_CloseAudio();
 }
 
 void Audio::writeByte(uint8_t b, uint16_t addr)
@@ -325,10 +325,4 @@ void play_audio(void *userdata, uint8_t *stream, int len)
 
 		++audio.sample_ctr;
 	}
-}
-
-
-void Audio::freeBuffers() {
-	SDL_CloseAudioDevice(dev);
-	SDL_CloseAudio();
 }

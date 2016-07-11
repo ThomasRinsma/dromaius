@@ -15,27 +15,11 @@ extern CPU cpu;
 
 constexpr uint8_t Memory::bios[256];
 
-Memory::Memory()
-{
-	// Empty
-}
-
 Memory::~Memory()
 {
 	if (initialized) {
 		freeBuffers();
 	}
-}
-
-void Memory::freeBuffers()
-{
-	if (romLoaded) {
-		delete[] rom;
-	}
-	
-	delete[] workram;
-	delete[] extram;
-	delete[] zeropageram;
 }
 
 void Memory::initialize()
@@ -57,6 +41,17 @@ void Memory::initialize()
 	biosLoaded = true;
 
 	initialized = true;
+}
+
+void Memory::freeBuffers()
+{
+	if (romLoaded) {
+		delete[] rom;
+	}
+	
+	delete[] workram;
+	delete[] extram;
+	delete[] zeropageram;
 }
 
 bool Memory::loadRom(std::string const &filename)

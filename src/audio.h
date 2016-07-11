@@ -95,7 +95,6 @@ struct Audio
 
 	bool initialized = false;
 
-	Audio();
 	~Audio();
 
 	void initialize();

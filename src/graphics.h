@@ -6,13 +6,13 @@
 #define GB_SCREEN_WIDTH  160
 #define GB_SCREEN_HEIGHT 144
 
-#define SCREEN_WIDTH  GB_SCREEN_WIDTH
-#define SCREEN_HEIGHT GB_SCREEN_HEIGHT
+#define WINDOW_WIDTH  512
+#define WINDOW_HEIGHT 512
 
 #define DEBUG_WIDTH   (8*16)
 #define DEBUG_HEIGHT  (8*24)
 
-#define WINDOW_SCALE  2
+//#define WINDOW_SCALE  2
 
 struct Graphics
 {
@@ -74,26 +74,23 @@ struct Graphics
 
 	// Window stuff
 	SDL_Window *mainWindow;
-	SDL_Window *debugWindow;
 
-	SDL_Renderer *screenRenderer;
-	SDL_Renderer *debugRenderer;
-
-	SDL_Texture *screenTexture;
-	SDL_Texture *debugTexture;
+	uint32_t screenTexture;
+	uint32_t debugTexture;
 
 	uint32_t *screenPixels;
 	uint32_t *debugPixels;
 
+	int screenScale = 1;
+
 	bool initialized = false;
 
-
-	Graphics();
 	~Graphics();
 
 	void initialize();
 	void freeBuffers();
 	void initDisplay();
+	void updateTextures();
 
 	uint8_t readByte(uint16_t addr);
 	void writeByte(uint8_t b, uint16_t addr);
@@ -106,6 +103,7 @@ struct Graphics
 	void updateTile(uint8_t b, uint16_t addr);
 	void buildSpriteData(uint8_t b, uint16_t addr);
 	void renderFrame();
+	void renderGUI();
 
 	void step();
 

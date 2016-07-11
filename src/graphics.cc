@@ -15,11 +15,6 @@ extern Input input;
 extern Memory memory;
 
 
-Graphics::Graphics()
-{
-	// Empty
-}
-
 Graphics::~Graphics()
 {
 	if (initialized) {
@@ -36,8 +31,10 @@ void Graphics::initialize()
 	r.scy = 0;
 	r.flags = 0;
 
-	screenPixels = new uint32_t[SCREEN_WIDTH * SCREEN_HEIGHT];
+	screenPixels = new uint32_t[GB_SCREEN_WIDTH * GB_SCREEN_HEIGHT];
 	debugPixels = new uint32_t[DEBUG_WIDTH * DEBUG_HEIGHT];
+
+	screenScale = 1;
 
 	vram = new uint8_t[0x2000];
 	oam = new uint8_t[0xA0];
@@ -82,40 +79,67 @@ void Graphics::freeBuffers()
 
 void Graphics::initDisplay()
 {
-	SDL_Window *debugWindow = SDL_CreateWindow("GB Emulator - debug",
-	                      SDL_WINDOWPOS_UNDEFINED,
-	                      SDL_WINDOWPOS_UNDEFINED,
-	                      WINDOW_SCALE * DEBUG_WIDTH, WINDOW_SCALE * DEBUG_HEIGHT,
-	                      SDL_WINDOW_OPENGL);
+
+	// Setup window
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+	SDL_DisplayMode current;
+	SDL_GetCurrentDisplayMode(0, &current);
 	
-	SDL_Window *mainWindow = SDL_CreateWindow("GB Emulator",
+	mainWindow = SDL_CreateWindow("GB Emulator",
 	                      SDL_WINDOWPOS_CENTERED,
 	                      SDL_WINDOWPOS_CENTERED,
-	                      WINDOW_SCALE * SCREEN_WIDTH, WINDOW_SCALE * SCREEN_HEIGHT,
-	                      SDL_WINDOW_OPENGL);
+	                      WINDOW_WIDTH, WINDOW_HEIGHT,
+	                      SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 
-	// Position the debug window right of the main window
-	int xmain, ymain;
-	SDL_GetWindowPosition(mainWindow, &xmain, &ymain);
-	SDL_SetWindowPosition(debugWindow, xmain + WINDOW_SCALE * SCREEN_WIDTH, ymain);
-
-
-	if (!mainWindow || !debugWindow) {
+	if (!mainWindow) {
 		printf("Failed to create a window.\n");
 		exit(1);
 	}
 
-	screenRenderer = SDL_CreateRenderer(mainWindow, -1, 0);
-	debugRenderer = SDL_CreateRenderer(debugWindow, -1, 0);
 
-	SDL_RenderSetLogicalSize(screenRenderer, SCREEN_WIDTH, SCREEN_HEIGHT);
-	SDL_RenderSetLogicalSize(debugRenderer, DEBUG_WIDTH, DEBUG_HEIGHT);
+    SDL_GLContext glcontext = SDL_GL_CreateContext(mainWindow);
+    printf("context = %u\n", glcontext);
 
-	screenTexture = SDL_CreateTexture(screenRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
-	debugTexture = SDL_CreateTexture(debugRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, DEBUG_WIDTH, DEBUG_HEIGHT);
+    // Init GL functions
+    gl3wInit();
+
+    // Setup ImGui binding
+    ImGui_ImplSdlGL3_Init(mainWindow);
+
+    // Create texture for game graphics
+    glGenTextures(1, &screenTexture);
+
+
+//	screenRenderer = SDL_CreateRenderer(mainWindow, -1, 0);
+//	debugRenderer = SDL_CreateRenderer(debugWindow, -1, 0);
+//
+//	SDL_RenderSetLogicalSize(screenRenderer, GB_SCREEN_WIDTH, GB_SCREEN_HEIGHT);
+//	SDL_RenderSetLogicalSize(debugRenderer, DEBUG_WIDTH, DEBUG_HEIGHT);
+//
+//	screenTexture = SDL_CreateTexture(screenRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, GB_SCREEN_WIDTH, GB_SCREEN_HEIGHT);
+//	debugTexture = SDL_CreateTexture(debugRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, DEBUG_WIDTH, DEBUG_HEIGHT);
 
 	// filtering
-	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+	//SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+}
+
+void Graphics::updateTextures()
+{
+	// Bind texture and upload pixels
+	glBindTexture(GL_TEXTURE_2D, screenTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, GB_SCREEN_WIDTH, GB_SCREEN_HEIGHT,
+		0, GL_RGBA, GL_UNSIGNED_BYTE, screenPixels);
+
+	// Restore state
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 uint8_t Graphics::readByte(uint16_t addr)
@@ -222,13 +246,13 @@ inline void Graphics::setPixelColor(int x, int y, uint8_t color)
 {
 	uint8_t palettecols[4] = {255, 192, 96, 0};
 	
-	if (x >= SCREEN_WIDTH || y >= SCREEN_HEIGHT || x < 0 || y < 0) {
+	if (x >= GB_SCREEN_WIDTH || y >= GB_SCREEN_HEIGHT || x < 0 || y < 0) {
 		return;
 	}
 	
 	// rgba
-	uint32_t pixel = palettecols[color] << 16 | palettecols[color] << 8 | palettecols[color];
-	screenPixels[y * SCREEN_WIDTH + x] = pixel;
+	uint32_t pixel = 0xFF000000 | palettecols[color] << 16 | palettecols[color] << 8 | palettecols[color];
+	screenPixels[y * GB_SCREEN_WIDTH + x] = pixel;
 }
 
 inline void Graphics::setDebugPixelColor(int x, int y, uint8_t color)
@@ -451,19 +475,57 @@ void Graphics::buildSpriteData(uint8_t b, uint16_t addr)
 	}
 }
 
+void Graphics::renderGUI()
+{
+	auto vecScreenSize = ImVec2(GB_SCREEN_WIDTH * screenScale, GB_SCREEN_HEIGHT * screenScale);
+
+	ImGui::SetNextWindowSize(vecScreenSize);
+	ImGui::Begin("GB Screen", nullptr, ImGuiWindowFlags_NoTitleBar
+		| ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar
+		 | ImGuiWindowFlags_NoSavedSettings
+		);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
+	ImGui::Image((void*)((intptr_t)screenTexture), vecScreenSize,
+		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(255,255,255,128));
+	
+	ImGui::PopStyleVar();
+	ImGui::End();
+
+	
+	ImGui::Begin("Settings");
+	ImGui::Text("Hello, world!");
+	ImGui::SliderInt("Scale", &screenScale, 1, 8);
+
+
+	ImGui::End();
+}
+
 void Graphics::renderFrame()
 {
 	// render main window
-	SDL_UpdateTexture(screenTexture, NULL, screenPixels, SCREEN_WIDTH * sizeof(uint32_t));
-	SDL_RenderClear(screenRenderer);
-	SDL_RenderCopy(screenRenderer, screenTexture, NULL, NULL);
-	SDL_RenderPresent(screenRenderer);
+	//SDL_UpdateTexture(screenTexture, NULL, screenPixels, GB_SCREEN_WIDTH * sizeof(uint32_t));
+	//SDL_RenderClear(screenRenderer);
+	//SDL_RenderCopy(screenRenderer, screenTexture, NULL, NULL);
+	//SDL_RenderPresent(screenRenderer);
 
-	// render debug window
-	SDL_UpdateTexture(debugTexture, NULL, debugPixels, DEBUG_WIDTH * sizeof(uint32_t));
-	SDL_RenderClear(debugRenderer);
-	SDL_RenderCopy(debugRenderer, debugTexture, NULL, NULL);
-	SDL_RenderPresent(debugRenderer);
+	int w, h;
+	int display_w, display_h;
+	SDL_GetWindowSize(mainWindow, &w, &h);
+	SDL_GL_GetDrawableSize(mainWindow, &display_w, &display_h);
+
+	ImGui_ImplSdlGL3_NewFrame(mainWindow);
+
+	updateTextures();
+    
+	renderGUI();
+
+	glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+	ImVec4 clear_color = ImColor(255, 255, 255);
+	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+	glClear(GL_COLOR_BUFFER_BIT);
+	ImGui::Render();
+	SDL_GL_SwapWindow(mainWindow);
 }
 
 void Graphics::step()

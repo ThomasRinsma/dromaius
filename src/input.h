@@ -10,7 +10,6 @@ struct Input
 	uint8_t row[2];
 	uint8_t wire;
 
-	Input();
 	void initialize();
 
 	void handleGameInput(int state, SDL_Keycode key);

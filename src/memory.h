@@ -73,7 +73,6 @@ struct Memory
 	bool romLoaded = false;
 	bool biosLoaded = true;
 
-	Memory();
 	~Memory();
 
 	uint8_t readByte(uint16_t addr);

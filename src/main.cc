@@ -103,6 +103,7 @@ int main(int argc, char *argv[])
 		// SDL event loop
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
+			ImGui_ImplSdlGL3_ProcessEvent(&event);
 			if (event.type == SDL_KEYDOWN) {
 				switch (event.key.keysym.sym) {
 					case SDLK_F1: // toggle: debugging on every instruction
@@ -147,6 +148,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	ImGui_ImplSdlGL3_Shutdown();
+	//SDL_GL_DeleteContext(glcontext);
+	//SDL_DestroyWindow(window);
 	SDL_Quit();
 	return 0;
 }

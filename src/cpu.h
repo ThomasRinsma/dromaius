@@ -58,7 +58,6 @@ struct CPU
 	int c;
 	int dc;
 
-	CPU();
 	void initialize();
 
 	void setFlag(Flag flag);

@@ -16,11 +16,6 @@ extern Memory memory;
 
 extern settings_t settings;
 
-CPU::CPU()
-{
-	// Empty
-}
-
 void CPU::initialize()
 {
 	r.a = 0x01;

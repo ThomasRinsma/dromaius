@@ -3,11 +3,6 @@
 
 extern settings_t settings;
 
-Input::Input()
-{
-	// Empty
-}
-
 void Input::initialize()
 {
 	wire = 0x10;
