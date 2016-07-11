@@ -115,6 +115,9 @@ void Graphics::initDisplay()
     // Create texture for game graphics
     glGenTextures(1, &screenTexture);
 
+    // Create texture for video mem debug
+    glGenTextures(1, &debugTexture);
+
 
 //	screenRenderer = SDL_CreateRenderer(mainWindow, -1, 0);
 //	debugRenderer = SDL_CreateRenderer(debugWindow, -1, 0);
@@ -137,6 +140,13 @@ void Graphics::updateTextures()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, GB_SCREEN_WIDTH, GB_SCREEN_HEIGHT,
 		0, GL_RGBA, GL_UNSIGNED_BYTE, screenPixels);
+
+	// Bind texture and upload pixels
+	glBindTexture(GL_TEXTURE_2D, debugTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, DEBUG_WIDTH, DEBUG_HEIGHT,
+		0, GL_RGBA, GL_UNSIGNED_BYTE, debugPixels);
 
 	// Restore state
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -264,7 +274,7 @@ inline void Graphics::setDebugPixelColor(int x, int y, uint8_t color)
 	}
 	
 	// rgba
-	uint32_t pixel = palettecols[color] << 16 | palettecols[color] << 8 | palettecols[color];
+	uint32_t pixel = 0xFF000000 | palettecols[color] << 16 | palettecols[color] << 8 | palettecols[color];
 	debugPixels[y * DEBUG_WIDTH + x] = pixel;
 }
 
@@ -479,16 +489,16 @@ void Graphics::renderGUI()
 {
 	// Window positions and sizes
 	auto vecSettingsPos = ImVec2(0,0);
-	auto vecSettingsSize = ImVec2(200, GB_SCREEN_HEIGHT * screenScale + 60);
+	auto vecSettingsSize = ImVec2(200, WINDOW_HEIGHT);
 
 	auto vecInfoPos = ImVec2(vecSettingsPos.x + vecSettingsSize.x, 0);
 	auto vecInfoSize = ImVec2(GB_SCREEN_WIDTH * screenScale, 60);
 
 	auto vecScreenPos = ImVec2(vecSettingsPos.x + vecSettingsSize.x, vecInfoSize.y);
-	auto vecScreenSize = ImVec2(GB_SCREEN_WIDTH * screenScale, GB_SCREEN_HEIGHT * screenScale);
+	auto vecScreenSize = ImVec2(GB_SCREEN_WIDTH * screenScale, WINDOW_HEIGHT);
 
 	auto vecDebugPos = ImVec2(vecScreenPos.x + vecScreenSize.x, 0);
-	auto vecDebugSize = ImVec2(200, GB_SCREEN_HEIGHT * screenScale + 60);
+	auto vecDebugSize = ImVec2(200, WINDOW_HEIGHT);
 
 	// Set global style
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -509,15 +519,26 @@ void Graphics::renderGUI()
 		memory.romheader->ramsize);
 	ImGui::End();
 
+
 	// Settings window
 	ImGui::SetNextWindowPos(vecSettingsPos);
 	ImGui::SetNextWindowSize(vecSettingsSize);
-	ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoSavedSettings
+	ImGui::Begin("Contols", nullptr, ImGuiWindowFlags_NoSavedSettings
 		| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
 		| ImGuiWindowFlags_NoResize);
-	ImGui::Text("Hello, world!");
+	if (ImGui::Button("Reset ROM")) {
+		// hacky, sorry
+		SDL_Event resetEvent;
+		resetEvent.type = SDL_KEYDOWN;
+		resetEvent.key.keysym.sym = SDLK_r;
+		SDL_PushEvent(&resetEvent);
+	}
+	if (ImGui::Button("Dump memory to \nfile (memdump.bin)")) {
+		memory.dumpToFile("memdump.bin");
+	}
 	ImGui::SliderInt("Scale", &screenScale, 1, 8);
 	ImGui::End();
+
 
 	// Debug window
 	ImGui::SetNextWindowPos(vecDebugPos);
@@ -543,11 +564,27 @@ void Graphics::renderGUI()
 		);
 
 		ImGui::Text("cycles: %d", cpu.c);
-
-
-
 	}
 
+	if (ImGui::CollapsingHeader("Audio", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::Text("1:%s, 2:%s 3:%s, 4:%s", 
+			audio.ch1.isEnabled ? "on " : "off", audio.ch2.isEnabled ? "on " : "off",
+			audio.ch3.isEnabled ? "on " : "off", audio.ch4.isEnabled ? "on " : "off");
+	}
+
+	if (ImGui::CollapsingHeader("Video memory", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
+		ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(DEBUG_WIDTH, DEBUG_HEIGHT),
+		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			int tilex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x) / 8;
+			int tiley = (int)(ImGui::GetMousePos().y - tex_screen_pos.y) / 8;
+			ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(80, 80),
+			ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
+			ImGui::EndTooltip();
+		}
+	}
 
 	ImGui::End();
 
@@ -559,7 +596,7 @@ void Graphics::renderGUI()
 		| ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar
 		| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse
 		);
-	ImGui::Image((void*)((intptr_t)screenTexture), vecScreenSize,
+	ImGui::Image((void*)((intptr_t)screenTexture), ImVec2(GB_SCREEN_WIDTH * screenScale, GB_SCREEN_HEIGHT * screenScale),
 		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
 	ImGui::End();
 	ImGui::PopStyleVar();
@@ -587,7 +624,7 @@ void Graphics::renderFrame()
 	renderGUI();
 
 	glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-	ImVec4 clear_color = ImColor(255, 255, 255);
+	ImVec4 clear_color = ImColor(255, 255, 255, 128);
 	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui::Render();
