@@ -104,6 +104,8 @@ int main(int argc, char *argv[])
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			ImGui_ImplSdlGL3_ProcessEvent(&event);
+			ImGuiIO& io = ImGui::GetIO();
+
 			if (event.type == SDL_KEYDOWN) {
 				switch (event.key.keysym.sym) {
 					case SDLK_F1: // toggle: debugging on every instruction
@@ -129,7 +131,9 @@ int main(int argc, char *argv[])
 						break;
 					
 					default:
-						input.handleGameInput(0, event.key.keysym.sym);
+						if (not io.WantCaptureKeyboard) {
+							input.handleGameInput(0, event.key.keysym.sym);
+						}
 						break;
 				}
 			}

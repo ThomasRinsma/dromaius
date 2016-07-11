@@ -6,8 +6,8 @@
 #define GB_SCREEN_WIDTH  160
 #define GB_SCREEN_HEIGHT 144
 
-#define WINDOW_WIDTH  512
-#define WINDOW_HEIGHT 512
+#define WINDOW_WIDTH  (400 + (160 * 2))
+#define WINDOW_HEIGHT (144 * 2 + 50)
 
 #define DEBUG_WIDTH   (8*16)
 #define DEBUG_HEIGHT  (8*24)
@@ -81,7 +81,7 @@ struct Graphics
 	uint32_t *screenPixels;
 	uint32_t *debugPixels;
 
-	int screenScale = 1;
+	int screenScale;
 
 	bool initialized = false;
 

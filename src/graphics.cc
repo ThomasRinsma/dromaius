@@ -34,7 +34,7 @@ void Graphics::initialize()
 	screenPixels = new uint32_t[GB_SCREEN_WIDTH * GB_SCREEN_HEIGHT];
 	debugPixels = new uint32_t[DEBUG_WIDTH * DEBUG_HEIGHT];
 
-	screenScale = 1;
+	screenScale = 2;
 
 	vram = new uint8_t[0x2000];
 	oam = new uint8_t[0xA0];
@@ -95,7 +95,7 @@ void Graphics::initDisplay()
 	                      SDL_WINDOWPOS_CENTERED,
 	                      SDL_WINDOWPOS_CENTERED,
 	                      WINDOW_WIDTH, WINDOW_HEIGHT,
-	                      SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+	                      SDL_WINDOW_OPENGL);
 
 	if (!mainWindow) {
 		printf("Failed to create a window.\n");
@@ -477,28 +477,65 @@ void Graphics::buildSpriteData(uint8_t b, uint16_t addr)
 
 void Graphics::renderGUI()
 {
+	auto vecSettingsPos = ImVec2(0,0);
+	auto vecSettingsSize = ImVec2(200, GB_SCREEN_HEIGHT * screenScale + 50);
+
+	auto vecInfoPos = ImVec2(vecSettingsPos.x + vecSettingsSize.x, 0);
+	auto vecInfoSize = ImVec2(GB_SCREEN_WIDTH * screenScale, 50);
+
+	auto vecScreenPos = ImVec2(vecSettingsPos.x + vecSettingsSize.x, vecInfoSize.y);
 	auto vecScreenSize = ImVec2(GB_SCREEN_WIDTH * screenScale, GB_SCREEN_HEIGHT * screenScale);
 
-	ImGui::SetNextWindowSize(vecScreenSize);
-	ImGui::Begin("GB Screen", nullptr, ImGuiWindowFlags_NoTitleBar
-		| ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar
-		 | ImGuiWindowFlags_NoSavedSettings
-		);
+	auto vecDebugPos = ImVec2(vecScreenPos.x + vecScreenSize.x, 0);
+	auto vecDebugSize = ImVec2(200, GB_SCREEN_HEIGHT * screenScale + 50);
 
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
-	ImGui::Image((void*)((intptr_t)screenTexture), vecScreenSize,
-		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(255,255,255,128));
-	
-	ImGui::PopStyleVar();
-	ImGui::End();
+	// Set global style
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.WindowRounding = 0.0f;
 
-	
-	ImGui::Begin("Settings");
+
+	// Settings window
+	ImGui::SetNextWindowPos(vecSettingsPos);
+	ImGui::SetNextWindowSize(vecSettingsSize);
+	ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoSavedSettings
+		| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
+		| ImGuiWindowFlags_NoResize);
 	ImGui::Text("Hello, world!");
 	ImGui::SliderInt("Scale", &screenScale, 1, 8);
-
-
 	ImGui::End();
+
+	// Debug window
+	ImGui::SetNextWindowPos(vecDebugPos);
+	ImGui::SetNextWindowSize(vecDebugSize);
+	ImGui::Begin("Debug stuffs", nullptr, ImGuiWindowFlags_NoSavedSettings
+		| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
+		| ImGuiWindowFlags_NoResize);
+	ImGui::Text("Hello, world!");
+	ImGui::End();
+
+	// Info window
+	ImGui::SetNextWindowPos(vecInfoPos);
+	ImGui::SetNextWindowSize(vecInfoSize);
+	ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoSavedSettings
+		| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
+		| ImGuiWindowFlags_NoResize);
+	ImGui::Text("ROM NAME, etc");
+	ImGui::End();
+
+	// GB Screen window (borderless, no padding)
+	ImGui::SetNextWindowPos(vecScreenPos);
+	ImGui::SetNextWindowSize(vecScreenSize);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::Begin("GB Screen", nullptr, ImGuiWindowFlags_NoTitleBar
+		| ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar
+		| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse
+		);
+	ImGui::Image((void*)((intptr_t)screenTexture), vecScreenSize,
+		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
+	ImGui::End();
+	ImGui::PopStyleVar();
+
+
 }
 
 void Graphics::renderFrame()
