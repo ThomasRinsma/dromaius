@@ -577,7 +577,23 @@ void Graphics::renderGUI()
 			audio.ch3.isEnabled ? "on " : "off", audio.ch4.isEnabled ? "on " : "off");
 	}
 
-	if (ImGui::CollapsingHeader("Video memory", ImGuiTreeNodeFlags_DefaultOpen)) {
+	if (ImGui::CollapsingHeader("Active sprites", ImGuiTreeNodeFlags_DefaultOpen)) {
+		int ctr = 0;
+		for (int i = 0; i < 40; i++) {
+			if ((spritedata[i].x > -8 and spritedata[i].x < 168)
+				or (spritedata[i].y > -16 and spritedata[i].y < 160)) {
+				++ctr;
+				ImGui::Text("%02x x:%02x y:%02x t:%02x f:%02x", i,
+					spritedata[i].x, spritedata[i].y, spritedata[i].tile, spritedata[i].flags);
+			}
+		}
+
+		if (ctr == 0) {
+			ImGui::Text("(none)");
+		}
+	}
+
+	if (ImGui::CollapsingHeader("VRAM", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::Text("Background tilemap + set:");
 		ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
 		ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(DEBUG_WIDTH, DEBUG_HEIGHT),
@@ -586,6 +602,8 @@ void Graphics::renderGUI()
 			ImGui::BeginTooltip();
 			int tilex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x) / 8;
 			int tiley = (int)(ImGui::GetMousePos().y - tex_screen_pos.y) / 8;
+			int tileaddr = 0x8000 + 0x10*(tiley*16+tilex);
+			ImGui::Text("Tile: %02X @ %04X", (tileaddr & 0x0FF0) >> 4, tileaddr);
 			ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(80, 80),
 			ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
 			ImGui::EndTooltip();

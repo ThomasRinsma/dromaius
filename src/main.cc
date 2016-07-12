@@ -85,6 +85,8 @@ int main(int argc, char *argv[])
 	bool done = false;
 	while (not done) {
 		// Do a frame
+		graphics.renderDebugBackground();
+		
 		int oldTime = SDL_GetTicks();
 		int frametime = cpu.c + CPU_CLOCKS_PER_FRAME;
 		while (cpu.c < frametime) {
@@ -98,7 +100,6 @@ int main(int argc, char *argv[])
 			graphics.step();
 		}
 
-		graphics.renderDebugBackground();
 		
 		// SDL event loop
 		SDL_Event event;
