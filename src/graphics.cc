@@ -588,7 +588,7 @@ void Graphics::renderGUI()
 	// Settings window
 	ImGui::SetNextWindowPos(vecSettingsPos);
 	ImGui::SetNextWindowSize(vecSettingsSize);
-	ImGui::Begin("Contols", nullptr, ImGuiWindowFlags_NoSavedSettings
+	ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_NoSavedSettings
 		| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
 		| ImGuiWindowFlags_NoResize);
 	ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
