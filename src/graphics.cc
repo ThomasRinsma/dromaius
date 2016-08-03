@@ -540,7 +540,7 @@ void Graphics::renderGUI()
 	if (ImGui::Button("Dump memory to \nfile (memdump.bin)")) {
 		memory.dumpToFile("memdump.bin");
 	}
-	ImGui::SliderInt("Scale", &screenScale, 1, 8);
+	//ImGui::SliderInt("Scale", &screenScale, 1, 8);
 	ImGui::Checkbox("Fast forward", &cpu.fastForward);
 	ImGui::End();
 
@@ -572,12 +572,13 @@ void Graphics::renderGUI()
 	}
 
 	if (ImGui::CollapsingHeader("Audio", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::Checkbox("Enabled (override)", &audio.isEnabled);
 		ImGui::Text("1:%s, 2:%s 3:%s, 4:%s", 
 			audio.ch1.isEnabled ? "on " : "off", audio.ch2.isEnabled ? "on " : "off",
 			audio.ch3.isEnabled ? "on " : "off", audio.ch4.isEnabled ? "on " : "off");
 	}
 
-	if (ImGui::CollapsingHeader("Active sprites", ImGuiTreeNodeFlags_DefaultOpen)) {
+	if (ImGui::CollapsingHeader("Active sprites", 0)) {
 		int ctr = 0;
 		for (int i = 0; i < 40; i++) {
 			if ((spritedata[i].x > -8 and spritedata[i].x < 168)
