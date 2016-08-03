@@ -10,4 +10,4 @@ Usage:
 
 (requires SDL2)
 
-![Screenshot](https://raw.githubusercontent.com/ThomasRinsma/dromaius/master/screenshots/screenshot_games.png)
+![Screenshot](/screenshots/gui.png?raw=true)
