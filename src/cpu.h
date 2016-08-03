@@ -98,7 +98,9 @@ struct CPU
 	void handleTimers();
 	void handleInterrupts();
 	int executeInstruction();
-
+	inline const char *numToRegName(uint8_t num);
+	uint16_t instructionToString(uint16_t pc, char *instStr);
+	void disassemble(uint16_t pc, size_t instCnt, char *buf);
 };
 
 #endif

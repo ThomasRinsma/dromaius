@@ -638,6 +638,13 @@ void Graphics::renderGUI()
 		);
 
 		ImGui::Text("cycles: %d", cpu.c);
+
+	}
+
+	if (ImGui::CollapsingHeader("Disassembly", ImGuiTreeNodeFlags_DefaultOpen)) {
+		char buf[25 * 10];
+		cpu.disassemble(cpu.r.pc, 10, buf);
+		ImGui::Text("%s", buf);
 	}
 
 	if (ImGui::CollapsingHeader("Audio", ImGuiTreeNodeFlags_DefaultOpen)) {
