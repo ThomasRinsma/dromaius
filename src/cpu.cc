@@ -64,6 +64,10 @@ void CPU::initialize()
 	halted = false;
 	emulationPaused = false;
 	fastForward = false;
+	
+	stepMode = false;
+	stepInst = false;
+	stepFrame = false;
 
 	c = 0;
 }

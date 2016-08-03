@@ -56,6 +56,9 @@ struct CPU
 
 	bool emulationPaused;
 	bool fastForward;
+	bool stepMode;
+	bool stepInst;
+	bool stepFrame;
 
 	// Cycle count
 	int c;

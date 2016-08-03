@@ -604,6 +604,13 @@ void Graphics::renderGUI()
 	}
 	//ImGui::SliderInt("Scale", &screenScale, 1, 8);
 	ImGui::Checkbox("Fast forward", &cpu.fastForward);
+	ImGui::Checkbox("Step mode", &cpu.stepMode);
+	if (ImGui::Button("Step instruction (space)")) {
+		cpu.stepInst = true;
+	}
+	if (ImGui::Button("Step frame (f)")) {
+		cpu.stepFrame = true;
+	}
 	ImGui::End();
 
 
@@ -694,20 +701,14 @@ void Graphics::renderGUI()
 
 void Graphics::renderFrame()
 {
-	// render main window
-	//SDL_UpdateTexture(screenTexture, NULL, screenPixels, GB_SCREEN_WIDTH * sizeof(uint32_t));
-	//SDL_RenderClear(screenRenderer);
-	//SDL_RenderCopy(screenRenderer, screenTexture, NULL, NULL);
-	//SDL_RenderPresent(screenRenderer);
-
-	int w, h;
-	int display_w, display_h;
-	SDL_GetWindowSize(mainWindow, &w, &h);
-	SDL_GL_GetDrawableSize(mainWindow, &display_w, &display_h);
+	//int w, h;
+	//int display_w, display_h;
+	//SDL_GetWindowSize(mainWindow, &w, &h);
+	//SDL_GL_GetDrawableSize(mainWindow, &display_w, &display_h);
 
 	ImGui_ImplSdlGL3_NewFrame(mainWindow);
 
-	updateTextures();
+	//updateTextures();
     
 	renderGUI();
 
@@ -742,7 +743,7 @@ void Graphics::step()
 						cpu.intFlags |= CPU::Int::LCDSTAT;
 					}
 
-					renderFrame();
+					updateTextures();
 				}
 				else {
 					mode = Mode::OAM;

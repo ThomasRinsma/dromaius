@@ -84,22 +84,35 @@ int main(int argc, char *argv[])
 	// Instruction loop
 	bool done = false;
 	while (not done) {
-		// Do a frame
-		graphics.renderDebugBackground();
-		
 		int oldTime = SDL_GetTicks();
-		int frametime = cpu.c + CPU_CLOCKS_PER_FRAME;
-		while (cpu.c < frametime) {
+
+		if (cpu.stepMode and cpu.stepInst) {
+			// Perform one CPU instruction
 			if (not cpu.executeInstruction()) {
 				done = 1;
 				break;
 			}
-			if (settings.debug) {
-				//printRegisters();
-			}
 			graphics.step();
+			
+			cpu.stepInst = false;
+		} else if (not cpu.stepMode or cpu.stepFrame) {
+			// Do a frame
+			graphics.renderDebugBackground();
+			
+			int frametime = cpu.c + CPU_CLOCKS_PER_FRAME;
+			while (cpu.c < frametime) {
+				if (not cpu.executeInstruction()) {
+					done = 1;
+					break;
+				}
+
+				graphics.step();
+			}
+
+			cpu.stepFrame = false;
 		}
 
+		graphics.renderFrame();
 		
 		// SDL event loop
 		SDL_Event event;
@@ -129,6 +142,14 @@ int main(int argc, char *argv[])
 					
 					case SDLK_r: // reset
 						resetEmulation(argv[1]);
+						break;
+
+					case SDLK_SPACE:
+						cpu.stepInst = true;
+						break;
+
+					case SDLK_f:
+						cpu.stepFrame = true;
 						break;
 					
 					default:
