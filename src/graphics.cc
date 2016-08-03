@@ -193,11 +193,11 @@ uint8_t Graphics::readByte(uint16_t addr)
 void Graphics::writeByte(uint8_t b, uint16_t addr)
 {
 	switch (addr) {
-		case 0:
+		case 0x0:
 			r.flags = b;
 			break;
 
-		case 1: // LCD status, writing is only allowed on the interrupt enable flags
+		case 0x1: // LCD status, writing is only allowed on the interrupt enable flags
 			hBlankInt = (b & 0x08 ? 1 : 0);
 			vBlankInt = (b & 0x10 ? 1 : 0);	
 			OAMInt = (b & 0x20 ? 1 : 0);	
@@ -205,52 +205,60 @@ void Graphics::writeByte(uint8_t b, uint16_t addr)
 			printf("written 0x%02X to lcd STAT\n", b);
 			break;
 		
-		case 2:
+		case 0x2:
 			r.scy = b;
 			break;
 			
-		case 3:
+		case 0x3:
 			r.scx = b;
 			break;
 
-		case 4:
+		case 0x4:
 			//printf("written to read-only 0xFF44!\n");
 			// Actually this resets LY, if I understand the specs correctly.
 			r.line = 0;
 			printf("reset line counter.\n");
 			break;
 
-		case 5:
+		case 0x5:
 			r.lineComp = b;
 			printf("written %d to lineComp\n", b);
 			break;
 			
-		case 6: // DMA from XX00-XX9F to FE00-FE9F
+		case 0x6: // DMA from XX00-XX9F to FE00-FE9F
 			for (int i = 0; i <= 0x9F; i++) {
 				memory.writeByte(memory.readByte((b << 8) + i), 0xFE00 + i);
 			}
 			break;
 			
-		case 7: // Background palette
+		case 0x7: // Background palette
 			for (int i = 0; i < 4; i++) {
 				bgpalette[i] = (b >> (i * 2)) & 3;
 			}
 			break;
 			
-		case 8: // Object palette 0
+		case 0x8: // Object palette 0
 			for (int i = 0; i < 4; i++) {
 				objpalette[0][i] = (b >> (i * 2)) & 3;
 			}
 			break;
 			
-		case 9: // Object palette 1
+		case 0x9: // Object palette 1
 			for (int i = 0; i < 4; i++) {
 				objpalette[1][i] = (b >> (i * 2)) & 3;
 			}
 			break;
+
+		case 0xA:
+			r.winy = b;
+			break;
 			
+		case 0xB:
+			r.winx = b;
+			break;
+
 		default:
-			printf("TODO! write to unimplemented 0x%02X\n", addr + 0xFF40);
+			printf("TODO! write to unimplemented VRAM var 0x%02X\n", addr + 0xFF40);
 			break;
 	}
 }
@@ -388,6 +396,60 @@ void Graphics::renderScanline()
 			}
 		}
 	}
+
+	// Window, if enabled and on this line
+	if (r.flags & Flag::WINDOW and r.line >= (r.winy - 7)) {
+		// Use tilemap 1 or tilemap 0?
+		yoff = (r.flags & Flag::WINDOWTILEMAP) ? TILEMAP_ADDR1 : TILEMAP_ADDR0;
+	
+		// divide adjusted winy by 8 (to get whole tile)
+		// then multiply by 32 (= amount of tiles in a row)
+		yoff += (((r.line - r.winy) & 255) >> 3) << 5;
+	
+		// divide winx by 8 (to get whole tile)
+		xoff = ((r.winx - 7) >> 3) & 0x1F;
+	
+		// row number inside our tile, we only need 3 bits
+		row = (r.line - r.winy) & 0x07;
+	
+		// same with column number
+		col = (r.winx - 7) & 0x07;
+	
+		// tile number from bgmap
+		tilenr = vram[yoff + xoff];
+
+		// TODO: tilemap signed stuff
+		//printf("TEST: signed (int8_t)tilenr = %d\n", (int8_t)tilenr);
+		if (not (r.flags & Flag::TILESET) and tilenr < 128) {
+			tilenr = tilenr + 256;
+		}
+	
+		for (int i = 0; i < 160; i++) {
+			bgScanline[160 - col] = tileset[tilenr][row][col];
+			color = bgpalette[tileset[tilenr][row][col]];
+		
+			/*
+			bit = 1 << (7 - col);
+			offset = tilenr * 16 + row * 2;
+			color = bgpalette[((vram[offset] & bit) ? 0x01 : 0x00)
+								| ((vram[offset+1] & bit) ? 0x02 : 0x00)];
+			*/
+			
+			setPixelColor(i, r.line, color);
+		
+			col++;
+			if (col == 8) {
+				col = 0;
+				xoff = (xoff + 1) & 0x1F;
+				tilenr = vram[yoff + xoff];
+
+				if (not (r.flags & Flag::TILESET) and tilenr < 128) {
+					tilenr = tilenr + 256;
+				}
+			}
+		}
+	}
+
 	
 	// Sprites
 	if (r.flags & Flag::SPRITES) {
@@ -595,6 +657,7 @@ void Graphics::renderGUI()
 	}
 
 	if (ImGui::CollapsingHeader("VRAM", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::Text("win: %s pos: (%02x,%02x)", (r.flags & Flag::WINDOW) ? "on " : "off", r.winx, r.winy);
 		ImGui::Text("Background tilemap + set:");
 		ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
 		ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(DEBUG_WIDTH, DEBUG_HEIGHT),

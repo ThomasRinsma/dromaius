@@ -177,7 +177,7 @@ void Audio::writeByte(uint8_t b, uint16_t addr)
 
 		// Control regs
 		case 0xFF24:
-			printf("TODO: write to master channel volumes / Vin\n");
+			//printf("TODO: write to master channel volumes / Vin\n");
 			break;
 
 		case 0xFF25:

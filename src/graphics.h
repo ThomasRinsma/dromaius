@@ -48,6 +48,8 @@ struct Graphics
 		uint8_t lineComp;
 		uint8_t scx;
 		uint8_t scy;
+		uint8_t winx;
+		uint8_t winy;
 	};
 
 	struct sprite_s {
