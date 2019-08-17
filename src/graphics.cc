@@ -185,7 +185,7 @@ uint8_t Graphics::readByte(uint16_t addr)
 			return r.lineComp;
 			
 		default:
-			//printf("TODO! read from unimplemented 0x%02X\n", addr + 0xFF40);
+			printf("TODO! read from unimplemented 0x%02X\n", addr + 0xFF40);
 			return 0x00; // TODO: Unhandled I/O, no idea what GB does here
 	}
 }
@@ -214,7 +214,6 @@ void Graphics::writeByte(uint8_t b, uint16_t addr)
 			break;
 
 		case 0x4:
-			//printf("written to read-only 0xFF44!\n");
 			// Actually this resets LY, if I understand the specs correctly.
 			r.line = 0;
 			printf("reset line counter.\n");
@@ -262,6 +261,19 @@ void Graphics::writeByte(uint8_t b, uint16_t addr)
 			break;
 	}
 }
+
+// Draw it in bright color: 0 = red, 1 = green, 2 = blue
+inline void Graphics::setPixelColorDebug(int x, int y, uint8_t color)
+{
+	if (x >= GB_SCREEN_WIDTH || y >= GB_SCREEN_HEIGHT || x < 0 || y < 0) {
+		return;
+	}
+	
+	// rgba
+	uint32_t pixel = 0xFF000000 | 0xFF << (8 * color);
+	screenPixels[y * GB_SCREEN_WIDTH + x] = pixel;
+}
+
 
 inline void Graphics::setPixelColor(int x, int y, uint8_t color)
 {
@@ -339,7 +351,7 @@ void Graphics::renderScanline()
 	uint16_t yoff, xoff, tilenr;
 	uint8_t row, col, px;
 	uint8_t color;
-	uint8_t bgScanline[161];
+	uint8_t bgScanline[160];
 	int bit, offset;
 
 	// Background
@@ -370,9 +382,9 @@ void Graphics::renderScanline()
 		}
 		
 		
-	
 		for (int i = 0; i < 160; i++) {
-			bgScanline[160 - col] = tileset[tilenr][row][col];
+			bgScanline[i] = tileset[tilenr][row][col];
+
 			color = bgpalette[tileset[tilenr][row][col]];
 		
 			/*
@@ -425,7 +437,8 @@ void Graphics::renderScanline()
 		}
 	
 		for (int i = 0; i < 160; i++) {
-			bgScanline[160 - col] = tileset[tilenr][row][col];
+			bgScanline[i] = tileset[tilenr][row][col];
+
 			color = bgpalette[tileset[tilenr][row][col]];
 		
 			/*
@@ -495,12 +508,14 @@ void Graphics::renderScanline()
 						color = objpalette[(spritedata[i].flags & SpriteFlag::PALETTE) ? 1 : 0]
 								[tileset[spriteTile][spriteRow][col]];
 
-						// only draw pixel when color is not 0 and (sprite has priority or background pixel is 0)
-						if (tileset[spriteTile][spriteRow][col] != 0 and
-							(not (spritedata[i].flags & SpriteFlag::PRIORITY)
-								or bgpalette[bgScanline[px]] == 0)) {
-													  
-							setPixelColor(px, r.line, color);
+						// only draw sprite pixel when color is not 0
+						if (tileset[spriteTile][spriteRow][col] != 0) {
+
+							// Always draw if sprite priority bit is zero
+							// or if bg px is zero
+							if (not (spritedata[i].flags & SpriteFlag::PRIORITY) or bgpalette[bgScanline[px]] == 0) {
+								setPixelColor(px, r.line, color);
+							}
 						}
 					}
 				}

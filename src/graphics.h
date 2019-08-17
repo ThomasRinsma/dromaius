@@ -98,6 +98,7 @@ struct Graphics
 	void writeByte(uint8_t b, uint16_t addr);
 
 	void setPixelColor(int x, int y, uint8_t color);
+	void setPixelColorDebug(int x, int y, uint8_t color);
 	void setDebugPixelColor(int x, int y, uint8_t color);
 	void printDebug();
 	void renderDebugBackground();
