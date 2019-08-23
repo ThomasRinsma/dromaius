@@ -37,7 +37,7 @@ void Audio::initialize()
 	}
 
 	// Unpause audio device
-    SDL_PauseAudioDevice(dev, 0);
+    //SDL_PauseAudioDevice(dev, 0);
 
     // Reset sample counter
     sample_ctr = 0;

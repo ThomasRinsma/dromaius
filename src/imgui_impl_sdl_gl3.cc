@@ -320,7 +320,7 @@ bool    ImGui_ImplSdlGL3_Init(SDL_Window* window)
     io.SetClipboardTextFn = ImGui_ImplSdlGL3_SetClipboardText;
     io.GetClipboardTextFn = ImGui_ImplSdlGL3_GetClipboardText;
 
-    io.IniFilename = nullptr;
+    //io.IniFilename = nullptr;
 
 #ifdef _WIN32
     SDL_SysWMinfo wmInfo;

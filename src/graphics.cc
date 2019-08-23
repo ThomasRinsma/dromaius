@@ -32,7 +32,7 @@ void Graphics::initialize()
 	r.flags = 0;
 
 	screenPixels = new uint32_t[GB_SCREEN_WIDTH * GB_SCREEN_HEIGHT];
-	debugPixels = new uint32_t[DEBUG_WIDTH * DEBUG_HEIGHT];
+	debugTilesetPixels = new uint32_t[DEBUG_WIDTH * DEBUG_HEIGHT];
 
 	screenScale = 2;
 
@@ -61,7 +61,7 @@ void Graphics::initialize()
 void Graphics::freeBuffers()
 {
 	delete[] screenPixels;
-	delete[] debugPixels;
+	delete[] debugTilesetPixels;
 
 	delete[] vram;
 	delete[] oam;
@@ -90,12 +90,24 @@ void Graphics::initDisplay()
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 	SDL_DisplayMode current;
 	SDL_GetCurrentDisplayMode(0, &current);
+
+	// Set intiial window size
+	int initialWidth, initialHeight;
+	SDL_DisplayMode dm;
+	if (SDL_GetDesktopDisplayMode(0, &dm) != 0)
+	{
+	     SDL_Log("SDL_GetDesktopDisplayMode failed: %s", SDL_GetError());
+	     initialWidth = 1024;
+	     initialHeight = 768;
+	}
+	initialWidth = dm.w / 2;
+	initialHeight = dm.h / 2;
 	
 	mainWindow = SDL_CreateWindow(memory.romheader->gamename,
 	                      SDL_WINDOWPOS_CENTERED,
 	                      SDL_WINDOWPOS_CENTERED,
-	                      WINDOW_WIDTH, WINDOW_HEIGHT,
-	                      SDL_WINDOW_OPENGL);
+	                      initialWidth, initialHeight,
+	                      SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 
 	if (!mainWindow) {
 		printf("Failed to create a window.\n");
@@ -149,7 +161,7 @@ void Graphics::updateTextures()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, DEBUG_WIDTH, DEBUG_HEIGHT,
-		0, GL_RGBA, GL_UNSIGNED_BYTE, debugPixels);
+		0, GL_RGBA, GL_UNSIGNED_BYTE, debugTilesetPixels);
 
 	// Restore state
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -298,7 +310,7 @@ inline void Graphics::setDebugPixelColor(int x, int y, uint8_t color)
 	
 	// rgba
 	uint32_t pixel = 0xFF000000 | palettecols[color] << 16 | palettecols[color] << 8 | palettecols[color];
-	debugPixels[y * DEBUG_WIDTH + x] = pixel;
+	debugTilesetPixels[y * DEBUG_WIDTH + x] = pixel;
 }
 
 void Graphics::printDebug()
@@ -326,7 +338,7 @@ void Graphics::printDebug()
 	*/
 }
 
-void Graphics::renderDebugBackground()
+void Graphics::renderDebugTileset()
 {
 	int color;
 
@@ -567,45 +579,36 @@ void Graphics::buildSpriteData(uint8_t b, uint16_t addr)
 
 void Graphics::renderGUI()
 {
-	// Window positions and sizes
-	auto vecSettingsPos = ImVec2(0,0);
-	auto vecSettingsSize = ImVec2(200, WINDOW_HEIGHT);
-
-	auto vecInfoPos = ImVec2(vecSettingsPos.x + vecSettingsSize.x, 0);
-	auto vecInfoSize = ImVec2(GB_SCREEN_WIDTH * screenScale, 60);
-
-	auto vecScreenPos = ImVec2(vecSettingsPos.x + vecSettingsSize.x, vecInfoSize.y);
-	auto vecScreenSize = ImVec2(GB_SCREEN_WIDTH * screenScale, WINDOW_HEIGHT);
-
-	auto vecDebugPos = ImVec2(vecScreenPos.x + vecScreenSize.x, 0);
-	auto vecDebugSize = ImVec2(200, WINDOW_HEIGHT);
-
 	// Set global style
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.WindowRounding = 0.0f;
 
+	// Scale main window up to SDL window size
+	int windowWidth, windowHeight;
+	SDL_GetWindowSize(mainWindow, &windowWidth, &windowHeight);
+	ImGui::SetNextWindowPos(ImVec2(.0f, .0f), ImGuiSetCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiSetCond_Always);
+	ImGui::Begin("Main window", nullptr, 
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoScrollWithMouse
+	);
 
 	// Info window
-	ImGui::SetNextWindowPos(vecInfoPos);
-	ImGui::SetNextWindowSize(vecInfoSize);
-	ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoSavedSettings
-		| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
-		| ImGuiWindowFlags_NoResize);
+	ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoResize);
 	ImGui::Text("%s, MBC: %s, Country: %s\nRom size: %d, Ram size: %d",
 		memory.romheader->gamename,
 		memory.mbcAsString().c_str(),
 		memory.romheader->country ? "Other" : "Japan",
 		memory.romheader->romsize,
 		memory.romheader->ramsize);
-	ImGui::End();
+	ImGui::End(); // info window
 
 
 	// Settings window
-	ImGui::SetNextWindowPos(vecSettingsPos);
-	ImGui::SetNextWindowSize(vecSettingsSize);
-	ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_NoSavedSettings
-		| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
-		| ImGuiWindowFlags_NoResize);
+	ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_NoResize);
 	ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 	if (ImGui::Button("Reset ROM")) {
 		// hacky, sorry
@@ -630,11 +633,7 @@ void Graphics::renderGUI()
 
 
 	// Debug window
-	ImGui::SetNextWindowPos(vecDebugPos);
-	ImGui::SetNextWindowSize(vecDebugSize);
-	ImGui::Begin("Debug stuffs", nullptr, ImGuiWindowFlags_NoSavedSettings
-		| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
-		| ImGuiWindowFlags_NoResize);
+	ImGui::Begin("Debug stuffs", nullptr, ImGuiWindowFlags_NoResize);
 
 	if (ImGui::CollapsingHeader("CPU Registers", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::Text(
@@ -706,19 +705,15 @@ void Graphics::renderGUI()
 	ImGui::End();
 
 	// GB Screen window (borderless, no padding)
-	ImGui::SetNextWindowPos(vecScreenPos);
-	ImGui::SetNextWindowSize(vecScreenSize);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin("GB Screen", nullptr, ImGuiWindowFlags_NoTitleBar
-		| ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar
-		| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse
-		);
+	ImGui::Begin("GB Screen", nullptr, 0);
 	ImGui::Image((void*)((intptr_t)screenTexture), ImVec2(GB_SCREEN_WIDTH * screenScale, GB_SCREEN_HEIGHT * screenScale),
 		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
 	ImGui::End();
 	ImGui::PopStyleVar();
 
 
+	ImGui::End(); // main window
 }
 
 void Graphics::renderFrame()
@@ -735,7 +730,7 @@ void Graphics::renderFrame()
 	renderGUI();
 
 	glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-	ImVec4 clear_color = ImColor(255, 255, 255, 128);
+	ImVec4 clear_color = ImColor(128, 128, 128, 128);
 	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui::Render();

@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 			cpu.stepInst = false;
 		} else if (not cpu.stepMode or cpu.stepFrame) {
 			// Do a frame
-			graphics.renderDebugBackground();
+			graphics.renderDebugTileset();
 			
 			int frametime = cpu.c + CPU_CLOCKS_PER_FRAME;
 			while (cpu.c < frametime) {

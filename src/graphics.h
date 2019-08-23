@@ -6,9 +6,6 @@
 #define GB_SCREEN_WIDTH  160
 #define GB_SCREEN_HEIGHT 144
 
-#define WINDOW_WIDTH  (400 + (160 * 2))
-#define WINDOW_HEIGHT (500)
-
 #define DEBUG_WIDTH   (8*16)
 #define DEBUG_HEIGHT  (8*24)
 
@@ -81,7 +78,7 @@ struct Graphics
 	uint32_t debugTexture;
 
 	uint32_t *screenPixels;
-	uint32_t *debugPixels;
+	uint32_t *debugTilesetPixels;
 
 	int screenScale;
 
@@ -101,7 +98,7 @@ struct Graphics
 	void setPixelColorDebug(int x, int y, uint8_t color);
 	void setDebugPixelColor(int x, int y, uint8_t color);
 	void printDebug();
-	void renderDebugBackground();
+	void renderDebugTileset();
 	void renderScanline();
 	void updateTile(uint8_t b, uint16_t addr);
 	void buildSpriteData(uint8_t b, uint16_t addr);
