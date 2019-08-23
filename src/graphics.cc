@@ -701,14 +701,30 @@ void Graphics::renderGUI()
 			ImGui::EndTooltip();
 		}
 	}
-
-	ImGui::End();
+	ImGui::End(); // debug window
 
 	// GB Screen window (borderless, no padding)
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	ImGui::Begin("GB Screen", nullptr, 0);
 	ImGui::Image((void*)((intptr_t)screenTexture), ImVec2(GB_SCREEN_WIDTH * screenScale, GB_SCREEN_HEIGHT * screenScale),
 		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
+	
+	// handle hovering over sprites
+	if (ImGui::IsItemHovered()) {
+		ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
+		int mousex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x);
+		int mousey = (int)(ImGui::GetMousePos().y - tex_screen_pos.y);
+		// check if we're on a sprite
+		// for (int i = 0; i < 40; i++) {
+		// 	if (spritedata[i].x > ) {
+				// ImGui::BeginTooltip();
+				// ImGui::Text("Sprite: %02X @ %04X", (tileaddr & 0x0FF0) >> 4, tileaddr);
+				// ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(80, 80),
+				// ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
+				// ImGui::EndTooltip();
+		// 	}
+		// }
+	}
 	ImGui::End();
 	ImGui::PopStyleVar();
 

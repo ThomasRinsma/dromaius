@@ -320,6 +320,7 @@ bool    ImGui_ImplSdlGL3_Init(SDL_Window* window)
     io.SetClipboardTextFn = ImGui_ImplSdlGL3_SetClipboardText;
     io.GetClipboardTextFn = ImGui_ImplSdlGL3_GetClipboardText;
 
+    // uncomment to disable ini file
     //io.IniFilename = nullptr;
 
 #ifdef _WIN32
