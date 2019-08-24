@@ -9,6 +9,8 @@
 #include "input.h"
 #include "memory.h"
 
+#define GUI_INDENT_WIDTH 16.0f
+
 extern CPU cpu;
 extern Audio audio;
 extern Input input;
@@ -657,7 +659,7 @@ void Graphics::renderGUI()
 
 	// CPU Debug window
 	ImGui::Begin("CPU", nullptr, ImGuiWindowFlags_NoResize);
-		ImGui::Text("cycles: %d", cpu.c);
+		ImGui::Text("cycle: %d", cpu.c);
 		if (ImGui::CollapsingHeader("Registers", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::Text(
 					"a: %02X       hl: %04X\n"
@@ -694,44 +696,60 @@ void Graphics::renderGUI()
 
 	// Graphics window
 	ImGui::Begin("Graphics", nullptr);
-		if (ImGui::CollapsingHeader("Active sprites", 0)) {
+		ImGui::Text("win: %s pos: (%02x,%02x)", (r.flags & Flag::WINDOW) ? "on " : "off", r.winx, r.winy);
+
+		if (ImGui::CollapsingHeader("Sprites", true)) {
 			int ctr = 0;
+			ImGui::Indent(GUI_INDENT_WIDTH);
+			int showDetails = ImGui::CollapsingHeader("sprites on screen", false);
 			for (int i = 0; i < 40; i++) {
 				if ((spritedata[i].x > -8 and spritedata[i].x < 168)
-					or (spritedata[i].y > -16 and spritedata[i].y < 160)) {
+					and (spritedata[i].y > -16 and spritedata[i].y < 160)) {
 					++ctr;
-					ImGui::Text("%02x x:%02x y:%02x t:%02x f:%02x", i,
-						spritedata[i].x, spritedata[i].y, spritedata[i].tile, spritedata[i].flags);
+					if (showDetails) {
+						ImGui::Text("%2d (0x%2X) (%3d,%3d) f:%02X: ", i,
+							spritedata[i].x, spritedata[i].y, spritedata[i].tile, spritedata[i].flags);
+
+						ImGui::SameLine();
+
+						int tilex = spritedata[i].tile % 16;
+						int tiley = spritedata[i].tile >> 4;
+
+						ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(16,16), ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
+					}
 				}
 			}
+			ImGui::Unindent(GUI_INDENT_WIDTH);
 
 			if (ctr == 0) {
 				ImGui::Text("(none)");
+			} else {
+				ImGui::Text("%d/40 sprites on screen", ctr);
 			}
 		}
 
-		if (ImGui::CollapsingHeader("VRAM", ImGuiTreeNodeFlags_DefaultOpen)) {
-			ImGui::Text("win: %s pos: (%02x,%02x)", (r.flags & Flag::WINDOW) ? "on " : "off", r.winx, r.winy);
-			ImGui::Text("Background tilemap + set:");
+		if (ImGui::CollapsingHeader("Background tilemap", ImGuiTreeNodeFlags_DefaultOpen)) {
+			int tilemapScale = 2;
+
 			ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
-			ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(DEBUG_WIDTH, DEBUG_HEIGHT),
+			ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(DEBUG_WIDTH * tilemapScale, DEBUG_HEIGHT * tilemapScale),
 			ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
 			if (ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
-				int tilex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x) / 8;
-				int tiley = (int)(ImGui::GetMousePos().y - tex_screen_pos.y) / 8;
+				int tilex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x) / (8 * tilemapScale);
+				int tiley = (int)(ImGui::GetMousePos().y - tex_screen_pos.y) / (8 * tilemapScale);
 				int tileaddr = 0x8000 + 0x10*(tiley*16+tilex);
 				ImGui::Text("Tile: %02X @ %04X", (tileaddr & 0x0FF0) >> 4, tileaddr);
-				ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(80, 80),
+				ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(128,128),
 				ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
 				ImGui::EndTooltip();
 			}
 		}
 	ImGui::End(); // debug window
 
-	// GB Screen window (borderless, no padding)
+	// GB Screen window
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin("GB Screen", nullptr, 0);
+	ImGui::Begin("GB Screen", nullptr, ImGuiWindowFlags_NoResize);
 	ImGui::Image((void*)((intptr_t)screenTexture), ImVec2(GB_SCREEN_WIDTH * screenScale, GB_SCREEN_HEIGHT * screenScale),
 		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
 	
