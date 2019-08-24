@@ -89,19 +89,19 @@ void Graphics::initDisplay()
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 #if __APPLE__
-    // GL 3.2 Core + GLSL 150
-    const char* glsl_version = "#version 150";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+	// GL 3.2 Core + GLSL 150
+	const char* glsl_version = "#version 150";
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 #else
-    // GL 3.0 + GLSL 130
-    const char* glsl_version = "#version 130";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	// GL 3.0 + GLSL 130
+	const char* glsl_version = "#version 130";
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #endif
 
 	SDL_DisplayMode current;
@@ -112,18 +112,18 @@ void Graphics::initDisplay()
 	SDL_DisplayMode dm;
 	if (SDL_GetDesktopDisplayMode(0, &dm) != 0)
 	{
-	     SDL_Log("SDL_GetDesktopDisplayMode failed: %s", SDL_GetError());
-	     initialWidth = 1024;
-	     initialHeight = 768;
+		 SDL_Log("SDL_GetDesktopDisplayMode failed: %s", SDL_GetError());
+		 initialWidth = 1024;
+		 initialHeight = 768;
 	}
 	initialWidth = dm.w / 2;
 	initialHeight = dm.h / 2;
 	
 	mainWindow = SDL_CreateWindow(memory.romheader->gamename,
-	                      SDL_WINDOWPOS_CENTERED,
-	                      SDL_WINDOWPOS_CENTERED,
-	                      initialWidth, initialHeight,
-	                      SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+						  SDL_WINDOWPOS_CENTERED,
+						  SDL_WINDOWPOS_CENTERED,
+						  initialWidth, initialHeight,
+						  SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 
 	if (!mainWindow) {
 		printf("Failed to create a window.\n");
@@ -131,30 +131,30 @@ void Graphics::initDisplay()
 	}
 
 
-    SDL_GLContext glcontext = SDL_GL_CreateContext(mainWindow);
-    SDL_GL_MakeCurrent(mainWindow, glcontext);
+	SDL_GLContext glcontext = SDL_GL_CreateContext(mainWindow);
+	SDL_GL_MakeCurrent(mainWindow, glcontext);
 
-    // Init GL functions
-    gl3wInit();
+	// Init GL functions
+	gl3wInit();
 
-    // Setup ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    ImGui::StyleColorsDark();
+	// Setup ImGui
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	ImGui::StyleColorsDark();
 
-    // Setup ImGui Platform/Renderer bindings
-    ImGui_ImplSDL2_InitForOpenGL(mainWindow, glcontext);
-    ImGui_ImplOpenGL3_Init(glsl_version);
+	// Setup ImGui Platform/Renderer bindings
+	ImGui_ImplSDL2_InitForOpenGL(mainWindow, glcontext);
+	ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Create texture for game graphics
-    glGenTextures(1, &screenTexture);
+	// Create texture for game graphics
+	glGenTextures(1, &screenTexture);
 
-    // Create texture for video mem debug
-    glGenTextures(1, &debugTexture);
+	// Create texture for video mem debug
+	glGenTextures(1, &debugTexture);
 
-    // Disable vsync, we do our own syncing
-    SDL_GL_SetSwapInterval(0);
+	// Disable vsync, we do our own syncing
+	SDL_GL_SetSwapInterval(0);
 
 
 //	screenRenderer = SDL_CreateRenderer(mainWindow, -1, 0);
@@ -618,8 +618,35 @@ void Graphics::renderGUI()
 		ImGuiWindowFlags_NoMove |
 		ImGuiWindowFlags_NoScrollbar |
 		ImGuiWindowFlags_NoScrollWithMouse |
-		ImGuiWindowFlags_NoMouseInputs
+		// ImGuiWindowFlags_NoMouseInputs |
+		ImGuiWindowFlags_NoBringToFrontOnFocus |
+		ImGuiWindowFlags_NoFocusOnAppearing |
+		ImGuiWindowFlags_NoNavFocus |
+		ImGuiWindowFlags_MenuBar
 	);
+
+	// Menubar
+	if (ImGui::BeginMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			ImGui::MenuItem("Open...");
+			ImGui::Separator();
+			if (ImGui::MenuItem("Exit")) {
+				printf("TODO exit\n");
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Debug windows"))
+		{
+			ImGui::MenuItem("CPU info", nullptr, &showDebugCPU);
+			ImGui::MenuItem("Graphics info", nullptr, &showDebugGraphics);
+			ImGui::MenuItem("Audio info", nullptr, &showDebugAudio);
+			
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenuBar();
+	}
 
 	// Info window
 	ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoResize);
@@ -658,7 +685,8 @@ void Graphics::renderGUI()
 
 
 	// CPU Debug window
-	ImGui::Begin("CPU", nullptr, ImGuiWindowFlags_NoResize);
+	if (showDebugCPU) {
+		ImGui::Begin("CPU", nullptr, ImGuiWindowFlags_NoResize);
 		ImGui::Text("cycle: %d", cpu.c);
 		if (ImGui::CollapsingHeader("Registers", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::Text(
@@ -682,28 +710,27 @@ void Graphics::renderGUI()
 			cpu.disassemble(cpu.r.pc, 10, buf);
 			ImGui::Text("%s", buf);
 		}
-	ImGui::End();
+		ImGui::End();
+	}
 
 
 	// Audio window
-	ImGui::Begin("Audio", nullptr);
+	if (showDebugAudio) {
+		ImGui::Begin("Audio", nullptr);
 		ImGui::Checkbox("Enabled (override)", &audio.isEnabled);
 		ImGui::Text("1:%s, 2:%s 3:%s, 4:%s", 
 			audio.ch1.isEnabled ? "on " : "off", audio.ch2.isEnabled ? "on " : "off",
 			audio.ch3.isEnabled ? "on " : "off", audio.ch4.isEnabled ? "on " : "off");
 
 		// Show waveform of last N samples
-		// AUDIO_SAMPLE_HISTORY_SIZE
-		//float (*)(void *, int)
 		ImGui::PlotLines("waveform", [](void*data, int idx) { return (float)audio.sampleHistory[idx]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
-
-	ImGui::End();
-
-	//ImGui::ShowDemoWindow();
+		ImGui::End();
+	}
 
 
 	// Graphics window
-	ImGui::Begin("Graphics", nullptr);
+	if (showDebugGraphics) {
+		ImGui::Begin("Graphics", nullptr);
 		ImGui::Text("win: %s pos: (%02x,%02x)", (r.flags & Flag::WINDOW) ? "on " : "off", r.winx, r.winy);
 
 		if (ImGui::CollapsingHeader("Sprites", true)) {
@@ -753,7 +780,8 @@ void Graphics::renderGUI()
 				ImGui::EndTooltip();
 			}
 		}
-	ImGui::End(); // debug window
+		ImGui::End(); // debug window
+	}
 
 	// GB Screen window
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -792,11 +820,11 @@ void Graphics::renderFrame()
 	//SDL_GL_GetDrawableSize(mainWindow, &display_w, &display_h);
 
 	ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame(mainWindow);
-    ImGui::NewFrame();
+	ImGui_ImplSDL2_NewFrame(mainWindow);
+	ImGui::NewFrame();
 
 	//updateTextures();
-    
+	
 	renderGUI();
 
 	ImGui::Render();

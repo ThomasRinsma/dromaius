@@ -82,6 +82,13 @@ struct Graphics
 
 	int screenScale;
 
+
+	// debug stuff, TODO move to separate class
+	bool showDebugCPU = true;
+	bool showDebugGraphics = true;
+	bool showDebugAudio = true;
+
+
 	bool initialized = false;
 
 	~Graphics();
