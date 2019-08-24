@@ -45,14 +45,35 @@ typedef struct settings_s {
 } settings_t;
 
 
-IMGUI_API bool        ImGui_ImplSdlGL3_Init(SDL_Window* window);
-IMGUI_API void        ImGui_ImplSdlGL3_Shutdown();
-IMGUI_API void        ImGui_ImplSdlGL3_NewFrame(SDL_Window* window);
-IMGUI_API bool        ImGui_ImplSdlGL3_ProcessEvent(SDL_Event* event);
+struct SDL_Window;
+typedef union SDL_Event SDL_Event;
 
-// Use if you want to reset your rendering device without losing ImGui state.
-IMGUI_API void        ImGui_ImplSdlGL3_InvalidateDeviceObjects();
-IMGUI_API bool        ImGui_ImplSdlGL3_CreateDeviceObjects();
+IMGUI_IMPL_API bool ImGui_ImplSDL2_InitForOpenGL(SDL_Window* window, void* sdl_gl_context);
+IMGUI_IMPL_API bool ImGui_ImplSDL2_InitForVulkan(SDL_Window* window);
+IMGUI_IMPL_API bool ImGui_ImplSDL2_InitForD3D(SDL_Window* window);
+IMGUI_IMPL_API void ImGui_ImplSDL2_Shutdown();
+IMGUI_IMPL_API void ImGui_ImplSDL2_NewFrame(SDL_Window* window);
+IMGUI_IMPL_API bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event);
+
+// Set default OpenGL3 loader to be gl3w
+#if !defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)     \
+ && !defined(IMGUI_IMPL_OPENGL_LOADER_GLEW)     \
+ && !defined(IMGUI_IMPL_OPENGL_LOADER_GLAD)     \
+ && !defined(IMGUI_IMPL_OPENGL_LOADER_CUSTOM)
+#define IMGUI_IMPL_OPENGL_LOADER_GL3W
+#endif
+
+IMGUI_IMPL_API bool ImGui_ImplOpenGL3_Init(const char* glsl_version = NULL);
+IMGUI_IMPL_API void ImGui_ImplOpenGL3_Shutdown();
+IMGUI_IMPL_API void ImGui_ImplOpenGL3_NewFrame();
+IMGUI_IMPL_API void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data);
+
+// Called by Init/NewFrame/Shutdown
+IMGUI_IMPL_API bool ImGui_ImplOpenGL3_CreateFontsTexture();
+IMGUI_IMPL_API void ImGui_ImplOpenGL3_DestroyFontsTexture();
+IMGUI_IMPL_API bool ImGui_ImplOpenGL3_CreateDeviceObjects();
+IMGUI_IMPL_API void ImGui_ImplOpenGL3_DestroyDeviceObjects();
+
 
 
 #endif

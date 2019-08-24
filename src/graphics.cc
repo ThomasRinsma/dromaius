@@ -86,8 +86,22 @@ void Graphics::initDisplay()
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+#if __APPLE__
+    // GL 3.2 Core + GLSL 150
+    const char* glsl_version = "#version 150";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+#else
+    // GL 3.0 + GLSL 130
+    const char* glsl_version = "#version 130";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
+
 	SDL_DisplayMode current;
 	SDL_GetCurrentDisplayMode(0, &current);
 
@@ -107,7 +121,7 @@ void Graphics::initDisplay()
 	                      SDL_WINDOWPOS_CENTERED,
 	                      SDL_WINDOWPOS_CENTERED,
 	                      initialWidth, initialHeight,
-	                      SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+	                      SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 
 	if (!mainWindow) {
 		printf("Failed to create a window.\n");
@@ -116,13 +130,20 @@ void Graphics::initDisplay()
 
 
     SDL_GLContext glcontext = SDL_GL_CreateContext(mainWindow);
-    printf("context = %u\n", glcontext);
+    SDL_GL_MakeCurrent(mainWindow, glcontext);
 
     // Init GL functions
     gl3wInit();
 
-    // Setup ImGui binding
-    ImGui_ImplSdlGL3_Init(mainWindow);
+    // Setup ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark();
+
+    // Setup ImGui Platform/Renderer bindings
+    ImGui_ImplSDL2_InitForOpenGL(mainWindow, glcontext);
+    ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Create texture for game graphics
     glGenTextures(1, &screenTexture);
@@ -586,121 +607,123 @@ void Graphics::renderGUI()
 	// Scale main window up to SDL window size
 	int windowWidth, windowHeight;
 	SDL_GetWindowSize(mainWindow, &windowWidth, &windowHeight);
-	ImGui::SetNextWindowPos(ImVec2(.0f, .0f), ImGuiSetCond_Always);
-	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiSetCond_Always);
+	ImGui::SetNextWindowPos(ImVec2(.0f, .0f), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_Always);
+	ImGui::SetNextWindowBgAlpha(0.0f);
 	ImGui::Begin("Main window", nullptr, 
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_NoMove |
 		ImGuiWindowFlags_NoScrollbar |
-		ImGuiWindowFlags_NoScrollWithMouse
+		ImGuiWindowFlags_NoScrollWithMouse |
+		ImGuiWindowFlags_NoMouseInputs
 	);
 
 	// Info window
 	ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoResize);
-	ImGui::Text("%s, MBC: %s, Country: %s\nRom size: %d, Ram size: %d",
-		memory.romheader->gamename,
-		memory.mbcAsString().c_str(),
-		memory.romheader->country ? "Other" : "Japan",
-		memory.romheader->romsize,
-		memory.romheader->ramsize);
+		ImGui::Text("ROM Name: %s\nMBC: %s\nCountry: %s\nROM size: %d\nRAM size: %d",
+			memory.romheader->gamename,
+			memory.mbcAsString().c_str(),
+			memory.romheader->country ? "Other" : "Japan",
+			memory.romheader->romsize,
+			memory.romheader->ramsize);
 	ImGui::End(); // info window
 
 
 	// Settings window
 	ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_NoResize);
-	ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-	if (ImGui::Button("Reset ROM")) {
-		// hacky, sorry
-		SDL_Event resetEvent;
-		resetEvent.type = SDL_KEYDOWN;
-		resetEvent.key.keysym.sym = SDLK_r;
-		SDL_PushEvent(&resetEvent);
-	}
-	if (ImGui::Button("Dump memory to \nfile (memdump.bin)")) {
-		memory.dumpToFile("memdump.bin");
-	}
-	//ImGui::SliderInt("Scale", &screenScale, 1, 8);
-	ImGui::Checkbox("Fast forward", &cpu.fastForward);
-	ImGui::Checkbox("Step mode", &cpu.stepMode);
-	if (ImGui::Button("Step instruction (space)")) {
-		cpu.stepInst = true;
-	}
-	if (ImGui::Button("Step frame (f)")) {
-		cpu.stepFrame = true;
-	}
+		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+		if (ImGui::Button("Reset ROM")) {
+			// hacky, sorry
+			SDL_Event resetEvent;
+			resetEvent.type = SDL_KEYDOWN;
+			resetEvent.key.keysym.sym = SDLK_r;
+			SDL_PushEvent(&resetEvent);
+		}
+		if (ImGui::Button("Dump memory to \nfile (memdump.bin)")) {
+			memory.dumpToFile("memdump.bin");
+		}
+		//ImGui::SliderInt("Scale", &screenScale, 1, 8);
+		ImGui::Checkbox("Fast forward", &cpu.fastForward);
+		ImGui::Checkbox("Step mode", &cpu.stepMode);
+		if (ImGui::Button("Step instruction (space)")) {
+			cpu.stepInst = true;
+		}
+		if (ImGui::Button("Step frame (f)")) {
+			cpu.stepFrame = true;
+		}
 	ImGui::End();
 
 
-	// Debug window
-	ImGui::Begin("Debug stuffs", nullptr, ImGuiWindowFlags_NoResize);
-
-	if (ImGui::CollapsingHeader("CPU Registers", ImGuiTreeNodeFlags_DefaultOpen)) {
-		ImGui::Text(
-				"a: %02X       hl: %04X\n"
-				"b: %02X\n"
-				"c: %02X       pc: %04X\n"
-				"d: %02X       sp: %04X\n"
-				"e: %02X   \n"
-				"f: %c,%c,%c,%c",
-			cpu.r.a, (cpu.r.h << 8) | cpu.r.l, cpu.r.b, cpu.r.c,
-			cpu.r.pc, cpu.r.d, cpu.r.sp, cpu.r.e,
-			cpu.getFlag(CPU::Flag::ZERO) ? 'Z' : '_',
-			cpu.getFlag(CPU::Flag::SUBTRACT) ? 'N' : '_',
-			cpu.getFlag(CPU::Flag::HCARRY) ? 'H' : '_',
-			cpu.getFlag(CPU::Flag::CARRY) ? 'C' : '_'
-		);
-
+	// CPU Debug window
+	ImGui::Begin("CPU", nullptr, ImGuiWindowFlags_NoResize);
 		ImGui::Text("cycles: %d", cpu.c);
+		if (ImGui::CollapsingHeader("Registers", ImGuiTreeNodeFlags_DefaultOpen)) {
+			ImGui::Text(
+					"a: %02X       hl: %04X\n"
+					"b: %02X\n"
+					"c: %02X       pc: %04X\n"
+					"d: %02X       sp: %04X\n"
+					"e: %02X   \n"
+					"f: %c,%c,%c,%c",
+				cpu.r.a, (cpu.r.h << 8) | cpu.r.l, cpu.r.b, cpu.r.c,
+				cpu.r.pc, cpu.r.d, cpu.r.sp, cpu.r.e,
+				cpu.getFlag(CPU::Flag::ZERO) ? 'Z' : '_',
+				cpu.getFlag(CPU::Flag::SUBTRACT) ? 'N' : '_',
+				cpu.getFlag(CPU::Flag::HCARRY) ? 'H' : '_',
+				cpu.getFlag(CPU::Flag::CARRY) ? 'C' : '_'
+			);
+		}
 
-	}
+		if (ImGui::CollapsingHeader("Disassembly @ PC", ImGuiTreeNodeFlags_DefaultOpen)) {
+			char buf[25 * 10];
+			cpu.disassemble(cpu.r.pc, 10, buf);
+			ImGui::Text("%s", buf);
+		}
 
-	if (ImGui::CollapsingHeader("Disassembly", ImGuiTreeNodeFlags_DefaultOpen)) {
-		char buf[25 * 10];
-		cpu.disassemble(cpu.r.pc, 10, buf);
-		ImGui::Text("%s", buf);
-	}
-
-	if (ImGui::CollapsingHeader("Audio", ImGuiTreeNodeFlags_DefaultOpen)) {
+	// Audio window
+	ImGui::Begin("Audio", nullptr, ImGuiWindowFlags_NoResize);
 		ImGui::Checkbox("Enabled (override)", &audio.isEnabled);
 		ImGui::Text("1:%s, 2:%s 3:%s, 4:%s", 
 			audio.ch1.isEnabled ? "on " : "off", audio.ch2.isEnabled ? "on " : "off",
 			audio.ch3.isEnabled ? "on " : "off", audio.ch4.isEnabled ? "on " : "off");
-	}
+	ImGui::End();
 
-	if (ImGui::CollapsingHeader("Active sprites", 0)) {
-		int ctr = 0;
-		for (int i = 0; i < 40; i++) {
-			if ((spritedata[i].x > -8 and spritedata[i].x < 168)
-				or (spritedata[i].y > -16 and spritedata[i].y < 160)) {
-				++ctr;
-				ImGui::Text("%02x x:%02x y:%02x t:%02x f:%02x", i,
-					spritedata[i].x, spritedata[i].y, spritedata[i].tile, spritedata[i].flags);
+
+	// Graphics window
+		if (ImGui::CollapsingHeader("Active sprites", 0)) {
+			int ctr = 0;
+			for (int i = 0; i < 40; i++) {
+				if ((spritedata[i].x > -8 and spritedata[i].x < 168)
+					or (spritedata[i].y > -16 and spritedata[i].y < 160)) {
+					++ctr;
+					ImGui::Text("%02x x:%02x y:%02x t:%02x f:%02x", i,
+						spritedata[i].x, spritedata[i].y, spritedata[i].tile, spritedata[i].flags);
+				}
+			}
+
+			if (ctr == 0) {
+				ImGui::Text("(none)");
 			}
 		}
 
-		if (ctr == 0) {
-			ImGui::Text("(none)");
+		if (ImGui::CollapsingHeader("VRAM", ImGuiTreeNodeFlags_DefaultOpen)) {
+			ImGui::Text("win: %s pos: (%02x,%02x)", (r.flags & Flag::WINDOW) ? "on " : "off", r.winx, r.winy);
+			ImGui::Text("Background tilemap + set:");
+			ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
+			ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(DEBUG_WIDTH, DEBUG_HEIGHT),
+			ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
+			if (ImGui::IsItemHovered()) {
+				ImGui::BeginTooltip();
+				int tilex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x) / 8;
+				int tiley = (int)(ImGui::GetMousePos().y - tex_screen_pos.y) / 8;
+				int tileaddr = 0x8000 + 0x10*(tiley*16+tilex);
+				ImGui::Text("Tile: %02X @ %04X", (tileaddr & 0x0FF0) >> 4, tileaddr);
+				ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(80, 80),
+				ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
+				ImGui::EndTooltip();
+			}
 		}
-	}
-
-	if (ImGui::CollapsingHeader("VRAM", ImGuiTreeNodeFlags_DefaultOpen)) {
-		ImGui::Text("win: %s pos: (%02x,%02x)", (r.flags & Flag::WINDOW) ? "on " : "off", r.winx, r.winy);
-		ImGui::Text("Background tilemap + set:");
-		ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
-		ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(DEBUG_WIDTH, DEBUG_HEIGHT),
-		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
-		if (ImGui::IsItemHovered()) {
-			ImGui::BeginTooltip();
-			int tilex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x) / 8;
-			int tiley = (int)(ImGui::GetMousePos().y - tex_screen_pos.y) / 8;
-			int tileaddr = 0x8000 + 0x10*(tiley*16+tilex);
-			ImGui::Text("Tile: %02X @ %04X", (tileaddr & 0x0FF0) >> 4, tileaddr);
-			ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(80, 80),
-			ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
-			ImGui::EndTooltip();
-		}
-	}
 	ImGui::End(); // debug window
 
 	// GB Screen window (borderless, no padding)
@@ -739,17 +762,20 @@ void Graphics::renderFrame()
 	//SDL_GetWindowSize(mainWindow, &w, &h);
 	//SDL_GL_GetDrawableSize(mainWindow, &display_w, &display_h);
 
-	ImGui_ImplSdlGL3_NewFrame(mainWindow);
+	ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL2_NewFrame(mainWindow);
+    ImGui::NewFrame();
 
 	//updateTextures();
     
 	renderGUI();
 
+	ImGui::Render();
 	glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 	ImVec4 clear_color = ImColor(128, 128, 128, 128);
 	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 	glClear(GL_COLOR_BUFFER_BIT);
-	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	SDL_GL_SwapWindow(mainWindow);
 }
 

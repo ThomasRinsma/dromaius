@@ -2,8 +2,8 @@ CXX = g++ --std=c++11
 CFLAGS =-g -O0 -I libs/imgui -I libs/gl3w `sdl2-config --cflags`
 LDFLAGS =`sdl2-config --libs` -lm -lGL -ldl
 
-SOURCES = audio.cc cpu.cc graphics.cc input.cc main.cc memory.cc imgui_impl_sdl_gl3.cc
-LIBSOURCES = libs/imgui/imgui.cpp libs/imgui/imgui_demo.cpp
+SOURCES = audio.cc cpu.cc graphics.cc input.cc main.cc memory.cc imgui_impl_sdl.cc imgui_impl_opengl3.cc
+LIBSOURCES = libs/imgui/imgui.cpp libs/imgui/imgui_widgets.cpp
 LIBSOURCES += libs/imgui/imgui_draw.cpp libs/gl3w/GL/gl3w.c
 
 

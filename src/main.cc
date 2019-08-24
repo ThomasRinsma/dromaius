@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 		// SDL event loop
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
-			ImGui_ImplSdlGL3_ProcessEvent(&event);
+			ImGui_ImplSDL2_ProcessEvent(&event);
 			ImGuiIO& io = ImGui::GetIO();
 
 			if (event.type == SDL_KEYDOWN) {
@@ -174,7 +174,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	ImGui_ImplSdlGL3_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+	ImGui::DestroyContext();
 	//SDL_GL_DeleteContext(glcontext);
 	//SDL_DestroyWindow(window);
 	SDL_Quit();
