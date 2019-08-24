@@ -680,6 +680,8 @@ void Graphics::renderGUI()
 			cpu.disassemble(cpu.r.pc, 10, buf);
 			ImGui::Text("%s", buf);
 		}
+	ImGui::End();
+
 
 	// Audio window
 	ImGui::Begin("Audio", nullptr, ImGuiWindowFlags_NoResize);
@@ -691,6 +693,7 @@ void Graphics::renderGUI()
 
 
 	// Graphics window
+	ImGui::Begin("Graphics", nullptr);
 		if (ImGui::CollapsingHeader("Active sprites", 0)) {
 			int ctr = 0;
 			for (int i = 0; i < 40; i++) {
