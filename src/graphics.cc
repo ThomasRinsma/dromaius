@@ -686,12 +686,20 @@ void Graphics::renderGUI()
 
 
 	// Audio window
-	ImGui::Begin("Audio", nullptr, ImGuiWindowFlags_NoResize);
+	ImGui::Begin("Audio", nullptr);
 		ImGui::Checkbox("Enabled (override)", &audio.isEnabled);
 		ImGui::Text("1:%s, 2:%s 3:%s, 4:%s", 
 			audio.ch1.isEnabled ? "on " : "off", audio.ch2.isEnabled ? "on " : "off",
 			audio.ch3.isEnabled ? "on " : "off", audio.ch4.isEnabled ? "on " : "off");
+
+		// Show waveform of last N samples
+		// AUDIO_SAMPLE_HISTORY_SIZE
+		//float (*)(void *, int)
+		ImGui::PlotLines("waveform", [](void*data, int idx) { return (float)audio.sampleHistory[idx]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
+
 	ImGui::End();
+
+	//ImGui::ShowDemoWindow();
 
 
 	// Graphics window

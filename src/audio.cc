@@ -37,7 +37,7 @@ void Audio::initialize()
 	}
 
 	// Unpause audio device
-    //SDL_PauseAudioDevice(dev, 0);
+    SDL_PauseAudioDevice(dev, 0);
 
     // Reset sample counter
     sample_ctr = 0;
@@ -322,6 +322,9 @@ void play_audio(void *userdata, uint8_t *stream, int len)
 		    + (double)ch_sample[3]) * 32;
 		//stream[i] = (tmp >= 127 ? 127 : (tmp <= -128 ? -128 : tmp));
 		stream[i] = tmp;
+
+		// store for debugging
+		audio.sampleHistory[audio.sample_ctr % AUDIO_SAMPLE_HISTORY_SIZE] = tmp;
 
 		++audio.sample_ctr;
 	}

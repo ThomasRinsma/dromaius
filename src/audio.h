@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#define AUDIO_SAMPLE_HISTORY_SIZE 256
+
 struct Audio
 {
 	struct channel1_t {
@@ -92,6 +94,8 @@ struct Audio
 	bool isEnabled;
 	uint8_t waveRam[16]; // 32 nibbles
 	uint32_t sample_ctr;
+
+	uint8_t sampleHistory[AUDIO_SAMPLE_HISTORY_SIZE]; // for debugging
 
 	bool initialized = false;
 
