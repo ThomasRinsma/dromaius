@@ -13,6 +13,14 @@ struct GUI
 
 	~GUI();
 	void initialize();
+
+	void renderHoverText(const char *fmt, ...);
+	void renderInfoWindow();
+	void renderSettingsWindow();
+	void renderCPUDebugWindow();
+	void renderAudioWindow();
+	void renderGraphicsDebugWindow();
+	void renderGBScreenWindow();
 	void render();
 };
 

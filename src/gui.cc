@@ -1,6 +1,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
+#include <cstdarg>
+
 #include "gbemu.h"
 
 #define GUI_INDENT_WIDTH 16.0f
@@ -19,6 +21,201 @@ void GUI::initialize() {
 GUI::~GUI() {
 
 }
+
+void GUI::renderHoverText(const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+
+
+	if (ImGui::IsItemHovered()) {
+		ImGui::BeginTooltip();
+		ImGui::TextV(fmt, args);
+		ImGui::EndTooltip();
+	}
+
+	va_end(args);
+}
+
+void GUI::renderInfoWindow() {
+	ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoResize);
+	ImGui::Text("ROM Name: %s\nMBC: %s\nCountry: %s\nROM size: %d\nRAM size: %d",
+		memory.romheader->gamename,
+		memory.mbcAsString().c_str(),
+		memory.romheader->country ? "Other" : "Japan",
+		memory.romheader->romsize,
+		memory.romheader->ramsize);
+	ImGui::End(); // info window
+}
+
+
+void GUI::renderSettingsWindow() {
+	ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_NoResize);
+	float fps = ImGui::GetIO().Framerate;
+	ImGui::Text("FPS: %.1f (%.1fx speed)", fps, fps / 61.0f);
+	if (ImGui::Button("Reset ROM")) {
+		// hacky, sorry
+		SDL_Event resetEvent;
+		resetEvent.type = SDL_KEYDOWN;
+		resetEvent.key.keysym.sym = SDLK_r;
+		SDL_PushEvent(&resetEvent);
+	}
+	if (ImGui::Button("Dump memory to \nfile (memdump.bin)")) {
+		memory.dumpToFile("memdump.bin");
+	}
+	//ImGui::SliderInt("Scale", &screenScale, 1, 8);
+	ImGui::Checkbox("Fast forward", &cpu.fastForward);
+	ImGui::Checkbox("Step mode", &cpu.stepMode);
+	if (ImGui::Button("Step instruction (space)")) {
+		cpu.stepInst = true;
+	}
+	if (ImGui::Button("Step frame (f)")) {
+		cpu.stepFrame = true;
+	}
+	ImGui::End();
+}
+
+
+void GUI::renderCPUDebugWindow() {
+	if (showDebugCPU) {
+		ImGui::Begin("CPU", nullptr);
+		ImGui::Text("cycle: %d", cpu.c);
+		if (ImGui::CollapsingHeader("Registers", ImGuiTreeNodeFlags_DefaultOpen)) {
+			ImGui::Text(
+					"a: %02X       hl: %04X\n"
+					"b: %02X\n"
+					"c: %02X       pc: %04X\n"
+					"d: %02X       sp: %04X\n"
+					"e: %02X   \n"
+					"f: %c,%c,%c,%c",
+				cpu.r.a, (cpu.r.h << 8) | cpu.r.l, cpu.r.b, cpu.r.c,
+				cpu.r.pc, cpu.r.d, cpu.r.sp, cpu.r.e,
+				cpu.getFlag(CPU::Flag::ZERO) ? 'Z' : '_',
+				cpu.getFlag(CPU::Flag::SUBTRACT) ? 'N' : '_',
+				cpu.getFlag(CPU::Flag::HCARRY) ? 'H' : '_',
+				cpu.getFlag(CPU::Flag::CARRY) ? 'C' : '_'
+			);
+		}
+
+		if (ImGui::CollapsingHeader("Disassembly @ PC", ImGuiTreeNodeFlags_DefaultOpen)) {
+			char buf[25 * 20];
+			buf[0] = '\0';
+			cpu.disassemble(cpu.r.pc, 20, buf);
+			ImGui::Text("%s", buf);
+		}
+		ImGui::End();
+	}
+}
+
+
+void GUI::renderAudioWindow() {
+	if (showDebugAudio) {
+		ImGui::Begin("Audio", nullptr);
+		ImGui::Checkbox("Enabled (override)", &audio.isEnabled);
+		ImGui::Text("1:%s, 2:%s 3:%s, 4:%s", 
+			audio.ch1.isEnabled ? "on " : "off", audio.ch2.isEnabled ? "on " : "off",
+			audio.ch3.isEnabled ? "on " : "off", audio.ch4.isEnabled ? "on " : "off");
+
+		// Show waveform of last N samples
+		ImGui::PlotLines("waveform", [](void*data, int idx) { return (float)audio.sampleHistory[idx]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
+		ImGui::End();
+	}
+}
+
+
+void GUI::renderGraphicsDebugWindow() {
+	if (showDebugGraphics) {
+		ImGui::Begin("Graphics", nullptr);
+		ImGui::Text("win: %s pos: (%02x,%02x)", (graphics.r.flags & Graphics::Flag::WINDOW) ? "on " : "off", graphics.r.winx, graphics.r.winy);
+
+		if (ImGui::CollapsingHeader("Sprites", ImGuiTreeNodeFlags_DefaultOpen)) {
+			ImGui::Columns(5);
+			for (int i = 0; i < 40; i++) {
+				int spriteVisible = ((graphics.spritedata[i].x > -8 and graphics.spritedata[i].x < 168)
+					and (graphics.spritedata[i].y > -16 and graphics.spritedata[i].y < 160));
+
+				// slightly make elements transparent if not visible
+				if (not spriteVisible) {
+					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f);
+				}
+
+				ImGui::Text("%2d:", i);
+				ImGui::SameLine();
+
+				if (spriteVisible) {
+					int tilex = graphics.spritedata[i].tile % 16;
+					int tiley = graphics.spritedata[i].tile >> 4;
+
+					// Draw image with details on hover
+					ImGui::Image((void*)((intptr_t)graphics.debugTexture), ImVec2(16,16), ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
+					renderHoverText("%2d (0x%2X) (%3d,%3d) f:%02X: ", i,
+						graphics.spritedata[i].x, graphics.spritedata[i].y,
+						graphics.spritedata[i].tile, graphics.spritedata[i].flags);
+
+				} else {
+					// Sprite not on screen
+					// Show spacer to make the UI not flicker when showing/hiding sprites
+					ImGui::Dummy(ImVec2(16.0f, 16.0f));
+				}
+
+				if (not spriteVisible) {
+					ImGui::PopStyleVar();
+				}
+
+				ImGui::NextColumn();
+				if (i % 5 == 0)
+					ImGui::Separator();
+			}
+			ImGui::Columns(1);
+		}
+
+		if (ImGui::CollapsingHeader("Background tilemap", ImGuiTreeNodeFlags_DefaultOpen)) {
+			int tilemapScale = 2;
+
+			ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
+			ImGui::Image((void*)((intptr_t)graphics.debugTexture), ImVec2(DEBUG_WIDTH * tilemapScale, DEBUG_HEIGHT * tilemapScale),
+			ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
+			if (ImGui::IsItemHovered()) {
+				ImGui::BeginTooltip();
+				int tilex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x) / (8 * tilemapScale);
+				int tiley = (int)(ImGui::GetMousePos().y - tex_screen_pos.y) / (8 * tilemapScale);
+				int tileaddr = 0x8000 + 0x10*(tiley*16+tilex);
+				ImGui::Text("Tile: %02X @ %04X", (tileaddr & 0x0FF0) >> 4, tileaddr);
+				ImGui::Image((void*)((intptr_t)graphics.debugTexture), ImVec2(128,128),
+				ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
+				ImGui::EndTooltip();
+			}
+		}
+		ImGui::End(); // debug window
+	}
+}
+
+
+void GUI::renderGBScreenWindow() {
+	// GB Screen window
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::Begin("GB Screen", nullptr, ImGuiWindowFlags_NoResize);
+	ImGui::Image((void*)((intptr_t)graphics.screenTexture), ImVec2(GB_SCREEN_WIDTH * graphics.screenScale, GB_SCREEN_HEIGHT * graphics.screenScale),
+		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
+	// handle hovering over sprites
+	if (ImGui::IsItemHovered()) {
+		ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
+		int mousex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x);
+		int mousey = (int)(ImGui::GetMousePos().y - tex_screen_pos.y);
+		// TODO: check if we're on a sprite and show popup
+		// for (int i = 0; i < 40; i++) {
+		// 	if (spritedata[i].x > ) {
+				// ImGui::BeginTooltip();
+				// ImGui::Text("Sprite: %02X @ %04X", (tileaddr & 0x0FF0) >> 4, tileaddr);
+				// ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(80, 80),
+				// ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
+				// ImGui::EndTooltip();
+		// 	}
+		// }
+	}
+	ImGui::End();
+	ImGui::PopStyleVar();
+}
+
 
 void GUI::render() {
 	// Set global style
@@ -67,166 +264,12 @@ void GUI::render() {
 		ImGui::EndMenuBar();
 	}
 
-	// Info window
-	ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoResize);
-		ImGui::Text("ROM Name: %s\nMBC: %s\nCountry: %s\nROM size: %d\nRAM size: %d",
-			memory.romheader->gamename,
-			memory.mbcAsString().c_str(),
-			memory.romheader->country ? "Other" : "Japan",
-			memory.romheader->romsize,
-			memory.romheader->ramsize);
-	ImGui::End(); // info window
-
-
-	// Settings window
-	ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_NoResize);
-		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-		if (ImGui::Button("Reset ROM")) {
-			// hacky, sorry
-			SDL_Event resetEvent;
-			resetEvent.type = SDL_KEYDOWN;
-			resetEvent.key.keysym.sym = SDLK_r;
-			SDL_PushEvent(&resetEvent);
-		}
-		if (ImGui::Button("Dump memory to \nfile (memdump.bin)")) {
-			memory.dumpToFile("memdump.bin");
-		}
-		//ImGui::SliderInt("Scale", &screenScale, 1, 8);
-		ImGui::Checkbox("Fast forward", &cpu.fastForward);
-		ImGui::Checkbox("Step mode", &cpu.stepMode);
-		if (ImGui::Button("Step instruction (space)")) {
-			cpu.stepInst = true;
-		}
-		if (ImGui::Button("Step frame (f)")) {
-			cpu.stepFrame = true;
-		}
-	ImGui::End();
-
-
-	// CPU Debug window
-	if (showDebugCPU) {
-		ImGui::Begin("CPU", nullptr, ImGuiWindowFlags_NoResize);
-		ImGui::Text("cycle: %d", cpu.c);
-		if (ImGui::CollapsingHeader("Registers", ImGuiTreeNodeFlags_DefaultOpen)) {
-			ImGui::Text(
-					"a: %02X       hl: %04X\n"
-					"b: %02X\n"
-					"c: %02X       pc: %04X\n"
-					"d: %02X       sp: %04X\n"
-					"e: %02X   \n"
-					"f: %c,%c,%c,%c",
-				cpu.r.a, (cpu.r.h << 8) | cpu.r.l, cpu.r.b, cpu.r.c,
-				cpu.r.pc, cpu.r.d, cpu.r.sp, cpu.r.e,
-				cpu.getFlag(CPU::Flag::ZERO) ? 'Z' : '_',
-				cpu.getFlag(CPU::Flag::SUBTRACT) ? 'N' : '_',
-				cpu.getFlag(CPU::Flag::HCARRY) ? 'H' : '_',
-				cpu.getFlag(CPU::Flag::CARRY) ? 'C' : '_'
-			);
-		}
-
-		if (ImGui::CollapsingHeader("Disassembly @ PC", ImGuiTreeNodeFlags_DefaultOpen)) {
-			char buf[25 * 10];
-			cpu.disassemble(cpu.r.pc, 10, buf);
-			ImGui::Text("%s", buf);
-		}
-		ImGui::End();
-	}
-
-
-	// Audio window
-	if (showDebugAudio) {
-		ImGui::Begin("Audio", nullptr);
-		ImGui::Checkbox("Enabled (override)", &audio.isEnabled);
-		ImGui::Text("1:%s, 2:%s 3:%s, 4:%s", 
-			audio.ch1.isEnabled ? "on " : "off", audio.ch2.isEnabled ? "on " : "off",
-			audio.ch3.isEnabled ? "on " : "off", audio.ch4.isEnabled ? "on " : "off");
-
-		// Show waveform of last N samples
-		ImGui::PlotLines("waveform", [](void*data, int idx) { return (float)audio.sampleHistory[idx]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
-		ImGui::End();
-	}
-
-
-	// Graphics window
-	if (showDebugGraphics) {
-		ImGui::Begin("Graphics", nullptr);
-		ImGui::Text("win: %s pos: (%02x,%02x)", (graphics.r.flags & Graphics::Flag::WINDOW) ? "on " : "off", graphics.r.winx, graphics.r.winy);
-
-		if (ImGui::CollapsingHeader("Sprites", true)) {
-			int ctr = 0;
-			ImGui::Indent(GUI_INDENT_WIDTH);
-			int showDetails = ImGui::CollapsingHeader("sprites on screen", false);
-			for (int i = 0; i < 40; i++) {
-				if ((graphics.spritedata[i].x > -8 and graphics.spritedata[i].x < 168)
-					and (graphics.spritedata[i].y > -16 and graphics.spritedata[i].y < 160)) {
-					++ctr;
-					if (showDetails) {
-						ImGui::Text("%2d (0x%2X) (%3d,%3d) f:%02X: ", i,
-							graphics.spritedata[i].x, graphics.spritedata[i].y, graphics.spritedata[i].tile, graphics.spritedata[i].flags);
-
-						ImGui::SameLine();
-
-						int tilex = graphics.spritedata[i].tile % 16;
-						int tiley = graphics.spritedata[i].tile >> 4;
-
-						ImGui::Image((void*)((intptr_t)graphics.debugTexture), ImVec2(16,16), ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
-					}
-				}
-			}
-			ImGui::Unindent(GUI_INDENT_WIDTH);
-
-			if (ctr == 0) {
-				ImGui::Text("(none)");
-			} else {
-				ImGui::Text("%d/40 sprites on screen", ctr);
-			}
-		}
-
-		if (ImGui::CollapsingHeader("Background tilemap", ImGuiTreeNodeFlags_DefaultOpen)) {
-			int tilemapScale = 2;
-
-			ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
-			ImGui::Image((void*)((intptr_t)graphics.debugTexture), ImVec2(DEBUG_WIDTH * tilemapScale, DEBUG_HEIGHT * tilemapScale),
-			ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
-			if (ImGui::IsItemHovered()) {
-				ImGui::BeginTooltip();
-				int tilex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x) / (8 * tilemapScale);
-				int tiley = (int)(ImGui::GetMousePos().y - tex_screen_pos.y) / (8 * tilemapScale);
-				int tileaddr = 0x8000 + 0x10*(tiley*16+tilex);
-				ImGui::Text("Tile: %02X @ %04X", (tileaddr & 0x0FF0) >> 4, tileaddr);
-				ImGui::Image((void*)((intptr_t)graphics.debugTexture), ImVec2(128,128),
-				ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
-				ImGui::EndTooltip();
-			}
-		}
-		ImGui::End(); // debug window
-	}
-
-	// GB Screen window
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin("GB Screen", nullptr, ImGuiWindowFlags_NoResize);
-	ImGui::Image((void*)((intptr_t)graphics.screenTexture), ImVec2(GB_SCREEN_WIDTH * graphics.screenScale, GB_SCREEN_HEIGHT * graphics.screenScale),
-		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
-	
-	// handle hovering over sprites
-	if (ImGui::IsItemHovered()) {
-		ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
-		int mousex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x);
-		int mousey = (int)(ImGui::GetMousePos().y - tex_screen_pos.y);
-		// check if we're on a sprite
-		// for (int i = 0; i < 40; i++) {
-		// 	if (spritedata[i].x > ) {
-				// ImGui::BeginTooltip();
-				// ImGui::Text("Sprite: %02X @ %04X", (tileaddr & 0x0FF0) >> 4, tileaddr);
-				// ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(80, 80),
-				// ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
-				// ImGui::EndTooltip();
-		// 	}
-		// }
-	}
-	ImGui::End();
-	ImGui::PopStyleVar();
-
+	renderInfoWindow();
+	renderSettingsWindow();
+	renderCPUDebugWindow();
+	renderAudioWindow();
+	renderGraphicsDebugWindow();
+	renderGBScreenWindow();
 
 	ImGui::End(); // main window
 }
