@@ -110,13 +110,34 @@ void GUI::renderCPUDebugWindow() {
 void GUI::renderAudioWindow() {
 	if (showDebugAudio) {
 		ImGui::Begin("Audio", nullptr);
-		ImGui::Checkbox("Enabled (override)", &audio.isEnabled);
-		ImGui::Text("1:%s, 2:%s 3:%s, 4:%s", 
-			audio.ch1.isEnabled ? "on " : "off", audio.ch2.isEnabled ? "on " : "off",
-			audio.ch3.isEnabled ? "on " : "off", audio.ch4.isEnabled ? "on " : "off");
+		ImGui::Text("Enabled: %s", audio.isEnabled ? "yes" : "no");
 
-		// Show waveform of last N samples
-		ImGui::PlotLines("waveform", [](void*data, int idx) { return (float)audio.sampleHistory[idx]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
+		ImGui::Separator();
+
+		// Show waveram values as plot
+		ImGui::Text("waveram: ");
+		ImGui::SameLine();
+		ImGui::PlotLines("",
+			[](void*data, int idx) { return (float)(audio.waveRam[idx/2] & ((idx % 2) ? 0xF0 : 0x0F));}, NULL, 32);
+
+		ImGui::Separator();
+
+		// Show waveforms of last N samples
+		ImGui::Text("ch1 (%s): ", audio.ch1.isEnabled ? "on " : "off");
+		ImGui::SameLine();
+		ImGui::PlotLines("", [](void*data, int idx) { return (float)audio.sampleHistory[0][(idx + cpu.c) % AUDIO_SAMPLE_HISTORY_SIZE]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
+		
+		ImGui::Text("ch2 (%s): ", audio.ch2.isEnabled ? "on " : "off");
+		ImGui::SameLine();
+		ImGui::PlotLines("", [](void*data, int idx) { return (float)audio.sampleHistory[1][(idx + cpu.c) % AUDIO_SAMPLE_HISTORY_SIZE]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
+		
+		ImGui::Text("ch3 (%s): ", audio.ch3.isEnabled ? "on " : "off");
+		ImGui::SameLine();
+		ImGui::PlotLines("", [](void*data, int idx) { return (float)audio.sampleHistory[2][(idx + cpu.c) % AUDIO_SAMPLE_HISTORY_SIZE]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
+		
+		ImGui::Text("ch4 (%s): ", audio.ch4.isEnabled ? "on " : "off");
+		ImGui::SameLine();
+		ImGui::PlotLines("", [](void*data, int idx) { return (float)audio.sampleHistory[3][(idx + cpu.c) % AUDIO_SAMPLE_HISTORY_SIZE]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
 		ImGui::End();
 	}
 }

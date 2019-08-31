@@ -313,7 +313,10 @@ void play_audio(void *userdata, uint8_t *stream, int len)
 		stream[i] = tmp;
 
 		// store for debugging
-		audio.sampleHistory[audio.sample_ctr % AUDIO_SAMPLE_HISTORY_SIZE] = tmp;
+		audio.sampleHistory[0][cpu.c % AUDIO_SAMPLE_HISTORY_SIZE] = ch_sample[0];
+		audio.sampleHistory[1][cpu.c % AUDIO_SAMPLE_HISTORY_SIZE] = ch_sample[1];
+		audio.sampleHistory[2][cpu.c % AUDIO_SAMPLE_HISTORY_SIZE] = ch_sample[2];
+		audio.sampleHistory[3][cpu.c % AUDIO_SAMPLE_HISTORY_SIZE] = ch_sample[3];
 
 		++audio.sample_ctr;
 	}

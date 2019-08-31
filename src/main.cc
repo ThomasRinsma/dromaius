@@ -20,7 +20,7 @@ bool initEmulation(std::string const &filename)
 	graphics.initialize();
 	input.initialize();
 	memory.initialize();
-	//audio.initialize();
+	audio.initialize();
 
 	return memory.loadRom(filename);
 }
