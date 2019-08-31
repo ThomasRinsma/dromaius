@@ -3,12 +3,6 @@
 #include <cstdint>
 #include "gbemu.h"
 
-#include "audio.h"
-#include "cpu.h"
-#include "graphics.h"
-#include "input.h"
-#include "memory.h"
-
 #define GUI_INDENT_WIDTH 16.0f
 
 extern CPU cpu;

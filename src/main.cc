@@ -4,12 +4,6 @@
 #include <string>
 #include "gbemu.h"
 
-#include "audio.h"
-#include "cpu.h"
-#include "graphics.h"
-#include "input.h"
-#include "memory.h"
-
 // Global structs
 CPU cpu;
 Graphics graphics;
@@ -25,7 +19,7 @@ bool initEmulation(std::string const &filename)
 	graphics.initialize();
 	input.initialize();
 	memory.initialize();
-	audio.initialize();
+	//audio.initialize();
 
 	return memory.loadRom(filename);
 }

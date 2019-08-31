@@ -1,4 +1,3 @@
-#include "input.h"
 #include "gbemu.h"
 
 extern settings_t settings;

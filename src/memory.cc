@@ -2,12 +2,6 @@
 #include <iostream>
 #include "gbemu.h"
 
-#include "audio.h"
-#include "cpu.h"
-#include "graphics.h"
-#include "input.h"
-#include "memory.h"
-
 extern Graphics graphics;
 extern Audio audio;
 extern Input input;

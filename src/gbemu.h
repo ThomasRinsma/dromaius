@@ -6,6 +6,13 @@
 #include <GL/gl3w.h>
 #include <SDL2/SDL.h>
 
+#include "audio.h"
+#include "cpu.h"
+#include "graphics.h"
+#include "gui.h"
+#include "input.h"
+#include "memory.h"
+
 #define HEADER_START    0x134
 
 #define TILEMAP_ADDR0   0x1800
