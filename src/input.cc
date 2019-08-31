@@ -1,7 +1,5 @@
 #include "gbemu.h"
 
-extern settings_t settings;
-
 void Input::initialize()
 {
 	wire = 0x10;

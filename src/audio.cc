@@ -3,11 +3,6 @@
 #include <cmath>
 #include "gbemu.h"
 
-extern Graphics graphics;
-extern Audio audio;
-extern Input input;
-extern CPU cpu;
-
 Audio::~Audio()
 {
 	if (initialized) {

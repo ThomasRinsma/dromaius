@@ -6,11 +6,13 @@
 
 struct GUI
 {
-	Graphics &graphics;
+	// window states
+	bool showDebugCPU = true;
+	bool showDebugGraphics = true;
+	bool showDebugAudio = true;
 
-	void initialize(Graphics &graphics);
 	~GUI();
-
+	void initialize();
 	void render();
 };
 

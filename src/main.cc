@@ -7,6 +7,7 @@
 // Global structs
 CPU cpu;
 Graphics graphics;
+GUI gui;
 Input input;
 Memory memory;
 Audio audio;

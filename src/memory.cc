@@ -2,11 +2,6 @@
 #include <iostream>
 #include "gbemu.h"
 
-extern Graphics graphics;
-extern Audio audio;
-extern Input input;
-extern CPU cpu;
-
 constexpr uint8_t Memory::bios[256];
 
 Memory::~Memory()

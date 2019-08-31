@@ -3,13 +3,6 @@
 #include <iostream>
 #include "gbemu.h"
 
-extern Graphics graphics;
-extern Audio audio;
-extern Input input;
-extern Memory memory;
-
-extern settings_t settings;
-
 void CPU::initialize()
 {
 	r.a = 0x01;

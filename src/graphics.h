@@ -73,6 +73,8 @@ struct Graphics
 
 	// Window stuff
 	SDL_Window *mainWindow;
+	SDL_GLContext glcontext;
+	const char* glsl_version;
 
 	uint32_t screenTexture;
 	uint32_t debugTexture;
@@ -81,12 +83,6 @@ struct Graphics
 	uint32_t *debugTilesetPixels;
 
 	int screenScale;
-
-
-	// debug stuff, TODO move to separate class
-	bool showDebugCPU = true;
-	bool showDebugGraphics = true;
-	bool showDebugAudio = true;
 
 
 	bool initialized = false;
