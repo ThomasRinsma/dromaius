@@ -75,6 +75,45 @@ void GUI::renderCPUDebugWindow() {
 	if (showDebugCPU) {
 		ImGui::Begin("CPU", nullptr);
 		ImGui::Text("cycle: %d", cpu.c);
+
+		ImGui::Separator();
+
+		ImGui::Text("interrupts: %s (enabled / flagged):", cpu.intsOn ? "on " : "off");
+		ImGui::Text("     VBLANK: %s / %s",
+			cpu.ints & CPU::Int::VBLANK ? "yes" : "no ",
+			cpu.intFlags & CPU::Int::VBLANK ? "yes" : "no ");
+		ImGui::Text("    LCDSTAT: %s / %s",
+			cpu.ints & CPU::Int::LCDSTAT ? "yes" : "no ",
+			cpu.intFlags & CPU::Int::LCDSTAT ? "yes" : "no ");
+		ImGui::Text("      TIMER: %s / %s",
+			cpu.ints & CPU::Int::TIMER ? "yes" : "no ",
+			cpu.intFlags & CPU::Int::TIMER ? "yes" : "no ");
+		ImGui::Text("     SERIAL: %s / %s",
+			cpu.ints & CPU::Int::SERIAL ? "yes" : "no ",
+			cpu.intFlags & CPU::Int::SERIAL ? "yes" : "no ");
+		ImGui::Text("     JOYPAD: %s / %s",
+			cpu.ints & CPU::Int::JOYPAD ? "yes" : "no ",
+			cpu.intFlags & CPU::Int::JOYPAD ? "yes" : "no ");
+
+		ImGui::Separator();
+
+		/*
+struct timer_s {
+	uint8_t div;
+	uint8_t tima;
+	uint8_t tma;
+	uint8_t tac;
+	int cycleCount;
+	int cycleCountDiv;
+	int maxCount[4];
+};
+		*/
+		ImGui::Text("timer: %s", cpu.timer.tac & 0x04 ? "started" : "stopped");
+		ImGui::Text("    clock: %02X    div: %02X", cpu.timer.tac & 0x03, cpu.timer.tma);
+		ImGui::Text("     tima: %02X    tma: %02X", cpu.timer.tima, cpu.timer.div);
+
+
+
 		if (ImGui::CollapsingHeader("Registers", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::Text(
 					"a: %02X       hl: %04X\n"
