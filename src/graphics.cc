@@ -344,8 +344,10 @@ void Graphics::renderDebugTileset()
 {
 	int color;
 
+	// lines of tiles
 	for (int y = 0; y < 24; ++y)
 	{
+		// columns of tiles
 		for (int x = 0; x < 16; ++x)
 		{
 			for (int i = 0; i < 8; ++i)

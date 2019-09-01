@@ -146,7 +146,21 @@ void GUI::renderAudioWindow() {
 void GUI::renderGraphicsDebugWindow() {
 	if (showDebugGraphics) {
 		ImGui::Begin("Graphics", nullptr);
-		ImGui::Text("win: %s pos: (%02x,%02x)", (graphics.r.flags & Graphics::Flag::WINDOW) ? "on " : "off", graphics.r.winx, graphics.r.winy);
+		ImGui::Text("background: %s, tileset: %s", (graphics.r.flags & Graphics::Flag::BG) ? "on " : "off",
+			(graphics.r.flags & Graphics::Flag::TILESET) ? "8000-8FFF" : "8800-97FF");
+		ImGui::Text("    window: %s, pos: (%02x,%02x)", (graphics.r.flags & Graphics::Flag::WINDOW) ? "on " : "off",
+			graphics.r.winx, graphics.r.winy);
+
+		// enum Flag {
+		// 	BG            = 0x01,
+		// 	SPRITES       = 0x02,
+		// 	SPRITESIZE    = 0x04, // (0=8x8, 1=8x16)
+		// 	TILEMAP       = 0x08, // (0=9800-9BFF, 1=9C00-9FFF)
+		// 	TILESET       = 0x10, // (0=8800-97FF, 1=8000-8FFF)
+		// 	WINDOW        = 0x20,
+		// 	WINDOWTILEMAP = 0x40, // (0=9800-9BFF, 1=9C00-9FFF)
+		// 	LCD           = 0x80
+		// };
 
 		if (ImGui::CollapsingHeader("Sprites", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::Columns(5);
@@ -189,7 +203,7 @@ void GUI::renderGraphicsDebugWindow() {
 			ImGui::Columns(1);
 		}
 
-		if (ImGui::CollapsingHeader("Background tilemap", ImGuiTreeNodeFlags_DefaultOpen)) {
+		if (ImGui::CollapsingHeader("Background tileset", ImGuiTreeNodeFlags_DefaultOpen)) {
 			int tilemapScale = 2;
 
 			ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
@@ -200,11 +214,28 @@ void GUI::renderGraphicsDebugWindow() {
 				int tilex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x) / (8 * tilemapScale);
 				int tiley = (int)(ImGui::GetMousePos().y - tex_screen_pos.y) / (8 * tilemapScale);
 				int tileaddr = 0x8000 + 0x10*(tiley*16+tilex);
-				ImGui::Text("Tile: %02X @ %04X", (tileaddr & 0x0FF0) >> 4, tileaddr);
+				ImGui::Text("Tile: %03X @ %04X", (tileaddr & 0x1FF0) >> 4, tileaddr);
 				ImGui::Image((void*)((intptr_t)graphics.debugTexture), ImVec2(128,128),
 				ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
 				ImGui::EndTooltip();
 			}
+
+			// Grey out the inactive tiles
+			int topInactiveTile, bottomInactiveLine;
+			if (graphics.r.flags & Graphics::Flag::TILESET) {
+				// active: 8000-8FFF
+				topInactiveTile = 16 * 8;
+				bottomInactiveLine = 24 * 8;
+			} else {
+				// active: 8800-97FF
+				topInactiveTile = 0;
+				bottomInactiveLine = 8 * 8;
+			}
+			ImGui::GetWindowDrawList()->AddRectFilled(
+				ImVec2(tex_screen_pos.x, tex_screen_pos.y + topInactiveTile * tilemapScale),
+				ImVec2(tex_screen_pos.x + DEBUG_WIDTH * tilemapScale, tex_screen_pos.y + bottomInactiveLine * tilemapScale),
+				IM_COL32(0,0,0,128)
+			);
 		}
 		ImGui::End(); // debug window
 	}
