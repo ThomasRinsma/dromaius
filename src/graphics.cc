@@ -184,10 +184,10 @@ uint8_t Graphics::readByte(uint16_t addr)
 	uint8_t res;
 	
 	switch (addr) {
-		case 0:
+		case 0x00:
 			return r.flags;
 
-		case 1: // LCD status
+		case 0x01: // LCD status
 			//printf("  r.line = %d, r.lineComp = %d.\n", r.line, r.lineComp);
 			return (mode & 0x03) +
 				(r.line == r.lineComp ? 0x04 : 0x00) +
@@ -196,18 +196,30 @@ uint8_t Graphics::readByte(uint16_t addr)
 				(OAMInt ? 0x20 : 0x00) +
 				(CoinInt ? 0x40 : 0x00);
 
-		case 2:
+		case 0x02:
 			return r.scy;
 			
-		case 3:
+		case 0x03:
 			return r.scx;
 			
-		case 4:
+		case 0x04:
 			return r.line;
 
-		case 5:
+		case 0x05:
 			return r.lineComp;
+		
+		case 0x08: // Object palette 0
+			return objpalette[0][0] << 6 | objpalette[0][1] << 4 | objpalette[0][2] << 2 | objpalette[0][3];
 			
+		case 0x09: // Object palette 1
+			return objpalette[1][0] << 6 | objpalette[1][1] << 4 | objpalette[1][2] << 2 | objpalette[1][3];
+
+		case 0x0A:
+			return r.winy;
+			
+		case 0x0B:
+			return r.winx;
+
 		default:
 			printf("TODO! read from unimplemented 0x%02X\n", addr + 0xFF40);
 			return 0x00; // TODO: Unhandled I/O, no idea what GB does here
@@ -238,14 +250,12 @@ void Graphics::writeByte(uint8_t b, uint16_t addr)
 			break;
 
 		case 0x4:
-			// Actually this resets LY, if I understand the specs correctly.
+			// This resets LY, if I understand the specs correctly.
 			r.line = 0;
-			printf("reset line counter.\n");
 			break;
 
 		case 0x5:
 			r.lineComp = b;
-			printf("written %d to lineComp\n", b);
 			break;
 			
 		case 0x6: // DMA from XX00-XX9F to FE00-FE9F
@@ -436,7 +446,7 @@ void Graphics::renderScanline()
 	}
 
 	// Window, if enabled and on this line
-	if (r.flags & Flag::WINDOW and r.line >= (r.winy - 7)) {
+	if (r.flags & Flag::WINDOW and r.winx >= 0 and r.winx < 167 and r.winy >= 0 and r.winy < 144 and r.line >= (r.winy - 7)) {
 		// Use tilemap 1 or tilemap 0?
 		yoff = (r.flags & Flag::WINDOWTILEMAP) ? TILEMAP_ADDR1 : TILEMAP_ADDR0;
 	
