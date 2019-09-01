@@ -24,7 +24,7 @@ bool initEmulation(std::string const &filename)
 	graphics.initialize();
 	input.initialize();
 	memory.initialize();
-	audio.initialize();
+	//audio.initialize();
 
 	// Store for easy resets
 	lastFilename = filename;

@@ -18,8 +18,19 @@ void Memory::initialize()
 
 	// Allocate 
 	workram = new uint8_t[0x2000];  // 8 kb
+	for (int i = 0; i < 0x2000; ++i) {
+		workram[i] = 0x00;
+	}
+
 	extram = new uint8_t[0x2000];   // 8 kb
+	for (int i = 0; i < 0x2000; ++i) {
+		extram[i] = 0x00;
+	}
+
 	zeropageram = new uint8_t[128]; // 128 bytes
+	for (int i = 0; i < 128; ++i) {
+		zeropageram[i] = 0x00;
+	}
 
 	// MBC-related
 	ramEnabled = true;

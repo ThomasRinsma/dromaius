@@ -25,13 +25,23 @@ void Graphics::initialize()
 	screenScale = 2;
 
 	vram = new uint8_t[0x2000];
+	for (int i = 0; i < 0x2000; ++i) {
+		vram[i] = 0x00;
+	}
+
 	oam = new uint8_t[0xA0];
+	for (int i = 0; i < 0xA0; ++i) {
+		oam[i] = 0x00;
+	}
 	
 	tileset = new uint8_t **[0x200]; // = 512 dec
 	for (int i = 0; i < 512; i++) {
 		tileset[i] = new uint8_t*[8];
 		for (int j = 0; j < 8; j++) {
 			tileset[i][j] = new uint8_t[8];
+			for (int k = 0; k < 8; ++k) {
+				tileset[i][j][k] = 0x00;
+			}
 		}
 	}
 	

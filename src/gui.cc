@@ -272,7 +272,7 @@ void GUI::renderGraphicsDebugWindow() {
 
 void GUI::renderMemoryViewerWindow() {
 	uint16_t lineBuffer[16];
-	uint16_t charBuffer[16];
+	uint8_t charBuffer[16];
 
 	ImGui::Begin("Memory viewer", nullptr);
  	
