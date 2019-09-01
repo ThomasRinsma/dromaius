@@ -7,9 +7,10 @@
 struct GUI
 {
 	// window states
-	bool showDebugCPU = true;
-	bool showDebugGraphics = true;
-	bool showDebugAudio = true;
+	bool showCPUDebugWindow = true;
+	bool showGraphicsDebugWindow = true;
+	bool showAudioWindow = true;
+	bool showMemoryViewerWindow = true;
 
 	~GUI();
 	void initialize();
@@ -21,6 +22,7 @@ struct GUI
 	void renderAudioWindow();
 	void renderGraphicsDebugWindow();
 	void renderGBScreenWindow();
+	void renderMemoryViewerWindow();
 	void render();
 };
 
