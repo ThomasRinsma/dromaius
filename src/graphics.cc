@@ -102,8 +102,8 @@ void Graphics::initDisplay()
 		 initialWidth = 1024;
 		 initialHeight = 768;
 	}
-	initialWidth = dm.w / 2;
-	initialHeight = dm.h / 2;
+	initialWidth = dm.w * 0.75f;
+	initialHeight = dm.h * 0.75f;
 	
 	mainWindow = SDL_CreateWindow(memory.romheader->gamename,
 						  SDL_WINDOWPOS_CENTERED,
@@ -604,6 +604,21 @@ void Graphics::renderFrame()
 	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	SDL_GL_SwapWindow(mainWindow);
+}
+
+const char *Graphics::modeToString(uint8_t mode) {
+	switch (mode) {
+		case Mode::HBLANK:
+			return "HBLANK";
+		case Mode::VBLANK:
+			return "VBLANK";
+		case Mode::OAM:
+			return "OAM";
+		case Mode::VRAM:
+			return "VRAM";
+		default:
+			return "(invalid mode)";
+	}
 }
 
 void Graphics::step()

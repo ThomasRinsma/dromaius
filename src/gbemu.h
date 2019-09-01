@@ -2,6 +2,7 @@
 #define INCLUDED_GBEMU_H
 
 #include <cstdint>
+#include <string>
 #include <imgui.h>
 #include <GL/gl3w.h>
 #include <SDL2/SDL.h>
@@ -61,13 +62,17 @@ extern settings_t settings;
 
 #define CPU_CLOCKS_PER_FRAME 17556 // 70224 / 4 clock cycles
 
-
-
-
-
+// Stubs for function definitions
 struct SDL_Window;
 typedef union SDL_Event SDL_Event;
 
+// main.cc
+bool initEmulation(std::string const &filename);
+void resetEmulation();
+void initSettings();
+
+
+// GUI stuff
 IMGUI_IMPL_API bool ImGui_ImplSDL2_InitForOpenGL(SDL_Window* window, void* sdl_gl_context);
 IMGUI_IMPL_API bool ImGui_ImplSDL2_InitForVulkan(SDL_Window* window);
 IMGUI_IMPL_API bool ImGui_ImplSDL2_InitForD3D(SDL_Window* window);

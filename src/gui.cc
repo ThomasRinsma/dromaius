@@ -53,11 +53,7 @@ void GUI::renderSettingsWindow() {
 	float fps = ImGui::GetIO().Framerate;
 	ImGui::Text("FPS: %.1f (%.1fx speed)", fps, fps / 61.0f);
 	if (ImGui::Button("Reset ROM")) {
-		// hacky, sorry
-		SDL_Event resetEvent;
-		resetEvent.type = SDL_KEYDOWN;
-		resetEvent.key.keysym.sym = SDLK_r;
-		SDL_PushEvent(&resetEvent);
+		resetEmulation();
 	}
 	if (ImGui::Button("Dump memory to \nfile (memdump.bin)")) {
 		memory.dumpToFile("memdump.bin");
@@ -146,21 +142,25 @@ void GUI::renderAudioWindow() {
 void GUI::renderGraphicsDebugWindow() {
 	if (showDebugGraphics) {
 		ImGui::Begin("Graphics", nullptr);
-		ImGui::Text("background: %s, tileset: %s", (graphics.r.flags & Graphics::Flag::BG) ? "on " : "off",
-			(graphics.r.flags & Graphics::Flag::TILESET) ? "8000-8FFF" : "8800-97FF");
-		ImGui::Text("    window: %s, pos: (%02x,%02x)", (graphics.r.flags & Graphics::Flag::WINDOW) ? "on " : "off",
-			graphics.r.winx, graphics.r.winy);
 
-		// enum Flag {
-		// 	BG            = 0x01,
-		// 	SPRITES       = 0x02,
-		// 	SPRITESIZE    = 0x04, // (0=8x8, 1=8x16)
-		// 	TILEMAP       = 0x08, // (0=9800-9BFF, 1=9C00-9FFF)
-		// 	TILESET       = 0x10, // (0=8800-97FF, 1=8000-8FFF)
-		// 	WINDOW        = 0x20,
-		// 	WINDOWTILEMAP = 0x40, // (0=9800-9BFF, 1=9C00-9FFF)
-		// 	LCD           = 0x80
-		// };
+		// Basic flags info dump
+		ImGui::Text("background: %s", (graphics.r.flags & Graphics::Flag::BG) ? "on " : "off");
+		ImGui::Text("    tileset: %s", (graphics.r.flags & Graphics::Flag::TILESET) ? "8000-8FFF" : "8800-97FF");
+		ImGui::Text("    tilemap: %s", (graphics.r.flags & Graphics::Flag::TILEMAP) ? "9C00-9FFF" : "9800-9BFF");
+		ImGui::Text("    scroll: (%02X,%02X)", graphics.r.scx, graphics.r.scy);
+		ImGui::Separator();
+		ImGui::Text("window: %s", (graphics.r.flags & Graphics::Flag::WINDOW) ? "on " : "off");
+		ImGui::Text("    position: (%02X,%02X)", graphics.r.winx, graphics.r.winy);
+		ImGui::Text("    tilemap: %s", (graphics.r.flags & Graphics::Flag::WINDOWTILEMAP) ? "9C00-9FFF" : "9800-9BFF");
+		ImGui::Separator();
+		ImGui::Text("sprites: %s", (graphics.r.flags & Graphics::Flag::SPRITES) ? "on " : "off");
+		ImGui::Text("    size: %s", (graphics.r.flags & Graphics::Flag::SPRITESIZE) ? "8x16" : "8x8");
+		ImGui::Separator();
+		ImGui::Text("GPU state:");
+		ImGui::Text("    mode: %s", graphics.modeToString(graphics.mode));
+		ImGui::Text("    line: %03d/%d (comp: %d)", graphics.r.line, 144, graphics.r.lineComp);
+
+
 
 		if (ImGui::CollapsingHeader("Sprites", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::Columns(5);

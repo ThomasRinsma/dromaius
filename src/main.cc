@@ -14,6 +14,10 @@ Audio audio;
 
 settings_t settings;
 
+// Some ugly state
+std::string lastFilename;
+
+
 bool initEmulation(std::string const &filename)
 {
 	cpu.initialize();
@@ -22,16 +26,20 @@ bool initEmulation(std::string const &filename)
 	memory.initialize();
 	audio.initialize();
 
+	// Store for easy resets
+	lastFilename = filename;
+
 	return memory.loadRom(filename);
 }
 
-void resetEmulation(std::string const &filename)
+void resetEmulation()
 {
 	graphics.freeBuffers();
 	memory.freeBuffers();
 	audio.freeBuffers();
 
-	initEmulation(filename);
+	// Re-init emulation with last-used filename
+	initEmulation(lastFilename);
 }
 
 void initSettings()
@@ -136,7 +144,7 @@ int main(int argc, char *argv[])
 						break;
 					
 					case SDLK_r: // reset
-						resetEmulation(argv[1]);
+						resetEmulation();
 						break;
 
 					case SDLK_SPACE:

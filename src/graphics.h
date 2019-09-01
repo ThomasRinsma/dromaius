@@ -107,6 +107,7 @@ struct Graphics
 	void buildSpriteData(uint8_t b, uint16_t addr);
 	void renderFrame();
 	void renderGUI();
+	const char *modeToString(uint8_t mode);
 
 	void step();
 
