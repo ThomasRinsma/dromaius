@@ -48,6 +48,7 @@ struct Memory
 			case MBC::MBC5: return "MBC5";
 			case MBC::MMM01: return "MMM01";
 			case MBC::OTHER: return "OTHER";
+			default: return "(invalid mbc)";
 		}
 	}
 

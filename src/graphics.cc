@@ -58,6 +58,7 @@ void Graphics::initialize()
 
 void Graphics::freeBuffers()
 {
+	printf("calling freeBuffers on graphics!\n");
 	delete[] screenPixels;
 	delete[] debugTilesetPixels;
 

@@ -2493,6 +2493,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 	uint8_t extraOp, bitnr;
 
 	switch (inst) {
+		case 0x00:
 			sprintf(instStr, "NOP");
 			break;
 			

@@ -37,7 +37,7 @@ void GUI::renderHoverText(const char *fmt, ...) {
 }
 
 void GUI::renderInfoWindow() {
-	ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoResize);
+	ImGui::Begin("Info", nullptr);
 	ImGui::Text("ROM Name: %s\nMBC: %s\nCountry: %s\nROM size: %d\nRAM size: %d",
 		memory.romheader->gamename,
 		memory.mbcAsString().c_str(),
@@ -49,7 +49,7 @@ void GUI::renderInfoWindow() {
 
 
 void GUI::renderSettingsWindow() {
-	ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_NoResize);
+	ImGui::Begin("Controls", nullptr);
 	float fps = ImGui::GetIO().Framerate;
 	ImGui::Text("FPS: %.1f (%.1fx speed)", fps, fps / 61.0f);
 	if (ImGui::Button("Reset ROM")) {
@@ -58,7 +58,9 @@ void GUI::renderSettingsWindow() {
 	if (ImGui::Button("Dump memory to \nfile (memdump.bin)")) {
 		memory.dumpToFile("memdump.bin");
 	}
-	//ImGui::SliderInt("Scale", &screenScale, 1, 8);
+	
+	ImGui::Separator();
+
 	ImGui::Checkbox("Fast forward", &cpu.fastForward);
 	ImGui::Checkbox("Step mode", &cpu.stepMode);
 	if (ImGui::Button("Step instruction (space)")) {
@@ -333,22 +335,6 @@ void GUI::renderGBScreenWindow() {
 	ImGui::Begin("GB Screen", nullptr, ImGuiWindowFlags_NoResize);
 	ImGui::Image((void*)((intptr_t)graphics.screenTexture), ImVec2(GB_SCREEN_WIDTH * graphics.screenScale, GB_SCREEN_HEIGHT * graphics.screenScale),
 		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
-	// handle hovering over sprites
-	if (ImGui::IsItemHovered()) {
-		ImVec2 tex_screen_pos = ImGui::GetCursorScreenPos();
-		int mousex = (int)(ImGui::GetMousePos().x - tex_screen_pos.x);
-		int mousey = (int)(ImGui::GetMousePos().y - tex_screen_pos.y);
-		// TODO: check if we're on a sprite and show popup
-		// for (int i = 0; i < 40; i++) {
-		// 	if (spritedata[i].x > ) {
-				// ImGui::BeginTooltip();
-				// ImGui::Text("Sprite: %02X @ %04X", (tileaddr & 0x0FF0) >> 4, tileaddr);
-				// ImGui::Image((void*)((intptr_t)debugTexture), ImVec2(80, 80),
-				// ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
-				// ImGui::EndTooltip();
-		// 	}
-		// }
-	}
 	ImGui::End();
 	ImGui::PopStyleVar();
 }
@@ -371,7 +357,6 @@ void GUI::render() {
 		ImGuiWindowFlags_NoMove |
 		ImGuiWindowFlags_NoScrollbar |
 		ImGuiWindowFlags_NoScrollWithMouse |
-		// ImGuiWindowFlags_NoMouseInputs |
 		ImGuiWindowFlags_NoBringToFrontOnFocus |
 		ImGuiWindowFlags_NoFocusOnAppearing |
 		ImGuiWindowFlags_NoNavFocus |

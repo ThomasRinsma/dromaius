@@ -259,6 +259,7 @@ uint8_t Memory::readByte(uint16_t addr)
 		
 	}
 	printf("Memory error! 0x%02X\n", addr);
+	return 0;
 }
 
 uint16_t Memory::readWord(uint16_t addr)
