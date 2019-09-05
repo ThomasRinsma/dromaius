@@ -1,6 +1,6 @@
 #include <fstream>
 #include <iostream>
-#include "gbemu.h"
+#include "dromaius.h"
 
 constexpr uint8_t Memory::bios[256];
 

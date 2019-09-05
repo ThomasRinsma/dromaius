@@ -2,7 +2,7 @@
 #define INCLUDED_GUI_H
 
 #include <cstdint>
-#include "gbemu.h"
+#include "dromaius.h"
 
 struct GUI
 {

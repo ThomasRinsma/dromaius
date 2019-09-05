@@ -1,7 +1,7 @@
 #include <cstring>
 #include <iostream>
 #include <cmath>
-#include "gbemu.h"
+#include "dromaius.h"
 
 Audio::~Audio()
 {

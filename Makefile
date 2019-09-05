@@ -9,13 +9,13 @@ LIBSOURCES += libs/imgui/imgui_draw.cpp libs/gl3w/GL/gl3w.c
 
 
 .PHONY: all
-all: gbemu
+all: dromaius
 
-gbemu: $(subst .cc,.o,$(SOURCES))
+dromaius: $(subst .cc,.o,$(SOURCES))
 	$(CXX) $^ $(LIBSOURCES) -o $@ $(CFLAGS) $(LDFLAGS)
 
 %.o: src/%.cc
 	$(CXX) -c $< $(CFLAGS)
 
 clean:
-	rm *.o gbemu
+	rm *.o dromaius

@@ -41,7 +41,7 @@
 //  2016-10-15: Misc: Added a void* user_data parameter to Clipboard function handlers.
 
 #include "imgui.h"
-#include "gbemu.h"
+#include "dromaius.h"
 
 // SDL
 #include <SDL.h>

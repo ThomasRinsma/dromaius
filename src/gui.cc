@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstdarg>
 
-#include "gbemu.h"
+#include "dromaius.h"
 
 #define GUI_INDENT_WIDTH 16.0f
 

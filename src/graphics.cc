@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
-#include "gbemu.h"
+#include "dromaius.h"
 
 Graphics::~Graphics()
 {

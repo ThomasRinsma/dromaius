@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
-#include "gbemu.h"
+#include "dromaius.h"
 
 void CPU::initialize()
 {

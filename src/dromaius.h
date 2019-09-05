@@ -1,5 +1,5 @@
-#ifndef INCLUDED_GBEMU_H
-#define INCLUDED_GBEMU_H
+#ifndef INCLUDED_DROMAIUS_H
+#define INCLUDED_DROMAIUS_H
 
 #include <cstdint>
 #include <string>

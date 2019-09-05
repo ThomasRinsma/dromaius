@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-#include "gbemu.h"
+#include "dromaius.h"
 
 // Global structs
 CPU cpu;
