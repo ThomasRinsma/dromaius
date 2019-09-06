@@ -121,12 +121,14 @@ void GUI::renderHoverText(const char *fmt, ...) {
 
 void GUI::renderInfoWindow() {
 	ImGui::Begin("Info", nullptr);
+
+	auto romheader = (Memory::romheader_t *)emu->memory.rom; 
 	ImGui::Text("ROM Name: %s\nMBC: %s\nCountry: %s\nROM size: %d\nRAM size: %d",
-		emu->memory.romheader->gamename,
+		romheader->gamename,
 		emu->memory.mbcAsString().c_str(),
-		emu->memory.romheader->country ? "Other" : "Japan",
-		emu->memory.romheader->romsize,
-		emu->memory.romheader->ramsize);
+		romheader->country ? "Other" : "Japan",
+		romheader->romsize,
+		romheader->ramsize);
 	ImGui::End(); // info window
 }
 

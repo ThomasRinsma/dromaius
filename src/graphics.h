@@ -61,12 +61,17 @@ struct Graphics
 	// Up-reference
 	Dromaius *emu;
 
-	uint8_t ***tileset;
-	sprite_s *spritedata;
-	uint8_t *vram;
-	uint8_t *oam;
+	static const unsigned int screenScale = 2;
+
+	// Buffers and such
+	uint8_t vram[0x2000];
+	uint8_t oam[0xA0];
+	uint8_t tileset[0x200][8][8];
 	uint8_t bgpalette[4];
 	uint8_t objpalette[2][4];
+	sprite_s spritedata[0x28]; // 40 sprites
+
+	// State
 	regs_s r;
 	uint8_t mode;
 	int mclock;
@@ -78,14 +83,10 @@ struct Graphics
 	// Window stuff
 	uint32_t screenTexture;
 	uint32_t debugTexture;
+	uint32_t screenPixels[GB_SCREEN_WIDTH * GB_SCREEN_HEIGHT];
+	uint32_t debugTilesetPixels[DEBUG_WIDTH * DEBUG_HEIGHT];
 
-	uint32_t *screenPixels;
-	uint32_t *debugTilesetPixels;
-
-	int screenScale;
 	bool initialized = false;
-
-	~Graphics();
 
 	void initialize();
 	void initDisplay();
@@ -94,7 +95,6 @@ struct Graphics
 	uint8_t readByte(uint16_t addr);
 	void writeByte(uint8_t b, uint16_t addr);
 
-	void freeBuffers();
 	void setPixelColor(int x, int y, uint8_t color);
 	void setPixelColorDebug(int x, int y, uint8_t color);
 	void setDebugPixelColor(int x, int y, uint8_t color);

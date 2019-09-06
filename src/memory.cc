@@ -13,36 +13,17 @@ Memory::~Memory()
 
 void Memory::initialize()
 {
-	if (initialized) {
-		freeBuffers();
-	}
-	
-	// Set rom buffer to null
-	rom = nullptr;
-
-	// Allocate 
-	workram = new uint8_t[0x2000];  // 8 kb
-	for (int i = 0; i < 0x2000; ++i) {
-		workram[i] = 0x00;
-	}
-
-	extram = new uint8_t[0x2000];   // 8 kb
-	for (int i = 0; i < 0x2000; ++i) {
-		extram[i] = 0x00;
-	}
-
-	zeropageram = new uint8_t[128]; // 128 bytes
-	for (int i = 0; i < 128; ++i) {
-		zeropageram[i] = 0x00;
-	}
-
-	// MBC-related
+	// Initialize state
+	biosLoaded = true;
 	ramEnabled = true;
 	bankMode = 0;
 	ramBank = 0;
 	romBank = 1;
 
-	biosLoaded = true;
+	// Clear RAM buffers
+	memset(workram, 0x00, sizeof(workram));
+	memset(extram, 0x00, sizeof(extram));
+	memset(zeropageram, 0x00, sizeof(zeropageram));
 
 	initialized = true;
 }
@@ -52,10 +33,6 @@ void Memory::freeBuffers()
 	if (romLoaded) {
 		delete[] rom;
 	}
-	
-	delete[] workram;
-	delete[] extram;
-	delete[] zeropageram;
 }
 
 bool Memory::loadRom(std::string const &filename)
@@ -88,7 +65,7 @@ bool Memory::loadRom(std::string const &filename)
 	romLoaded = true;
 
 	// Read the ROM header
-	romheader = (romheader_s *)(&rom[HEADER_START]);
+	auto romheader = (Memory::romheader_t *)(&rom[HEADER_START]);
 	//printf("CGB: 0x%02X, SGB: 0x%02X, OLIC: 0x%02X, NLIC: 0x%04X, country: 0x%02X\n",
 	//	romheader->colorbyte, romheader->sgbfeatures, romheader->oldlicensee,
 	//	romheader->newlicensee, romheader->country);

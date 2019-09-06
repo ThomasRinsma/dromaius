@@ -4,19 +4,9 @@
 #include "dromaius.h"
 
 
-Graphics::~Graphics()
-{
-	if (initialized) {
-		freeBuffers();
-	}
-}
-
 void Graphics::initialize()
 {
-	if (initialized) {
-		freeBuffers();
-	}
-
+	// Initialize state
 	mode = Mode::HBLANK;
 	mclock = 0;
 	r.line = 0;
@@ -24,33 +14,25 @@ void Graphics::initialize()
 	r.scy = 0;
 	r.flags = 0;
 
-	screenPixels = new uint32_t[GB_SCREEN_WIDTH * GB_SCREEN_HEIGHT];
-	debugTilesetPixels = new uint32_t[DEBUG_WIDTH * DEBUG_HEIGHT];
+	// Initialize pixel buffers
+	memset(screenPixels, 0x00, sizeof(screenPixels));
+	memset(debugTilesetPixels, 0x00, sizeof(debugTilesetPixels));
 
-	screenScale = 2;
 
-	vram = new uint8_t[0x2000];
-	for (int i = 0; i < 0x2000; ++i) {
-		vram[i] = 0x00;
-	}
-
-	oam = new uint8_t[0xA0];
-	for (int i = 0; i < 0xA0; ++i) {
-		oam[i] = 0x00;
-	}
+	// Initialize OAM and VRAM
+	memset(vram, 0x00, sizeof(vram));
+	memset(oam, 0x00, sizeof(oam));
 	
-	tileset = new uint8_t **[0x200]; // = 512 dec
+	// Initialize tileset
 	for (int i = 0; i < 512; i++) {
-		tileset[i] = new uint8_t*[8];
 		for (int j = 0; j < 8; j++) {
-			tileset[i][j] = new uint8_t[8];
 			for (int k = 0; k < 8; ++k) {
 				tileset[i][j][k] = 0x00;
 			}
 		}
 	}
 	
-	spritedata = new sprite_s[0x28]; // = 40 dec
+	// Initialize sprite data	
 	for (int i = 0; i < 40; i++) {
 		spritedata[i].x = -8;
 		spritedata[i].y = -16;
@@ -59,29 +41,9 @@ void Graphics::initialize()
 	}
 
 	initDisplay();
-
 	initialized = true;
 }
 
-void Graphics::freeBuffers()
-{
-	printf("calling freeBuffers on graphics!\n");
-	delete[] screenPixels;
-	delete[] debugTilesetPixels;
-
-	delete[] vram;
-	delete[] oam;
-	
-	for (int i = 0; i < 512; i++) {
-		for (int j = 0; j < 8; j++) {
-			delete[] tileset[i][j];
-		}
-		delete[] tileset[i];
-	}
-	delete[] tileset;
-	
-	delete[] spritedata;
-}
 
 void Graphics::initDisplay()
 {

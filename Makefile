@@ -1,5 +1,5 @@
 CXX = g++ --std=c++11
-CFLAGS =-g -I libs/imgui -I libs/gl3w `sdl2-config --cflags` -Wno-pmf-conversions
+CFLAGS =-g -O0 -I libs/imgui -I libs/gl3w `sdl2-config --cflags` -Wno-pmf-conversions
 LDFLAGS =`sdl2-config --libs` -lm -lGL -ldl
 
 SOURCES = audio.cc cpu.cc graphics.cc gui.cc input.cc main.cc memory.cc dromaius.cc

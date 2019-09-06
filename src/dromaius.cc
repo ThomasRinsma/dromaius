@@ -38,7 +38,7 @@ void Dromaius::reset()
 	graphics.initialize();
 	input.initialize();
 	memory.initialize();
-	audio.initialize();
+	//audio.initialize();
 }
 
 void Dromaius::run()

@@ -5,17 +5,12 @@
 
 Audio::~Audio()
 {
-	if (initialized) {
-		freeBuffers();
-	}
+	SDL_CloseAudioDevice(dev);
+	SDL_CloseAudio();
 }
 
 void Audio::initialize()
 {
-	if (initialized) {
-		freeBuffers();
-	}
-
 	memset(&want, 0, sizeof(want));
 
 	want.freq = 48000;
@@ -37,11 +32,6 @@ void Audio::initialize()
     sample_ctr = 0;
 
     initialized = true;
-}
-
-void Audio::freeBuffers() {
-	SDL_CloseAudioDevice(dev);
-	SDL_CloseAudio();
 }
 
 void Audio::writeByte(uint8_t b, uint16_t addr)

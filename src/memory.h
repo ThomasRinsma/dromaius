@@ -56,7 +56,7 @@ struct Memory
 		}
 	}
 
-	struct romheader_s {
+	typedef struct romheader_s {
 		char	gamename[15];
 		uint8_t	colorbyte;		// 0x80 = yes
 		uint16_t newlicensee;
@@ -68,18 +68,16 @@ struct Memory
 		uint8_t	oldlicensee;
 		uint8_t	headersum;
 		uint16_t romsum;
-	};
+	} romheader_t;
 
-	// Memory buffers
+	// Dynamic buffer for ROM image
 	uint8_t *rom;
 	size_t romLen;
 	size_t ramSize;
 
-	romheader_s *romheader;
-
-	uint8_t *workram;
-	uint8_t *extram;
-	uint8_t *zeropageram;
+	uint8_t workram[0x2000]; // 8kb
+	uint8_t extram[0x2000];
+	uint8_t zeropageram[128];
 
 	bool ramEnabled;
 	uint8_t bankMode; // 0 = ROM, 1 = RAM

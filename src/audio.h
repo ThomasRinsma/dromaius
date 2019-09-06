@@ -105,7 +105,6 @@ struct Audio
 	~Audio();
 
 	void initialize();
-	void freeBuffers();
 
 	void writeByte(uint8_t b, uint16_t addr);
 
