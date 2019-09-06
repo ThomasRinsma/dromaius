@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <fstream>
 #include "dromaius.h"
 
 
@@ -39,6 +40,63 @@ void Dromaius::reset()
 	input.initialize();
 	memory.initialize();
 	//audio.initialize();
+}
+
+void Dromaius::saveState(uint8_t slot)
+{
+	uint8_t state[sizeof(Audio) + sizeof(CPU) + sizeof(Graphics) + sizeof(Input) + sizeof(Memory)];
+
+	// Serialization, hardcore mode
+	uint8_t *dest = state;
+	memcpy(dest, (uint8_t *)&audio, sizeof(Audio)); dest += sizeof(Audio);
+	memcpy(dest, (uint8_t *)&cpu, sizeof(CPU)); dest += sizeof(CPU);
+	memcpy(dest, (uint8_t *)&graphics, sizeof(Graphics)); dest += sizeof(Graphics);
+	memcpy(dest, (uint8_t *)&input, sizeof(Input)); dest += sizeof(Input);
+	memcpy(dest, (uint8_t *)&memory, sizeof(Memory)); dest += sizeof(Memory);
+
+	// Write to file
+	std::ofstream file("savestate.bin", std::ios::binary);
+	file.write((const char *)state, sizeof(state));
+}
+
+bool Dromaius::loadState(uint8_t slot)
+{
+	size_t expectedLen = sizeof(Audio) + sizeof(CPU) + sizeof(Graphics) + sizeof(Input) + sizeof(Memory);
+	uint8_t state[expectedLen];
+
+	// Load file
+	std::ifstream file("savestate.bin", std::ios::binary);
+
+	// Verify length
+	file.seekg(0, file.end);
+	size_t length = file.tellg();
+	file.seekg(0, file.beg);
+	if (length != expectedLen) {
+		std::cerr << "Error: unexpected savestate length";
+		return false;
+	}
+
+	// Read into state
+	file.read((char *)state, expectedLen);
+
+	// Save ROM ptr before overwriting
+	uint8_t *rom = memory.rom;
+	auto stepMode = cpu.stepMode;
+
+	// Overwrite all state
+	uint8_t *src = state;
+	memcpy((uint8_t *)&audio, src, sizeof(Audio)); src += sizeof(Audio);
+	memcpy((uint8_t *)&cpu, src, sizeof(CPU)); src += sizeof(CPU);
+	memcpy((uint8_t *)&graphics, src, sizeof(Graphics)); src += sizeof(Graphics);
+	memcpy((uint8_t *)&input, src, sizeof(Input)); src += sizeof(Input);
+	memcpy((uint8_t *)&memory, src, sizeof(Memory)); src += sizeof(Memory);
+
+	// Restore pointers
+	memory.rom = rom;
+	audio.emu = cpu.emu = graphics.emu = input.emu = memory.emu = this;
+	cpu.stepMode = stepMode;
+
+	return true;
 }
 
 void Dromaius::run()

@@ -49,9 +49,7 @@ void CPU::initialize()
 	timer.maxCount[3] = 64;
 
 	halted = false;
-	emulationPaused = false;
 	fastForward = false;
-
 	stepMode = false;
 	stepInst = false;
 	stepFrame = false;

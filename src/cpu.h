@@ -58,7 +58,6 @@ struct CPU
 
 	bool halted;
 
-	bool emulationPaused;
 	bool fastForward;
 	bool stepMode;
 	bool stepInst;

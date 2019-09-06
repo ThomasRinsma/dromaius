@@ -69,6 +69,10 @@ struct Dromaius
 	bool initializeWithRom(std::string const filename);
 	void reset();
 	void initSettings();
+
+	void saveState(uint8_t slot);
+	bool loadState(uint8_t slot);
+	
 	void run();
 };
 

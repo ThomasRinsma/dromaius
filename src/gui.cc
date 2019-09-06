@@ -140,6 +140,12 @@ void GUI::renderSettingsWindow() {
 	if (ImGui::Button("Reset ROM")) {
 		emu->reset();
 	}
+	if (ImGui::Button("Save state")) {
+		emu->saveState(0);
+	}
+	if (ImGui::Button("Load state")) {
+		emu->loadState(0);
+	}
 	if (ImGui::Button("Dump emu->memory. to \nfile (memdump.bin)")) {
 		emu->memory.dumpToFile("memdump.bin");
 	}
@@ -364,7 +370,7 @@ void GUI::renderMemoryViewerWindow() {
 	uint16_t lineBuffer[16];
 	uint8_t charBuffer[16];
 
-	ImGui::Begin("emu->memory. viewer", nullptr);
+	ImGui::Begin("Memory viewer", nullptr);
  	
  	// SetNextWindowContentWidth()
 	ImGui::Columns(3);
