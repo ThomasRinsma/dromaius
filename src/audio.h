@@ -2,11 +2,14 @@
 #define INCLUDED_AUDIO_H
 
 #include <cstdint>
+struct Dromaius;
 
 #define AUDIO_SAMPLE_HISTORY_SIZE 256
 
 struct Audio
 {
+	Dromaius *emu;
+
 	struct channel1_t {
 		bool isEnabled;
 		bool isRestarted;
@@ -109,9 +112,9 @@ struct Audio
 	inline int8_t sinewave(uint32_t f, double t) const;
 	inline int8_t squarewave(uint32_t f, double t, int8_t dutyline) const;
 
+	// SDL callback
+	void play_audio(uint8_t *stream, int len);
 };
 
-// SDL callback
-void play_audio(void *userdata, uint8_t *stream, int len);
 
 #endif

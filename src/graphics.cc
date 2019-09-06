@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "dromaius.h"
 
+
 Graphics::~Graphics()
 {
 	if (initialized) {
@@ -12,6 +13,10 @@ Graphics::~Graphics()
 
 void Graphics::initialize()
 {
+	if (initialized) {
+		freeBuffers();
+	}
+
 	mode = Mode::HBLANK;
 	mclock = 0;
 	r.line = 0;
@@ -53,6 +58,8 @@ void Graphics::initialize()
 		spritedata[i].flags = 0;
 	}
 
+	initDisplay();
+
 	initialized = true;
 }
 
@@ -78,86 +85,11 @@ void Graphics::freeBuffers()
 
 void Graphics::initDisplay()
 {
-
-	// Setup window
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-#if __APPLE__
-	// GL 3.2 Core + GLSL 150
-	glsl_version = "#version 150";
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-#else
-	// GL 3.0 + GLSL 130
-	glsl_version = "#version 130";
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-#endif
-
-	SDL_DisplayMode current;
-	SDL_GetCurrentDisplayMode(0, &current);
-
-	// Set intiial window size
-	int initialWidth, initialHeight;
-	SDL_DisplayMode dm;
-	if (SDL_GetDesktopDisplayMode(0, &dm) != 0)
-	{
-		 SDL_Log("SDL_GetDesktopDisplayMode failed: %s", SDL_GetError());
-		 initialWidth = 1024;
-		 initialHeight = 768;
-	}
-	initialWidth = dm.w * 0.75f;
-	initialHeight = dm.h * 0.75f;
-	
-	mainWindow = SDL_CreateWindow(memory.romheader->gamename,
-						  SDL_WINDOWPOS_CENTERED,
-						  SDL_WINDOWPOS_CENTERED,
-						  initialWidth, initialHeight,
-						  SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-
-	if (!mainWindow) {
-		printf("Failed to create a window.\n");
-		exit(1);
-	}
-
-
-	glcontext = SDL_GL_CreateContext(mainWindow);
-	SDL_GL_MakeCurrent(mainWindow, glcontext);
-
-	// Init GL functions
-	gl3wInit();
-
-	// Setup ImGui
-	gui.initialize();
-
 	// Create texture for game graphics
-	glGenTextures(1, &screenTexture);
+	glGenTextures(1, &emu->graphics.screenTexture);
 
 	// Create texture for video mem debug
-	glGenTextures(1, &debugTexture);
-
-	// Disable vsync, we do our own syncing
-	SDL_GL_SetSwapInterval(0);
-
-
-//	screenRenderer = SDL_CreateRenderer(mainWindow, -1, 0);
-//	debugRenderer = SDL_CreateRenderer(debugWindow, -1, 0);
-//
-//	SDL_RenderSetLogicalSize(screenRenderer, GB_SCREEN_WIDTH, GB_SCREEN_HEIGHT);
-//	SDL_RenderSetLogicalSize(debugRenderer, DEBUG_WIDTH, DEBUG_HEIGHT);
-//
-//	screenTexture = SDL_CreateTexture(screenRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, GB_SCREEN_WIDTH, GB_SCREEN_HEIGHT);
-//	debugTexture = SDL_CreateTexture(debugRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, DEBUG_WIDTH, DEBUG_HEIGHT);
-
-	// filtering
-	//SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+	glGenTextures(1, &emu->graphics.debugTexture);
 }
 
 void Graphics::updateTextures()
@@ -261,7 +193,7 @@ void Graphics::writeByte(uint8_t b, uint16_t addr)
 			
 		case 0x6: // DMA from XX00-XX9F to FE00-FE9F
 			for (int i = 0; i <= 0x9F; i++) {
-				memory.writeByte(memory.readByte((b << 8) + i), 0xFE00 + i);
+				emu->memory.writeByte(emu->memory.readByte((b << 8) + i), 0xFE00 + i);
 			}
 			break;
 			
@@ -610,21 +542,15 @@ void Graphics::renderFrame()
 	//SDL_GetWindowSize(mainWindow, &w, &h);
 	//SDL_GL_GetDrawableSize(mainWindow, &display_w, &display_h);
 
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplSDL2_NewFrame(mainWindow);
-	ImGui::NewFrame();
+	emu->gui.render();
 
-	//updateTextures();
 	
-	gui.render();
-
-	ImGui::Render();
 	glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 	ImVec4 clear_color = ImColor(128, 128, 128, 128);
 	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-	SDL_GL_SwapWindow(mainWindow);
+	SDL_GL_SwapWindow(emu->gui.window);
 }
 
 const char *Graphics::modeToString(uint8_t mode) {
@@ -644,7 +570,7 @@ const char *Graphics::modeToString(uint8_t mode) {
 
 void Graphics::step()
 {
-	mclock += cpu.dc;
+	mclock += emu->cpu.dc;
 	switch (mode) {
 		case Mode::HBLANK:
 			if (mclock >= 51) {
@@ -653,16 +579,16 @@ void Graphics::step()
 
 				//printf("coinInt = %d, line = %d, lineComp = %d\n", CoinInt, r.line, r.lineComp);
 				if (CoinInt and r.line == r.lineComp) {
-						cpu.intFlags |= CPU::Int::LCDSTAT;
+						emu->cpu.intFlags |= CPU::Int::LCDSTAT;
 				}
 
 				
 				if (r.line == 144) { // last line
 					mode = Mode::VBLANK;
-					cpu.intFlags |= CPU::Int::VBLANK;
+					emu->cpu.intFlags |= CPU::Int::VBLANK;
 
 					if (vBlankInt) {
-						cpu.intFlags |= CPU::Int::LCDSTAT;
+						emu->cpu.intFlags |= CPU::Int::LCDSTAT;
 					}
 
 					updateTextures();
@@ -671,7 +597,7 @@ void Graphics::step()
 					mode = Mode::OAM;
 
 					if (OAMInt) {
-						cpu.intFlags |= CPU::Int::LCDSTAT;
+						emu->cpu.intFlags |= CPU::Int::LCDSTAT;
 					}
 				}
 			}
@@ -687,7 +613,7 @@ void Graphics::step()
 					r.line = 0;
 
 					if (OAMInt) {
-						cpu.intFlags |= CPU::Int::LCDSTAT;
+						emu->cpu.intFlags |= CPU::Int::LCDSTAT;
 					}
 				}
 			}
@@ -707,7 +633,7 @@ void Graphics::step()
 				renderScanline();
 
 				if (hBlankInt) {
-					cpu.intFlags |= CPU::Int::LCDSTAT;
+					emu->cpu.intFlags |= CPU::Int::LCDSTAT;
 				}
 			}
 	}

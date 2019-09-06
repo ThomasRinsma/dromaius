@@ -2,19 +2,30 @@
 #define INCLUDED_GUI_H
 
 #include <cstdint>
-#include "dromaius.h"
+struct Dromaius;
 
 struct GUI
 {
+	// Up-reference
+	Dromaius *emu;
+	
 	// window states
 	bool showCPUDebugWindow = true;
 	bool showGraphicsDebugWindow = true;
 	bool showAudioWindow = true;
 	bool showMemoryViewerWindow = true;
 
-	~GUI();
-	void initialize();
+	// SDL/gl contexts
+	SDL_Window *window;
+	SDL_GLContext glcontext;
+	const char* glsl_version;
 
+	GUI();
+	~GUI();
+	void render();
+
+private:
+	void initializeImgui();
 	void renderHoverText(const char *fmt, ...);
 	void renderInfoWindow();
 	void renderSettingsWindow();
@@ -23,7 +34,6 @@ struct GUI
 	void renderGraphicsDebugWindow();
 	void renderGBScreenWindow();
 	void renderMemoryViewerWindow();
-	void render();
 };
 
 #endif // include guard

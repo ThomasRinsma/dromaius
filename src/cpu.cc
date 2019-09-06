@@ -523,7 +523,7 @@ void CPU::doCpRegA(uint8_t val)
 
 void CPU::doOpcodeUNIMP()
 {
-	printf("Unimplemented instruction (0x%02X) at 0x%04X.\n", memory.readByte(r.pc-1), r.pc-1);
+	printf("Unimplemented instruction (0x%02X) at 0x%04X.\n", emu->memory.readByte(r.pc-1), r.pc-1);
 	//exit(1);
 }
 
@@ -557,7 +557,7 @@ void CPU::doExtraOP(uint8_t op)
 	// RLC
 	if (op <= 0x07) {
 		if ((op & 0x07) == 0x06) {
-			tmp = memory.readByte((r.h << 8) + r.l);
+			tmp = emu->memory.readByte((r.h << 8) + r.l);
 			regp = &tmp;
 		} else {
 			regp = numToRegPtr(op & 0x07);
@@ -566,7 +566,7 @@ void CPU::doExtraOP(uint8_t op)
 		doRotateLeft(regp);
 
 		if ((op & 0x07) == 0x06) {
-			memory.writeByte(tmp, (r.h << 8) + r.l);
+			emu->memory.writeByte(tmp, (r.h << 8) + r.l);
 			c += 2;
 		}
 
@@ -575,7 +575,7 @@ void CPU::doExtraOP(uint8_t op)
 	// RRC
 	else if (op > 0x07 && op <= 0x0F) {
 		if ((op & 0x07) == 0x06) {
-			tmp = memory.readByte((r.h << 8) + r.l);
+			tmp = emu->memory.readByte((r.h << 8) + r.l);
 			regp = &tmp;
 		} else {
 			regp = numToRegPtr(op & 0x07);
@@ -584,7 +584,7 @@ void CPU::doExtraOP(uint8_t op)
 		doRotateRight(regp);
 
 		if ((op & 0x07) == 0x06) {
-			memory.writeByte(tmp, (r.h << 8) + r.l);
+			emu->memory.writeByte(tmp, (r.h << 8) + r.l);
 			c += 2;
 		}
 
@@ -593,7 +593,7 @@ void CPU::doExtraOP(uint8_t op)
 	// RL
 	else if (op > 0x0F && op <= 0x17) {
 		if ((op & 0x07) == 0x06) {
-			tmp = memory.readByte((r.h << 8) + r.l);
+			tmp = emu->memory.readByte((r.h << 8) + r.l);
 			regp = &tmp;
 		} else {
 			regp = numToRegPtr(op & 0x07);
@@ -602,7 +602,7 @@ void CPU::doExtraOP(uint8_t op)
 		doRotateLeftWithCarry(regp);
 
 		if ((op & 0x07) == 0x06) {
-			memory.writeByte(tmp, (r.h << 8) + r.l);
+			emu->memory.writeByte(tmp, (r.h << 8) + r.l);
 			c += 2;
 		}
 
@@ -611,7 +611,7 @@ void CPU::doExtraOP(uint8_t op)
 	// RR
 	else if (op > 0x17 && op <= 0x1F) {
 		if ((op & 0x07) == 0x06) {
-			tmp = memory.readByte((r.h << 8) + r.l);
+			tmp = emu->memory.readByte((r.h << 8) + r.l);
 			regp = &tmp;
 		} else {
 			regp = numToRegPtr(op & 0x07);
@@ -620,7 +620,7 @@ void CPU::doExtraOP(uint8_t op)
 		doRotateRightWithCarry(regp);
 
 		if ((op & 0x07) == 0x06) {
-			memory.writeByte(tmp, (r.h << 8) + r.l);
+			emu->memory.writeByte(tmp, (r.h << 8) + r.l);
 			c += 2;
 		}
 
@@ -629,7 +629,7 @@ void CPU::doExtraOP(uint8_t op)
 	// SLA
 	else if (op > 0x1F && op <= 0x27) {
 		if ((op & 0x07) == 0x06) {
-			tmp = memory.readByte((r.h << 8) + r.l);
+			tmp = emu->memory.readByte((r.h << 8) + r.l);
 			regp = &tmp;
 		} else {
 			regp = numToRegPtr(op & 0x07);
@@ -638,7 +638,7 @@ void CPU::doExtraOP(uint8_t op)
 		doShiftLeft(regp);
 
 		if ((op & 0x07) == 0x06) {
-			memory.writeByte(tmp, (r.h << 8) + r.l);
+			emu->memory.writeByte(tmp, (r.h << 8) + r.l);
 			c += 2;
 		}
 
@@ -647,7 +647,7 @@ void CPU::doExtraOP(uint8_t op)
 	// SRA
 	else if (op > 0x27 && op <= 0x2F) {
 		if ((op & 0x07) == 0x06) {
-			tmp = memory.readByte((r.h << 8) + r.l);
+			tmp = emu->memory.readByte((r.h << 8) + r.l);
 			regp = &tmp;
 		} else {
 			regp = numToRegPtr(op & 0x07);
@@ -656,7 +656,7 @@ void CPU::doExtraOP(uint8_t op)
 		doShiftRight(regp);
 
 		if ((op & 0x07) == 0x06) {
-			memory.writeByte(tmp, (r.h << 8) + r.l);
+			emu->memory.writeByte(tmp, (r.h << 8) + r.l);
 			c += 2;
 		}
 
@@ -665,7 +665,7 @@ void CPU::doExtraOP(uint8_t op)
 	// SWAP
 	else if (op > 0x2F && op <= 0x37) {
 		if ((op & 0x07) == 0x06) {
-			tmp = memory.readByte((r.h << 8) + r.l);
+			tmp = emu->memory.readByte((r.h << 8) + r.l);
 			regp = &tmp;
 		} else {
 			regp = numToRegPtr(op & 0x07);
@@ -674,7 +674,7 @@ void CPU::doExtraOP(uint8_t op)
 		doSwapNibbles(regp);
 
 		if ((op & 0x07) == 0x06) {
-			memory.writeByte(tmp, (r.h << 8) + r.l);
+			emu->memory.writeByte(tmp, (r.h << 8) + r.l);
 			c += 2;
 		}
 
@@ -683,7 +683,7 @@ void CPU::doExtraOP(uint8_t op)
 	// SRL
 	else if (op > 0x37 && op <= 0x3F) {
 		if ((op & 0x07) == 0x06) {
-			tmp = memory.readByte((r.h << 8) + r.l);
+			tmp = emu->memory.readByte((r.h << 8) + r.l);
 			regp = &tmp;
 		} else {
 			regp = numToRegPtr(op & 0x07);
@@ -692,7 +692,7 @@ void CPU::doExtraOP(uint8_t op)
 		doShiftRightL(regp);
 
 		if ((op & 0x07) == 0x06) {
-			memory.writeByte(tmp, (r.h << 8) + r.l);
+			emu->memory.writeByte(tmp, (r.h << 8) + r.l);
 			c += 2;
 		}
 
@@ -703,7 +703,7 @@ void CPU::doExtraOP(uint8_t op)
 		bitnr = (op - 0x40) / 8;
 
 		if ((op & 0x07) == 0x06) {
-			tmp = memory.readByte((r.h << 8) + r.l);
+			tmp = emu->memory.readByte((r.h << 8) + r.l);
 			regp = &tmp;
 		} else {
 			regp = numToRegPtr(op & 0x07);
@@ -712,7 +712,7 @@ void CPU::doExtraOP(uint8_t op)
 		doBit(regp, bitnr);
 
 		if ((op & 0x07) == 0x06) {
-			memory.writeByte(tmp, (r.h << 8) + r.l);
+			emu->memory.writeByte(tmp, (r.h << 8) + r.l);
 			c += 1;
 		}
 
@@ -723,7 +723,7 @@ void CPU::doExtraOP(uint8_t op)
 		bitnr = (op - 0x80) / 8;
 
 		if ((op & 0x07) == 0x06) {
-			tmp = memory.readByte((r.h << 8) + r.l);
+			tmp = emu->memory.readByte((r.h << 8) + r.l);
 			regp = &tmp;
 		} else {
 			regp = numToRegPtr(op & 0x07);
@@ -732,7 +732,7 @@ void CPU::doExtraOP(uint8_t op)
 		doRes(regp, bitnr);
 
 		if ((op & 0x07) == 0x06) {
-			memory.writeByte(tmp, (r.h << 8) + r.l);
+			emu->memory.writeByte(tmp, (r.h << 8) + r.l);
 			c += 2;
 		}
 
@@ -743,7 +743,7 @@ void CPU::doExtraOP(uint8_t op)
 		bitnr = (op - 0xC0) / 8;
 
 		if ((op & 0x07) == 0x06) {
-			tmp = memory.readByte((r.h << 8) + r.l);
+			tmp = emu->memory.readByte((r.h << 8) + r.l);
 			regp = &tmp;
 		} else {
 			regp = numToRegPtr(op & 0x07);
@@ -752,7 +752,7 @@ void CPU::doExtraOP(uint8_t op)
 		doSet(regp, bitnr);
 
 		if ((op & 0x07) == 0x06) {
-			memory.writeByte(tmp, (r.h << 8) + r.l);
+			emu->memory.writeByte(tmp, (r.h << 8) + r.l);
 			c += 2;
 		}
 
@@ -803,7 +803,7 @@ void CPU::handleInterrupts() {
 		
 		// Push PC;
 		r.sp -= 2;
-		memory.writeWord(r.pc, r.sp);
+		emu->memory.writeWord(r.pc, r.sp);
 
 		if (interrupts & Int::VBLANK) {
 			intFlags &= ~Int::VBLANK;
@@ -845,13 +845,13 @@ int CPU::executeInstruction()
 
 	handleInterrupts();
 
-	if (settings.debug) {
+	if (emu->settings.debug) {
 		//printf("Read instruction 0x%02X at 0x%04X. (%d)\n", inst, r.pc, r.pc);
 		printRegisters();
 	}
 
 	if (not halted) {
-		inst = memory.readByte(r.pc);
+		inst = emu->memory.readByte(r.pc);
 		lastInst = inst;
 
 		r.pc++;
@@ -861,14 +861,14 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x01: // LD BC, nn
-				r.c = memory.readByte(r.pc);
-				r.b = memory.readByte(r.pc + 1);
+				r.c = emu->memory.readByte(r.pc);
+				r.b = emu->memory.readByte(r.pc + 1);
 				r.pc += 2;
 				c += 3;
 				break;
 				
 			case 0x02: // LD (BC), A
-				memory.writeByte(r.a, (r.b << 8) + r.c);
+				emu->memory.writeByte(r.a, (r.b << 8) + r.c);
 				c += 2;
 				break;
 				
@@ -891,7 +891,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x06: // LD B, n
-				r.b = memory.readByte(r.pc);
+				r.b = emu->memory.readByte(r.pc);
 				r.pc++;
 				c += 2;
 				break;
@@ -916,9 +916,9 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x08: // LD (nn), SP
-				utmp8 = memory.readByte(r.pc);
-				utmp8_2 = memory.readByte(r.pc + 1);
-				memory.writeWord(r.sp, (utmp8 << 8) + utmp8_2);
+				utmp8 = emu->memory.readByte(r.pc);
+				utmp8_2 = emu->memory.readByte(r.pc + 1);
+				emu->memory.writeWord(r.sp, (utmp8 << 8) + utmp8_2);
 				r.pc += 2;
 				c += 5;
 				break;
@@ -929,7 +929,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x0A: // LD A, (BC)
-				r.a = memory.readByte((r.b << 8) + r.c);
+				r.a = emu->memory.readByte((r.b << 8) + r.c);
 				c += 2;
 				break;
 				
@@ -952,7 +952,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x0E: // LD C, n
-				r.c = memory.readByte(r.pc);
+				r.c = emu->memory.readByte(r.pc);
 				r.pc++;
 				c += 2;
 				break;
@@ -983,14 +983,14 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x11: // LD DE, nn
-				r.e = memory.readByte(r.pc);
-				r.d = memory.readByte(r.pc + 1);
+				r.e = emu->memory.readByte(r.pc);
+				r.d = emu->memory.readByte(r.pc + 1);
 				r.pc += 2;
 				c += 3;
 				break;
 			
 			case 0x12: // LD (DE), A
-				memory.writeByte(r.a, (r.d << 8) + r.e);
+				emu->memory.writeByte(r.a, (r.d << 8) + r.e);
 				c += 2;
 				break;
 				
@@ -1013,7 +1013,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x16: // LD D, n
-				r.d = memory.readByte(r.pc);
+				r.d = emu->memory.readByte(r.pc);
 				r.pc++;
 				c += 2;
 				break;
@@ -1026,7 +1026,7 @@ int CPU::executeInstruction()
 				break;
 			
 			case 0x18: // JR n
-				tmp8 = (int8_t)memory.readByte(r.pc);
+				tmp8 = (int8_t)emu->memory.readByte(r.pc);
 				r.pc++;
 				r.pc += tmp8;
 				c += 3;
@@ -1038,7 +1038,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x1A: // LD A, (DE)
-				r.a = memory.readByte((r.d << 8) + r.e);
+				r.a = emu->memory.readByte((r.d << 8) + r.e);
 				c += 2;
 				break;
 				
@@ -1061,7 +1061,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x1E: // LD E, n
-				r.e = memory.readByte(r.pc);
+				r.e = emu->memory.readByte(r.pc);
 				r.pc++;
 				c += 2;
 				break;
@@ -1073,7 +1073,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x20: // JR NZ, n
-				tmp8 = (int8_t)memory.readByte(r.pc);
+				tmp8 = (int8_t)emu->memory.readByte(r.pc);
 				r.pc++;
 				if (!getFlag(Flag::ZERO)) {
 					r.pc += tmp8;
@@ -1083,14 +1083,14 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x21: // LD HL, nn
-				r.l = memory.readByte(r.pc);
-				r.h = memory.readByte(r.pc+1);
+				r.l = emu->memory.readByte(r.pc);
+				r.h = emu->memory.readByte(r.pc+1);
 				r.pc += 2;
 				c += 3;
 				break;
 				
 			case 0x22: // LDI (HL), A
-				memory.writeByte(r.a, (r.h << 8) + r.l);
+				emu->memory.writeByte(r.a, (r.h << 8) + r.l);
 				r.l++;
 				if (r.l == 0x00) {
 					r.h++;
@@ -1117,7 +1117,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x26: // LD H, n
-				r.h = memory.readByte(r.pc);
+				r.h = emu->memory.readByte(r.pc);
 				r.pc++;
 				c += 2;
 				break;
@@ -1163,7 +1163,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x28: // JR Z, n
-				tmp8 = (int8_t)memory.readByte(r.pc);
+				tmp8 = (int8_t)emu->memory.readByte(r.pc);
 				r.pc++;
 				if (getFlag(Flag::ZERO)) {
 					r.pc += tmp8;
@@ -1178,7 +1178,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x2A: // LDI A, (HL)
-				r.a = memory.readByte((r.h << 8) + r.l);
+				r.a = emu->memory.readByte((r.h << 8) + r.l);
 				r.l++;
 				if (r.l == 0x00) {
 					r.h++;
@@ -1205,7 +1205,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x2E: // LD L, n
-				r.l = memory.readByte(r.pc);
+				r.l = emu->memory.readByte(r.pc);
 				r.pc++;
 				c += 2;
 				break;
@@ -1220,7 +1220,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x30: // JR NC, n
-				tmp8 = (int8_t)memory.readByte(r.pc);
+				tmp8 = (int8_t)emu->memory.readByte(r.pc);
 				r.pc++;
 				if (not getFlag(Flag::CARRY)) {
 					r.pc += tmp8;
@@ -1230,13 +1230,13 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x31: // LD SP, nn
-				r.sp = memory.readWord(r.pc);
+				r.sp = emu->memory.readWord(r.pc);
 				r.pc += 2;
 				c += 3;
 				break;
 				
 			case 0x32: // LDD (HL), A
-				memory.writeByte(r.a, (r.h << 8) + r.l);
+				emu->memory.writeByte(r.a, (r.h << 8) + r.l);
 				r.l--;
 				if (r.l == 0xFF) {
 					r.h--;
@@ -1250,21 +1250,21 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x34: // INC (HL)
-				utmp8 = memory.readByte((r.h << 8) + r.l);
+				utmp8 = emu->memory.readByte((r.h << 8) + r.l);
 				doIncReg(&utmp8);
-				memory.writeByte(utmp8, (r.h << 8) + r.l);
+				emu->memory.writeByte(utmp8, (r.h << 8) + r.l);
 				c += 3;
 				break;
 				
 			case 0x35: // DEC (HL)
-				utmp8 = memory.readByte((r.h << 8) + r.l);
+				utmp8 = emu->memory.readByte((r.h << 8) + r.l);
 				doDecReg(&utmp8);
-				memory.writeByte(utmp8, (r.h << 8) + r.l);
+				emu->memory.writeByte(utmp8, (r.h << 8) + r.l);
 				c += 3;
 				break;
 				
 			case 0x36: // LD (HL), n
-				memory.writeByte(memory.readByte(r.pc), (r.h << 8) + r.l);
+				emu->memory.writeByte(emu->memory.readByte(r.pc), (r.h << 8) + r.l);
 				r.pc++;
 				c += 3;
 				break;
@@ -1277,7 +1277,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x38: // JR C, n
-				tmp8 = (int8_t)memory.readByte(r.pc);
+				tmp8 = (int8_t)emu->memory.readByte(r.pc);
 				r.pc++;
 				if (getFlag(Flag::CARRY)) {
 					r.pc += tmp8;
@@ -1292,7 +1292,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x3A: // LDD A, (HL)
-				r.a = memory.readByte((r.h << 8) + r.l);
+				r.a = emu->memory.readByte((r.h << 8) + r.l);
 				r.l--;
 				if (r.l == 0xFF) {
 					r.h--;
@@ -1316,7 +1316,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x3E: // LD A, n
-				r.a = memory.readByte(r.pc);
+				r.a = emu->memory.readByte(r.pc);
 				r.pc++;
 				c += 2;
 				break;
@@ -1365,7 +1365,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x46: // LD B, (HL)
-				r.b = memory.readByte((r.h << 8) + r.l);
+				r.b = emu->memory.readByte((r.h << 8) + r.l);
 				c += 2;
 				break;
 				
@@ -1405,7 +1405,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x4E: // LD C, (HL)
-				r.c = memory.readByte((r.h << 8) + r.l);
+				r.c = emu->memory.readByte((r.h << 8) + r.l);
 				c += 2;
 				break;
 				
@@ -1445,7 +1445,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x56: // LD D, (HL)
-				r.d = memory.readByte((r.h << 8) + r.l);
+				r.d = emu->memory.readByte((r.h << 8) + r.l);
 				c += 2;
 				break;
 				
@@ -1485,7 +1485,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x5E: // LD E, (HL)
-				r.e = memory.readByte((r.h << 8) + r.l);
+				r.e = emu->memory.readByte((r.h << 8) + r.l);
 				c += 2;
 				break;
 				
@@ -1525,7 +1525,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x66: // LD H, (HL)
-				r.h = memory.readByte((r.h << 8) + r.l);
+				r.h = emu->memory.readByte((r.h << 8) + r.l);
 				c += 2;
 				break;
 				
@@ -1565,7 +1565,7 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x6E: // LD L, (HL)
-				r.l = memory.readByte((r.h << 8) + r.l);
+				r.l = emu->memory.readByte((r.h << 8) + r.l);
 				c += 2;
 				break;
 				
@@ -1575,32 +1575,32 @@ int CPU::executeInstruction()
 				break;
 				
 			case 0x70: // LD (HL), B
-				memory.writeByte(r.b, (r.h << 8) + r.l);
+				emu->memory.writeByte(r.b, (r.h << 8) + r.l);
 				c += 2;
 				break;
 
 			case 0x71: // LD (HL), C
-				memory.writeByte(r.c, (r.h << 8) + r.l);
+				emu->memory.writeByte(r.c, (r.h << 8) + r.l);
 				c += 2;
 				break;
 
 			case 0x72: // LD (HL), D
-				memory.writeByte(r.d, (r.h << 8) + r.l);
+				emu->memory.writeByte(r.d, (r.h << 8) + r.l);
 				c += 2;
 				break;
 
 			case 0x73: // LD (HL), E
-				memory.writeByte(r.e, (r.h << 8) + r.l);
+				emu->memory.writeByte(r.e, (r.h << 8) + r.l);
 				c += 2;
 				break;
 
 			case 0x74: // LD (HL), H
-				memory.writeByte(r.h, (r.h << 8) + r.l);
+				emu->memory.writeByte(r.h, (r.h << 8) + r.l);
 				c += 2;
 				break;
 
 			case 0x75: // LD (HL), L
-				memory.writeByte(r.l, (r.h << 8) + r.l);
+				emu->memory.writeByte(r.l, (r.h << 8) + r.l);
 				c += 2;
 				break;
 
@@ -1614,7 +1614,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0x77: // LD (HL), A
-				memory.writeByte(r.a, (r.h << 8) + r.l);
+				emu->memory.writeByte(r.a, (r.h << 8) + r.l);
 				c += 2;
 				break;
 
@@ -1649,7 +1649,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0x7E: // LD A, (HL)
-				r.a = memory.readByte((r.h << 8) + r.l);
+				r.a = emu->memory.readByte((r.h << 8) + r.l);
 				c += 2;
 				break;
 
@@ -1689,7 +1689,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0x86: // ADD A, (HL)
-				doAddReg(&r.a, memory.readByte((r.h << 8) + r.l));
+				doAddReg(&r.a, emu->memory.readByte((r.h << 8) + r.l));
 				c += 2;
 				break;
 
@@ -1729,7 +1729,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0x8E: // ADC A, (HL)
-				doAddRegWithCarry(&r.a, memory.readByte((r.h << 8) + r.l));
+				doAddRegWithCarry(&r.a, emu->memory.readByte((r.h << 8) + r.l));
 				c += 2;
 				break;
 
@@ -1769,7 +1769,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0x96: // SUB A, (HL)
-				doSubReg(&r.a, memory.readByte((r.h << 8) + r.l));
+				doSubReg(&r.a, emu->memory.readByte((r.h << 8) + r.l));
 				c += 2;
 				break;
 
@@ -1809,7 +1809,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0x9E: // SBC A, (HL)
-				doSubRegWithCarry(&r.a, memory.readByte((r.h << 8) + r.l));
+				doSubRegWithCarry(&r.a, emu->memory.readByte((r.h << 8) + r.l));
 				c += 2;
 				break;
 
@@ -1849,7 +1849,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xA6: // AND (HL)
-				doAndRegA(memory.readByte((r.h << 8) + r.l));
+				doAndRegA(emu->memory.readByte((r.h << 8) + r.l));
 				c += 2;
 				break;
 
@@ -1889,7 +1889,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xAE: // XOR (HL)
-				doXorRegA(memory.readByte((r.h << 8) + r.l));
+				doXorRegA(emu->memory.readByte((r.h << 8) + r.l));
 				c += 2;
 				break;
 
@@ -1929,7 +1929,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xB6: // OR (HL)
-				doOrRegA(memory.readByte((r.h << 8) + r.l));
+				doOrRegA(emu->memory.readByte((r.h << 8) + r.l));
 				c += 2;
 				break;
 
@@ -1969,7 +1969,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xBE: // CP (HL)
-				doCpRegA(memory.readByte((r.h << 8) + r.l));
+				doCpRegA(emu->memory.readByte((r.h << 8) + r.l));
 				c += 2;
 				break;
 
@@ -1980,7 +1980,7 @@ int CPU::executeInstruction()
 
 			case 0xC0: // RET NZ
 				if (not getFlag(Flag::ZERO)) {
-					r.pc = memory.readWord(r.sp);
+					r.pc = emu->memory.readWord(r.sp);
 					r.sp += 2;
 					c += 3;
 				}
@@ -1988,16 +1988,16 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xC1: // POP BC
-				r.c = memory.readByte(r.sp);
+				r.c = emu->memory.readByte(r.sp);
 				r.sp++;
-				r.b = memory.readByte(r.sp);
+				r.b = emu->memory.readByte(r.sp);
 				r.sp++;
 				c += 3;
 				break;
 
 			case 0xC2: // JP NZ, nn
 				if (not getFlag(Flag::ZERO)) {
-					r.pc = memory.readWord(r.pc);
+					r.pc = emu->memory.readWord(r.pc);
 					c += 1;
 				} else {
 					r.pc += 2;
@@ -2006,15 +2006,15 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xC3: // JP nn
-				r.pc = memory.readWord(r.pc);
+				r.pc = emu->memory.readWord(r.pc);
 				c += 4;
 				break;
 
 			case 0xC4: // CALL NZ, nn
 				if (not getFlag(Flag::ZERO)) {
 					r.sp -= 2;
-					memory.writeWord(r.pc + 2, r.sp);
-					r.pc = memory.readWord(r.pc);
+					emu->memory.writeWord(r.pc + 2, r.sp);
+					r.pc = emu->memory.readWord(r.pc);
 					c += 3;
 				} else {
 					r.pc += 2;
@@ -2024,14 +2024,14 @@ int CPU::executeInstruction()
 
 			case 0xC5: // PUSH BC
 				r.sp--;
-				memory.writeByte(r.b, r.sp);
+				emu->memory.writeByte(r.b, r.sp);
 				r.sp--;
-				memory.writeByte(r.c, r.sp);
+				emu->memory.writeByte(r.c, r.sp);
 				c += 4;
 				break;
 
 			case 0xC6: // ADD A, n
-				utmp8 = memory.readByte(r.pc);
+				utmp8 = emu->memory.readByte(r.pc);
 				r.pc++;
 				doAddReg(&r.a, utmp8);
 				c += 2;
@@ -2039,14 +2039,14 @@ int CPU::executeInstruction()
 
 			case 0xC7: // RST 00
 				r.sp -= 2;
-				memory.writeWord(r.pc, r.sp);
+				emu->memory.writeWord(r.pc, r.sp);
 				r.pc = 0x00;
 				c += 4;
 				break;
 
 			case 0xC8: // RET Z
 				if (getFlag(Flag::ZERO)) {
-					r.pc = memory.readWord(r.sp);
+					r.pc = emu->memory.readWord(r.sp);
 					r.sp += 2;
 					c += 3;
 				}
@@ -2054,14 +2054,14 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xC9: // RET
-				r.pc = memory.readWord(r.sp);
+				r.pc = emu->memory.readWord(r.sp);
 				r.sp += 2;
 				c += 4;
 				break;
 
 			case 0xCA: // JP Z, nn
 				if (getFlag(Flag::ZERO)) {
-					r.pc = memory.readWord(r.pc);
+					r.pc = emu->memory.readWord(r.pc);
 					c += 1;
 				} else {
 					r.pc += 2;
@@ -2070,7 +2070,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xCB: // Extra instructions
-				utmp8 = memory.readByte(r.pc);
+				utmp8 = emu->memory.readByte(r.pc);
 				r.pc++;
 				doExtraOP(utmp8);
 				break;
@@ -2078,8 +2078,8 @@ int CPU::executeInstruction()
 			case 0xCC: // CALL Z, nn
 				if (getFlag(Flag::ZERO)) {
 					r.sp -= 2;
-					memory.writeWord(r.pc + 2, r.sp);
-					r.pc = memory.readWord(r.pc);
+					emu->memory.writeWord(r.pc + 2, r.sp);
+					r.pc = emu->memory.readWord(r.pc);
 					c += 3;
 				} else {
 					r.pc += 2;
@@ -2089,27 +2089,27 @@ int CPU::executeInstruction()
 
 			case 0xCD: // CALL nn
 				r.sp -= 2;
-				memory.writeWord(r.pc + 2, r.sp);
-				r.pc = memory.readWord(r.pc);
+				emu->memory.writeWord(r.pc + 2, r.sp);
+				r.pc = emu->memory.readWord(r.pc);
 				c += 6;
 				break;
 
 			case 0xCE: // ADC A, n
-				doAddRegWithCarry(&r.a, memory.readByte(r.pc));
+				doAddRegWithCarry(&r.a, emu->memory.readByte(r.pc));
 				r.pc++;
 				c += 2;
 				break;
 
 			case 0xCF: // RST 08
 				r.sp -= 2;
-				memory.writeWord(r.pc, r.sp);
+				emu->memory.writeWord(r.pc, r.sp);
 				r.pc = 0x08;
 				c += 4;
 				break;
 
 			case 0xD0: // RET NC
 				if (not getFlag(Flag::CARRY)) {
-					r.pc = memory.readWord(r.sp);
+					r.pc = emu->memory.readWord(r.sp);
 					r.sp += 2;
 					c += 3;
 				}
@@ -2117,16 +2117,16 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xD1: // POP DE
-				r.e = memory.readByte(r.sp);
+				r.e = emu->memory.readByte(r.sp);
 				r.sp++;
-				r.d = memory.readByte(r.sp);
+				r.d = emu->memory.readByte(r.sp);
 				r.sp++;
 				c += 3;
 				break;
 
 			case 0xD2: // JP NC, nn
 				if (not getFlag(Flag::CARRY)) {
-					r.pc = memory.readWord(r.pc);
+					r.pc = emu->memory.readWord(r.pc);
 					c += 1;
 				} else {
 					r.pc += 2;
@@ -2141,8 +2141,8 @@ int CPU::executeInstruction()
 			case 0xD4: // CALL NC, nn
 				if (not getFlag(Flag::CARRY)) {
 					r.sp -= 2;
-					memory.writeWord(r.pc + 2, r.sp);
-					r.pc = memory.readWord(r.pc);
+					emu->memory.writeWord(r.pc + 2, r.sp);
+					r.pc = emu->memory.readWord(r.pc);
 					c += 3;
 				} else {
 					r.pc += 2;
@@ -2152,28 +2152,28 @@ int CPU::executeInstruction()
 
 			case 0xD5: // PUSH DE
 				r.sp--;
-				memory.writeByte(r.d, r.sp);
+				emu->memory.writeByte(r.d, r.sp);
 				r.sp--;
-				memory.writeByte(r.e, r.sp);
+				emu->memory.writeByte(r.e, r.sp);
 				c += 4;
 				break;
 
 			case 0xD6: // SUB A, n
-				doSubReg(&r.a, memory.readByte(r.pc));
+				doSubReg(&r.a, emu->memory.readByte(r.pc));
 				r.pc++;
 				c += 2;
 				break;
 
 			case 0xD7: // RST 10
 				r.sp -= 2;
-				memory.writeWord(r.pc, r.sp);
+				emu->memory.writeWord(r.pc, r.sp);
 				r.pc = 0x10;
 				c += 4;
 				break;
 
 			case 0xD8: // RET C
 				if (getFlag(Flag::CARRY)) {
-					r.pc = memory.readWord(r.sp);
+					r.pc = emu->memory.readWord(r.sp);
 					r.sp += 2;
 					c += 3;
 				}
@@ -2184,7 +2184,7 @@ int CPU::executeInstruction()
 				intsOn = true;
 				//printf("reti, intsOn = 1\n");
 				
-				r.pc = memory.readWord(r.sp);
+				r.pc = emu->memory.readWord(r.sp);
 				r.sp += 2;
 				
 				c += 4;
@@ -2192,7 +2192,7 @@ int CPU::executeInstruction()
 
 			case 0xDA: // JP C, nn
 				if (getFlag(Flag::CARRY)) {
-					r.pc = memory.readWord(r.pc);
+					r.pc = emu->memory.readWord(r.pc);
 					c += 1;
 				} else {
 					r.pc += 2;
@@ -2207,8 +2207,8 @@ int CPU::executeInstruction()
 			case 0xDC: // CALL C, nn
 				if (getFlag(Flag::CARRY)) {
 					r.sp -= 2;
-					memory.writeWord(r.pc + 2, r.sp);
-					r.pc = memory.readWord(r.pc);
+					emu->memory.writeWord(r.pc + 2, r.sp);
+					r.pc = emu->memory.readWord(r.pc);
 					c += 3;
 				} else {
 					r.pc += 2;
@@ -2221,34 +2221,34 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xDE: // SBC A, n
-				doSubRegWithCarry(&r.a, memory.readByte(r.pc));
+				doSubRegWithCarry(&r.a, emu->memory.readByte(r.pc));
 				r.pc++;
 				c += 2;
 				break;
 
 			case 0xDF: // RST 18
 				r.sp -= 2;
-				memory.writeWord(r.pc, r.sp);
+				emu->memory.writeWord(r.pc, r.sp);
 				r.pc = 0x18;
 				c += 4;
 				break;
 
 			case 0xE0: // LDH (n), A
-				memory.writeByte(r.a, 0xFF00 + memory.readByte(r.pc));
+				emu->memory.writeByte(r.a, 0xFF00 + emu->memory.readByte(r.pc));
 				r.pc++;
 				c += 3;
 				break;
 
 			case 0xE1: // POP HL
-				r.l = memory.readByte(r.sp);
+				r.l = emu->memory.readByte(r.sp);
 				r.sp++;
-				r.h = memory.readByte(r.sp);
+				r.h = emu->memory.readByte(r.sp);
 				r.sp++;
 				c += 3;
 				break;
 
 			case 0xE2: // LDH (C), A
-				memory.writeByte(r.a, 0xFF00 + r.c);
+				emu->memory.writeByte(r.a, 0xFF00 + r.c);
 				c += 2;
 				break;
 
@@ -2259,27 +2259,27 @@ int CPU::executeInstruction()
 
 			case 0xE5: // PUSH HL
 				r.sp--;
-				memory.writeByte(r.h, r.sp);
+				emu->memory.writeByte(r.h, r.sp);
 				r.sp--;
-				memory.writeByte(r.l, r.sp);
+				emu->memory.writeByte(r.l, r.sp);
 				c += 4;
 				break;
 
 			case 0xE6: // AND n
-				doAndRegA(memory.readByte(r.pc));
+				doAndRegA(emu->memory.readByte(r.pc));
 				r.pc++;
 				c += 2;
 				break;
 
 			case 0xE7: // RST 20
 				r.sp -= 2;
-				memory.writeWord(r.pc, r.sp);
+				emu->memory.writeWord(r.pc, r.sp);
 				r.pc = 0x20;
 				c += 4;
 				break;
 
 			case 0xE8: // ADD SP, n
-				tmp8 = (int8_t)memory.readByte(r.pc);
+				tmp8 = (int8_t)emu->memory.readByte(r.pc);
 				r.pc++;
 
 				utmp16 = r.sp + tmp8;
@@ -2308,7 +2308,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xEA: // LD (nn), A
-				memory.writeByte(r.a, memory.readWord(r.pc));
+				emu->memory.writeByte(r.a, emu->memory.readWord(r.pc));
 				r.pc += 2;
 				c += 4;
 				break;
@@ -2320,34 +2320,34 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xEE: // XOR n
-				doXorRegA(memory.readByte(r.pc));
+				doXorRegA(emu->memory.readByte(r.pc));
 				r.pc++;
 				c += 2;
 				break;
 
 			case 0xEF: // RST 28
 				r.sp -= 2;
-				memory.writeWord(r.pc, r.sp);
+				emu->memory.writeWord(r.pc, r.sp);
 				r.pc = 0x28;
 				c += 4;
 				break;
 
 			case 0xF0: // LDH A, (n)
-				r.a = memory.readByte(0xFF00 + memory.readByte(r.pc));
+				r.a = emu->memory.readByte(0xFF00 + emu->memory.readByte(r.pc));
 				r.pc++;
 				c += 3;
 				break;
 
 			case 0xF1: // POP AF
-				r.f = memory.readByte(r.sp) & 0xF0;
+				r.f = emu->memory.readByte(r.sp) & 0xF0;
 				r.sp++;
-				r.a = memory.readByte(r.sp);
+				r.a = emu->memory.readByte(r.sp);
 				r.sp++;
 				c += 3;
 				break;
 
 			case 0xF2: // LDH a, (C)?
-				r.a = memory.readByte(0xFF00 + r.c);
+				r.a = emu->memory.readByte(0xFF00 + r.c);
 				c += 2;
 				break;
 
@@ -2363,27 +2363,27 @@ int CPU::executeInstruction()
 
 			case 0xF5: // PUSH AF
 				r.sp--;
-				memory.writeByte(r.a, r.sp);
+				emu->memory.writeByte(r.a, r.sp);
 				r.sp--;
-				memory.writeByte(r.f, r.sp);
+				emu->memory.writeByte(r.f, r.sp);
 				c += 4;
 				break;
 
 			case 0xF6: // OR n
-				doOrRegA(memory.readByte(r.pc));
+				doOrRegA(emu->memory.readByte(r.pc));
 				r.pc++;
 				c += 2;
 				break;
 
 			case 0xF7: // RST 30
 				r.sp -= 2;
-				memory.writeWord(r.pc, r.sp);
+				emu->memory.writeWord(r.pc, r.sp);
 				r.pc = 0x30;
 				c += 4;
 				break;
 
 			case 0xF8: // LDHL SP, d
-				tmp8 = (int8_t)memory.readByte(r.pc);
+				tmp8 = (int8_t)emu->memory.readByte(r.pc);
 				r.pc++;
 				utmp16 = (r.sp + tmp8) & 0xFFFF;
 
@@ -2414,7 +2414,7 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xFA: // LD A, (nn)
-				r.a = memory.readByte(memory.readWord(r.pc));
+				r.a = emu->memory.readByte(emu->memory.readWord(r.pc));
 				r.pc += 2;
 				c += 4;
 				break;
@@ -2431,14 +2431,14 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xFE: // CP n
-				doCpRegA(memory.readByte(r.pc));
+				doCpRegA(emu->memory.readByte(r.pc));
 				r.pc++;
 				c += 2;
 				break;
 
 			case 0xFF: // RST 38
 				r.sp -= 2;
-				memory.writeWord(r.pc, r.sp);
+				emu->memory.writeWord(r.pc, r.sp);
 				r.pc = 0x38;
 				c += 4;
 				break;
@@ -2488,7 +2488,7 @@ inline const char *CPU::numToRegName(uint8_t num)
 
 uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 {
-	uint8_t inst = memory.readByte(pc);
+	uint8_t inst = emu->memory.readByte(pc);
 	uint16_t npc = pc + 1;
 	uint8_t extraOp, bitnr;
 
@@ -2498,7 +2498,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x01: // LD BC, nn
-			sprintf(instStr, "LD BC, 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "LD BC, 0x%04X", emu->memory.readWord(npc));
 			break;
 			npc += 2;
 			
@@ -2519,7 +2519,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x06: // LD B, n
-			sprintf(instStr, "LD B, 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "LD B, 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 			
@@ -2528,7 +2528,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x08: // LD (nn), SP
-			sprintf(instStr, "LD (0x%04X), SP", memory.readWord(npc));
+			sprintf(instStr, "LD (0x%04X), SP", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 			
@@ -2553,7 +2553,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x0E: // LD C, n
-			sprintf(instStr, "LD C, 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "LD C, 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 			
@@ -2566,7 +2566,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x11: // LD DE, nn
-			sprintf(instStr, "LD DE, 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "LD DE, 0x%04X", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 		
@@ -2587,7 +2587,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x16: // LD D, n
-			sprintf(instStr, "LD D, 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "LD D, 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 			
@@ -2596,7 +2596,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 		
 		case 0x18: // JR n
-			sprintf(instStr, "JR 0x%02X (%d)", memory.readByte(npc), (int8_t)memory.readByte(npc));
+			sprintf(instStr, "JR 0x%02X (%d)", emu->memory.readByte(npc), (int8_t)emu->memory.readByte(npc));
 			npc++;
 			break;
 			
@@ -2621,7 +2621,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x1E: // LD E, n
-			sprintf(instStr, "LD E, 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "LD E, 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 			
@@ -2630,12 +2630,12 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x20: // JR NZ, n
-			sprintf(instStr, "JR NZ, 0x%02X (%d)", memory.readByte(npc), (int8_t)memory.readByte(npc));
+			sprintf(instStr, "JR NZ, 0x%02X (%d)", emu->memory.readByte(npc), (int8_t)emu->memory.readByte(npc));
 			npc++;
 			break;
 			
 		case 0x21: // LD HL, nn
-			sprintf(instStr, "LD HL, 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "LD HL, 0x%04X", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 			
@@ -2656,7 +2656,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x26: // LD H, n
-			sprintf(instStr, "LD H, 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "LD H, 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 			
@@ -2665,7 +2665,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x28: // JR Z, n
-			sprintf(instStr, "JR Z, 0x%02X (%d)", memory.readByte(npc), (int8_t)memory.readByte(npc));
+			sprintf(instStr, "JR Z, 0x%02X (%d)", emu->memory.readByte(npc), (int8_t)emu->memory.readByte(npc));
 			npc++;
 			break;
 			
@@ -2690,7 +2690,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x2E: // LD L, n
-			sprintf(instStr, "LD L, 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "LD L, 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 			
@@ -2699,12 +2699,12 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x30: // JR NC, n
-			sprintf(instStr, "JR NC, 0x%02X (%d)", memory.readByte(npc), (int8_t)memory.readByte(npc));
+			sprintf(instStr, "JR NC, 0x%02X (%d)", emu->memory.readByte(npc), (int8_t)emu->memory.readByte(npc));
 			npc++;
 			break;
 			
 		case 0x31: // LD SP, nn
-			sprintf(instStr, "LD SP, 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "LD SP, 0x%04X", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 			
@@ -2725,7 +2725,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x36: // LD (HL), n
-			sprintf(instStr, "LD (HL), 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "LD (HL), 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 			
@@ -2734,7 +2734,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x38: // JR C, n
-			sprintf(instStr, "JR C, 0x%02X (%d)", memory.readByte(npc), (int8_t)memory.readByte(npc));
+			sprintf(instStr, "JR C, 0x%02X (%d)", emu->memory.readByte(npc), (int8_t)emu->memory.readByte(npc));
 			npc++;
 			break;
 			
@@ -2759,7 +2759,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 			
 		case 0x3E: // LD A, n
-			sprintf(instStr, "LD A, 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "LD A, 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 			
@@ -3288,16 +3288,16 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xC2: // JP NZ, nn
-			sprintf(instStr, "JP NZ, 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "JP NZ, 0x%04X", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 
 		case 0xC3: // JP nn
-			sprintf(instStr, "JP 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "JP 0x%04X", emu->memory.readWord(npc));
 			break;
 
 		case 0xC4: // CALL NZ, nn
-			sprintf(instStr, "CALL NZ, 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "CALL NZ, 0x%04X", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 
@@ -3306,7 +3306,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xC6: // ADD A, n
-			sprintf(instStr, "ADD A, 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "ADD A, 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 
@@ -3323,12 +3323,12 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xCA: // JP Z, nn
-			sprintf(instStr, "JP Z, 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "JP Z, 0x%04X", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 
 		case 0xCB: // Extra instructions
-			extraOp = memory.readWord(npc);
+			extraOp = emu->memory.readWord(npc);
 			npc++;
 			// RLC
 			if (extraOp <= 0x07) {
@@ -3380,17 +3380,17 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xCC: // CALL Z, nn
-			sprintf(instStr, "CALL Z, 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "CALL Z, 0x%04X", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 
 		case 0xCD: // CALL nn
-			sprintf(instStr, "CALL 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "CALL 0x%04X", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 
 		case 0xCE: // ADC A, n
-			sprintf(instStr, "ADC A, 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "ADC A, 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 
@@ -3407,7 +3407,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xD2: // JP NC, nn
-			sprintf(instStr, "JP NC, 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "JP NC, 0x%04X", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 
@@ -3416,7 +3416,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xD4: // CALL NC, nn
-			sprintf(instStr, "CALL NC, 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "CALL NC, 0x%04X", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 
@@ -3425,7 +3425,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xD6: // SUB A, n
-			sprintf(instStr, "SUB A, 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "SUB A, 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 
@@ -3442,7 +3442,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xDA: // JP C, nn
-			sprintf(instStr, "JP C, 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "JP C, 0x%04X", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 
@@ -3451,7 +3451,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xDC: // CALL C, nn
-			sprintf(instStr, "CALL C, 0x%04X", memory.readWord(npc));
+			sprintf(instStr, "CALL C, 0x%04X", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 
@@ -3460,7 +3460,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xDE: // SBC A, n
-			sprintf(instStr, "SBC A, 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "SBC A, 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 
@@ -3469,7 +3469,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xE0: // LDH (n), A
-			sprintf(instStr, "LD (0xFF%02X), A", memory.readByte(npc));
+			sprintf(instStr, "LD (0xFF%02X), A", emu->memory.readByte(npc));
 			npc++;
 			break;
 
@@ -3491,7 +3491,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xE6: // AND n
-			sprintf(instStr, "AND 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "AND 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 
@@ -3500,7 +3500,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xE8: // ADD SP, n
-			sprintf(instStr, "ADD SP, 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "ADD SP, 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 
@@ -3509,7 +3509,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xEA: // LD (nn), A
-			sprintf(instStr, "LD (0x%04X), A", memory.readWord(npc));
+			sprintf(instStr, "LD (0x%04X), A", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 
@@ -3520,7 +3520,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xEE: // XOR n
-			sprintf(instStr, "XOR 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "XOR 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 
@@ -3529,7 +3529,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xF0: // LDH A, (n)
-			sprintf(instStr, "LDH A, (0x%02X)", memory.readByte(npc));
+			sprintf(instStr, "LDH A, (0x%02X)", emu->memory.readByte(npc));
 			npc++;
 			break;
 
@@ -3554,7 +3554,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xF6: // OR n
-			sprintf(instStr, "OR 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "OR 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 
@@ -3563,7 +3563,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xF8: // LDHL SP, d
-			sprintf(instStr, "LD HL, SP+0x%02X", memory.readByte(npc));
+			sprintf(instStr, "LD HL, SP+0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 
@@ -3572,7 +3572,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xFA: // LD A, (nn)
-			sprintf(instStr, "LD A, (0x%04X)", memory.readWord(npc));
+			sprintf(instStr, "LD A, (0x%04X)", emu->memory.readWord(npc));
 			npc += 2;
 			break;
 
@@ -3586,7 +3586,7 @@ uint16_t CPU::instructionToString(uint16_t pc, char *instStr)
 			break;
 
 		case 0xFE: // CP n
-			sprintf(instStr, "CP 0x%02X", memory.readByte(npc));
+			sprintf(instStr, "CP 0x%02X", emu->memory.readByte(npc));
 			npc++;
 			break;
 

@@ -15,13 +15,6 @@
 #include "input.h"
 #include "memory.h"
 
-extern CPU cpu;
-extern Audio audio;
-extern Input input;
-extern Memory memory;
-extern Graphics graphics;
-extern GUI gui;
-
 typedef struct keymap_s {
 	int start;
 	int startDown;
@@ -54,7 +47,32 @@ typedef struct settings_s {
 	keymap_t keymap;
 } settings_t;
 
-extern settings_t settings;
+
+struct Dromaius
+{
+	// GB subcomponents
+	CPU cpu;
+	Graphics graphics;
+	Input input;
+	Memory memory;
+	Audio audio;
+
+	// Emulator subcomponents
+	GUI gui;
+	settings_t settings;
+
+	// State
+	std::string filename;
+
+	Dromaius(settings_t settings);
+
+	bool initializeWithRom(std::string const filename);
+	void reset();
+	void initSettings();
+	void run();
+};
+
+
 
 #define HEADER_START    0x134
 
@@ -66,12 +84,6 @@ extern settings_t settings;
 // Stubs for function definitions
 struct SDL_Window;
 typedef union SDL_Event SDL_Event;
-
-// main.cc
-bool initEmulation(std::string const &filename);
-void resetEmulation();
-void initSettings();
-
 
 // GUI stuff
 IMGUI_IMPL_API bool ImGui_ImplSDL2_InitForOpenGL(SDL_Window* window, void* sdl_gl_context);

@@ -2,6 +2,7 @@
 #define INCLUDED_GRAPHICS_H
 
 #include <cstdint>
+struct Dromaius;
 
 #define GB_SCREEN_WIDTH  160
 #define GB_SCREEN_HEIGHT 144
@@ -13,6 +14,7 @@
 
 struct Graphics
 {
+
 	enum Mode {
 		HBLANK,
 		VBLANK,
@@ -56,6 +58,8 @@ struct Graphics
 		uint8_t flags;
 	};
 
+	// Up-reference
+	Dromaius *emu;
 
 	uint8_t ***tileset;
 	sprite_s *spritedata;
@@ -72,10 +76,6 @@ struct Graphics
 	int CoinInt;
 
 	// Window stuff
-	SDL_Window *mainWindow;
-	SDL_GLContext glcontext;
-	const char* glsl_version;
-
 	uint32_t screenTexture;
 	uint32_t debugTexture;
 
@@ -83,20 +83,18 @@ struct Graphics
 	uint32_t *debugTilesetPixels;
 
 	int screenScale;
-
-
 	bool initialized = false;
 
 	~Graphics();
 
 	void initialize();
-	void freeBuffers();
 	void initDisplay();
 	void updateTextures();
 
 	uint8_t readByte(uint16_t addr);
 	void writeByte(uint8_t b, uint16_t addr);
 
+	void freeBuffers();
 	void setPixelColor(int x, int y, uint8_t color);
 	void setPixelColorDebug(int x, int y, uint8_t color);
 	void setDebugPixelColor(int x, int y, uint8_t color);

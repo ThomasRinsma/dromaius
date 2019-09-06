@@ -12,13 +12,18 @@ Audio::~Audio()
 
 void Audio::initialize()
 {
+	if (initialized) {
+		freeBuffers();
+	}
+
 	memset(&want, 0, sizeof(want));
 
 	want.freq = 48000;
 	want.format = AUDIO_S8;
 	want.channels = 1;
 	want.samples = 128;
-	want.callback = play_audio;
+	want.userdata = this; // store reference to this for the callback
+	want.callback = reinterpret_cast<void (*)(void*, unsigned char*, int)>(&Audio::play_audio);
 
 	dev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
 	if (not dev) {
@@ -194,108 +199,108 @@ inline int8_t Audio::squarewave(uint32_t f, double t, int8_t dutyline) const
 
 int8_t dutylines[4] = {-118, -90, 0, 90};
 
-void play_audio(void *userdata, uint8_t *stream, int len)
+void Audio::play_audio(uint8_t *stream, int len)
 {
 	double t, f = 220;
 	int8_t ch_sample[4] = {0, 0, 0, 0};
 	int16_t tmp;
 
 	for (int i = 0; i < len; ++i) {
-		if (audio.isEnabled) {
-			if (audio.ch1.isEnabled) {
-				t = audio.sample_ctr * (1.0 / audio.have.freq);
+		if (isEnabled) {
+			if (ch1.isEnabled) {
+				t = sample_ctr * (1.0 / have.freq);
 
-				if (audio.ch1.isRestarted) {
-					audio.ch1.isRestarted = 0;
+				if (ch1.isRestarted) {
+					ch1.isRestarted = 0;
 				} else {
 					// Check if we've run out of time
-					double ch1time = audio.ch1.ctr * (1.0 / audio.have.freq);
-					if (!audio.ch1.isCont &&
-						ch1time > (64 - audio.ch1.soundLen) * (1.0 / 256)) {
+					double ch1time = ch1.ctr * (1.0 / have.freq);
+					if (!ch1.isCont &&
+						ch1time > (64 - ch1.soundLen) * (1.0 / 256)) {
 
 						// Time is up, disable sound
-						audio.ch1.isEnabled = 0;
+						ch1.isEnabled = 0;
 					} else {
 						// Sweep if enabled and enough time has passed
-						if (audio.ch1.sweepTime != 0 &&
-							t - audio.ch1.lastSweep > (audio.ch1.sweepTime / 128.0)) {
+						if (ch1.sweepTime != 0 &&
+							t - ch1.lastSweep > (ch1.sweepTime / 128.0)) {
 							// 
 							// X(t) = X(t-1) +/- X(t-1)/2^n
-							if (audio.ch1.sweepDir == 0) {
-								audio.ch1.freq += audio.ch1.freq >> audio.ch1.sweepExp;
+							if (ch1.sweepDir == 0) {
+								ch1.freq += ch1.freq >> ch1.sweepExp;
 							} else {
-								audio.ch1.freq -= audio.ch1.freq >> audio.ch1.sweepExp;
+								ch1.freq -= ch1.freq >> ch1.sweepExp;
 							}
 
-							audio.ch1.lastSweep = t;
+							ch1.lastSweep = t;
 						}
 
-						f = 131072.0 / (2048.0 - audio.ch1.freq);
-						ch_sample[0] = audio.squarewave(f, t, dutylines[audio.ch1.duty]);
-						++audio.ch1.ctr;
+						f = 131072.0 / (2048.0 - ch1.freq);
+						ch_sample[0] = squarewave(f, t, dutylines[ch1.duty]);
+						++ch1.ctr;
 					}
 				}
 			}
 
-			if (audio.ch2.isEnabled) {
+			if (ch2.isEnabled) {
 				// Check if we've run out of time
-				double ch2time = audio.ch2.ctr * (1.0 / audio.have.freq);
-				if (!audio.ch2.isCont &&
-					ch2time > (64 - audio.ch2.soundLen) * (1.0 / 256)) {
+				double ch2time = ch2.ctr * (1.0 / have.freq);
+				if (!ch2.isCont &&
+					ch2time > (64 - ch2.soundLen) * (1.0 / 256)) {
 
 					// Time is up, disable sound
-					audio.ch2.isEnabled = 0;
+					ch2.isEnabled = 0;
 				} else {
-					f = 131072.0 / (2048.0 - audio.ch2.freq);
-					ch_sample[1] = audio.squarewave(f, t, dutylines[audio.ch2.duty]);
-					++audio.ch2.ctr;
+					f = 131072.0 / (2048.0 - ch2.freq);
+					ch_sample[1] = squarewave(f, t, dutylines[ch2.duty]);
+					++ch2.ctr;
 				}
 			}
 
-			if (audio.ch3.isEnabled) {
+			if (ch3.isEnabled) {
 				// Check if we've run out of time
-				double ch3time = audio.ch3.ctr * (1.0 / audio.have.freq);
-				if (!audio.ch3.isCont &&
-					ch3time > (64 - audio.ch3.soundLen) * (1.0 / 256)) {
+				double ch3time = ch3.ctr * (1.0 / have.freq);
+				if (!ch3.isCont &&
+					ch3time > (64 - ch3.soundLen) * (1.0 / 256)) {
 
 					// Time is up, disable sound
-					audio.ch3.isEnabled = 0;
+					ch3.isEnabled = 0;
 				} else {
 
-					double sps = audio.have.freq / (65536.0 / (2048 - audio.ch3.freq));
+					double sps = have.freq / (65536.0 / (2048 - ch3.freq));
 
-					if (audio.ch3.ctr > sps) {
-						++audio.ch3.waveCtr;
-						audio.ch3.ctr = 0;
+					if (ch3.ctr > sps) {
+						++ch3.waveCtr;
+						ch3.ctr = 0;
 					}
 
 					//printf("sps = %f\n", sps);
 
-					ch_sample[2] = ((audio.ch3.waveCtr % 2 == 0)
-						? (audio.waveRam[audio.ch3.waveCtr >> 1] & 0xF0) >> 8
-						: (audio.waveRam[audio.ch3.waveCtr >> 1] & 0xF0));
-					++audio.ch3.ctr;
+					ch_sample[2] = ((ch3.waveCtr % 2 == 0)
+						? (waveRam[ch3.waveCtr >> 1] & 0xF0) >> 8
+						: (waveRam[ch3.waveCtr >> 1] & 0xF0));
+					++ch3.ctr;
 				}
 			}
 
 			/*
-			if (audio.ch4.isEnabled) {
+			if (ch4.isEnabled) {
 				// Check if we've run out of time
-				double ch4time = audio.ch4.ctr * (1.0 / have.freq);
-				if (!audio.ch4.isCont &&
-					ch4time > (64 - audio.ch4.soundLen) * (1.0 / 256)) {
+				double ch4time = ch4.ctr * (1.0 / have.freq);
+				if (!ch4.isCont &&
+					ch4time > (64 - ch4.soundLen) * (1.0 / 256)) {
 
 					// Time is up, disable sound
-					audio.ch4.isEnabled = 0;
+					ch4.isEnabled = 0;
 				} else {
-					if (audio.ch4.r == 0) {
-						audio.ch4.r = 1;
+					if (ch4.r == 0) {
+						ch4.r = 1;
 					}
-					double noisef = 524288.0 / (audio.ch4.r << (audio.ch4.s + 1));
+					double noisef = 524288.0 / (ch4.r << (ch4.s + 1));
 
 					ch_sample[3] = rand() / 8;
 
-					++audio.ch4.ctr;
+					++ch4.ctr;
 				}
 			}
 			*/
@@ -306,18 +311,18 @@ void play_audio(void *userdata, uint8_t *stream, int len)
 		// Add everything together
 		tmp = ((double)ch_sample[0]
 		    + (double)ch_sample[1]
-		    + (audio.ch3.volume == 0 ? 0.0 :
-		    	(double)(ch_sample[2] >> (audio.ch3.volume - 1)))
+		    + (ch3.volume == 0 ? 0.0 :
+		    	(double)(ch_sample[2] >> (ch3.volume - 1)))
 		    + (double)ch_sample[3]) * 32;
 		//stream[i] = (tmp >= 127 ? 127 : (tmp <= -128 ? -128 : tmp));
 		stream[i] = tmp;
 
 		// store for debugging
-		audio.sampleHistory[0][cpu.c % AUDIO_SAMPLE_HISTORY_SIZE] = ch_sample[0];
-		audio.sampleHistory[1][cpu.c % AUDIO_SAMPLE_HISTORY_SIZE] = ch_sample[1];
-		audio.sampleHistory[2][cpu.c % AUDIO_SAMPLE_HISTORY_SIZE] = ch_sample[2];
-		audio.sampleHistory[3][cpu.c % AUDIO_SAMPLE_HISTORY_SIZE] = ch_sample[3];
+		sampleHistory[0][emu->cpu.c % AUDIO_SAMPLE_HISTORY_SIZE] = ch_sample[0];
+		sampleHistory[1][emu->cpu.c % AUDIO_SAMPLE_HISTORY_SIZE] = ch_sample[1];
+		sampleHistory[2][emu->cpu.c % AUDIO_SAMPLE_HISTORY_SIZE] = ch_sample[2];
+		sampleHistory[3][emu->cpu.c % AUDIO_SAMPLE_HISTORY_SIZE] = ch_sample[3];
 
-		++audio.sample_ctr;
+		++sample_ctr;
 	}
 }

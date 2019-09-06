@@ -11,73 +11,73 @@ void Input::handleGameInput(int state, SDL_Keycode key)
 {
 	if (state == 1) {
 		// key up
-		if (key == settings.keymap.start && settings.keymap.startDown) {
+		if (key == emu->settings.keymap.start && emu->settings.keymap.startDown) {
 			row[0] |= 0x08;
-			settings.keymap.startDown = 0;
+			emu->settings.keymap.startDown = 0;
 		}
-		else if (key == settings.keymap.select && settings.keymap.selectDown) {
+		else if (key == emu->settings.keymap.select && emu->settings.keymap.selectDown) {
 			row[0] |= 0x04;
-			settings.keymap.selectDown = 0;
+			emu->settings.keymap.selectDown = 0;
 		}
-		else if (key == settings.keymap.b && settings.keymap.bDown) {
+		else if (key == emu->settings.keymap.b && emu->settings.keymap.bDown) {
 			row[0] |= 0x02;
-			settings.keymap.bDown = 0;
+			emu->settings.keymap.bDown = 0;
 		}
-		else if (key == settings.keymap.a && settings.keymap.aDown) {
+		else if (key == emu->settings.keymap.a && emu->settings.keymap.aDown) {
 			row[0] |= 0x01;
-			settings.keymap.aDown = 0;
+			emu->settings.keymap.aDown = 0;
 		}
 		
-		else if (key == settings.keymap.down && settings.keymap.downDown) {
+		else if (key == emu->settings.keymap.down && emu->settings.keymap.downDown) {
 			row[1] |= 0x08;
-			settings.keymap.downDown = 0;
+			emu->settings.keymap.downDown = 0;
 		}
-		else if (key == settings.keymap.up && settings.keymap.upDown) {
+		else if (key == emu->settings.keymap.up && emu->settings.keymap.upDown) {
 			row[1] |= 0x04;
-			settings.keymap.upDown = 0;
+			emu->settings.keymap.upDown = 0;
 		}
-		else if (key == settings.keymap.left && settings.keymap.leftDown) {
+		else if (key == emu->settings.keymap.left && emu->settings.keymap.leftDown) {
 			row[1] |= 0x02;
-			settings.keymap.leftDown = 0;
+			emu->settings.keymap.leftDown = 0;
 		}
-		else if (key == settings.keymap.right && settings.keymap.rightDown) {
+		else if (key == emu->settings.keymap.right && emu->settings.keymap.rightDown) {
 			row[1] |= 0x01;
-			settings.keymap.rightDown = 0;
+			emu->settings.keymap.rightDown = 0;
 		}
 	} else {
 		// key down
-		if (key == settings.keymap.start && !settings.keymap.startDown) {
+		if (key == emu->settings.keymap.start && !emu->settings.keymap.startDown) {
 			row[0] &= ~0x08 & 0x0F;
-			settings.keymap.startDown = 1;
+			emu->settings.keymap.startDown = 1;
 		}
-		else if (key == settings.keymap.select && !settings.keymap.selectDown) {
+		else if (key == emu->settings.keymap.select && !emu->settings.keymap.selectDown) {
 			row[0] &= ~0x04 & 0x0F;
-			settings.keymap.selectDown = 1;
+			emu->settings.keymap.selectDown = 1;
 		}
-		else if (key == settings.keymap.b && !settings.keymap.bDown) {
+		else if (key == emu->settings.keymap.b && !emu->settings.keymap.bDown) {
 			row[0] &= ~0x02 & 0x0F;
-			settings.keymap.bDown = 1;
+			emu->settings.keymap.bDown = 1;
 		}
-		else if (key == settings.keymap.a && !settings.keymap.aDown) {
+		else if (key == emu->settings.keymap.a && !emu->settings.keymap.aDown) {
 			row[0] &= ~0x01 & 0x0F;
-			settings.keymap.aDown = 1;
+			emu->settings.keymap.aDown = 1;
 		}
 		
-		else if (key == settings.keymap.down && !settings.keymap.downDown) {
+		else if (key == emu->settings.keymap.down && !emu->settings.keymap.downDown) {
 			row[1] &= ~0x08 & 0x0F;
-			settings.keymap.downDown = 1;
+			emu->settings.keymap.downDown = 1;
 		}
-		else if (key == settings.keymap.up && !settings.keymap.upDown) {
+		else if (key == emu->settings.keymap.up && !emu->settings.keymap.upDown) {
 			row[1] &= ~0x04 & 0x0F;
-			settings.keymap.upDown = 1;
+			emu->settings.keymap.upDown = 1;
 		}
-		else if (key == settings.keymap.left && !settings.keymap.leftDown) {
+		else if (key == emu->settings.keymap.left && !emu->settings.keymap.leftDown) {
 			row[1] &= ~0x02 & 0x0F;
-			settings.keymap.leftDown = 1;
+			emu->settings.keymap.leftDown = 1;
 		}
-		else if (key == settings.keymap.right && !settings.keymap.rightDown) {
+		else if (key == emu->settings.keymap.right && !emu->settings.keymap.rightDown) {
 			row[1] &= ~0x01 & 0x0F;
-			settings.keymap.rightDown = 1;
+			emu->settings.keymap.rightDown = 1;
 		}
 	}
 }

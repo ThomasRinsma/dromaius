@@ -2,6 +2,7 @@
 #define INCLUDED_CPU_H
 
 #include <cstdint>
+struct Dromaius;
 
 struct CPU
 {
@@ -42,6 +43,9 @@ struct CPU
 		int cycleCountDiv;
 		int maxCount[4];
 	};
+
+	// Up-reference
+	Dromaius *emu;
 
 	regs_s r;
 	regs_s registerStore;

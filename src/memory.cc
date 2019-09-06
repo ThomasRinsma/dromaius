@@ -13,6 +13,10 @@ Memory::~Memory()
 
 void Memory::initialize()
 {
+	if (initialized) {
+		freeBuffers();
+	}
+	
 	// Set rom buffer to null
 	rom = nullptr;
 
@@ -152,7 +156,7 @@ uint8_t Memory::readByte(uint16_t addr)
 		// VRAM
 		case 0x8000:
 		case 0x9000:
-			return graphics.vram[addr & 0x1FFF];
+			return emu->graphics.vram[addr & 0x1FFF];
 			
 		// External RAM
 		case 0xA000:
@@ -212,7 +216,7 @@ uint8_t Memory::readByte(uint16_t addr)
 			
 			if ((addr & 0x0F00) == 0x0E00) {
 				if (addr < 0xFEA0) { // Object Attribute Memory
-			    	return graphics.oam[addr & 0xFF];
+			    	return emu->graphics.oam[addr & 0xFF];
 			    }
 			    else {
 			    	return 0;
@@ -220,35 +224,35 @@ uint8_t Memory::readByte(uint16_t addr)
 			}
 			else {
 				if (addr == 0xFFFF) { // interrupt enable
-					return cpu.ints;
+					return emu->cpu.ints;
 				}
 				else if (addr >= 0xFF80) { // Zero page
 					return zeropageram[addr & 0x7F];
 				}
 				else if (addr >= 0xFF40) { // I/O
-					return graphics.readByte(addr - 0xFF40);
+					return emu->graphics.readByte(addr - 0xFF40);
 				}
 				else if (addr == 0xFF0F) { // interrupt flags
-					return cpu.intFlags;
+					return emu->cpu.intFlags;
 				}
 				else if (addr == 0xFF04) {
-					return cpu.timer.div;
+					return emu->cpu.timer.div;
 				}
 				else if (addr == 0xFF05) {
-					return cpu.timer.tima;
+					return emu->cpu.timer.tima;
 				}
 				else if (addr == 0xFF06) {
-					return cpu.timer.tma;
+					return emu->cpu.timer.tma;
 				}
 				else if (addr == 0xFF07) {
-					return cpu.timer.tac;
+					return emu->cpu.timer.tac;
 				}
 				else if (addr == 0xFF00) { 
-					if (input.wire == 0x10) {
-						return input.row[0];
+					if (emu->input.wire == 0x10) {
+						return emu->input.row[0];
 					}
-					if (input.wire == 0x20) {
-						return input.row[1];
+					if (emu->input.wire == 0x20) {
+						return emu->input.row[1];
 					}
 					return 0;
 				}
@@ -396,14 +400,14 @@ void Memory::writeByte(uint8_t b, uint16_t addr)
 		// VRAM
 		case 0x8000:
 		case 0x9000:
-			graphics.vram[addr & 0x1FFF] = b;
+			emu->graphics.vram[addr & 0x1FFF] = b;
 			//if (b == 0 && addr >= 0x9800 && addr < 0x9C00)
 			//{
 			//	printf("wrote b=%d to vram @ 0x%04X.\n", b, addr);
 
 			//	printRegisters();
 			//}
-			graphics.updateTile(b, addr & 0x1FFE);
+			emu->graphics.updateTile(b, addr & 0x1FFE);
 			return;
 			
 		// External RAM
@@ -468,8 +472,8 @@ void Memory::writeByte(uint8_t b, uint16_t addr)
 			}
 			if ((addr & 0x0F00) == 0x0E00) {
 				if (addr < 0xFEA0) { // Object Attribute Memory
-			    	graphics.oam[addr & 0xFF] = b;
-			    	graphics.buildSpriteData(b, addr - 0xFE00);
+			    	emu->graphics.oam[addr & 0xFF] = b;
+			    	emu->graphics.buildSpriteData(b, addr - 0xFE00);
 			    	return;
 			    }
 			    else {
@@ -479,8 +483,8 @@ void Memory::writeByte(uint8_t b, uint16_t addr)
 			}
 			else {
 				if (addr == 0xFFFF) { // interrupt enable
-					//printf("cpu.ints = %d\n", b);
-					cpu.ints = b;
+					//printf("emu->cpu.ints = %d\n", b);
+					emu->cpu.ints = b;
 					return;
 				}
 				else if (addr >= 0xFF80) { // Zero page
@@ -488,39 +492,39 @@ void Memory::writeByte(uint8_t b, uint16_t addr)
 					return;
 				}
 				else if (addr >= 0xFF40) { // I/O
-					graphics.writeByte(b, addr - 0xFF40);
+					emu->graphics.writeByte(b, addr - 0xFF40);
 					return;
 				}
 				else if (addr == 0xFF0F) {
-					//printf("cpu.intFlags = %d\n", b);
-					cpu.intFlags = b; // TODO: Can we allow program to set these?
+					//printf("emu->cpu.intFlags = %d\n", b);
+					emu->cpu.intFlags = b; // TODO: Can we allow program to set these?
 					return;
 				}
 				else if (addr == 0xFF04) {
-					cpu.timer.div = 0x00; // writing resets the timer
+					emu->cpu.timer.div = 0x00; // writing resets the timer
 					return;
 				}
 				else if (addr == 0xFF05) {
-					cpu.timer.tima = b;
+					emu->cpu.timer.tima = b;
 					return;
 				}
 				else if (addr == 0xFF06) {
-					cpu.timer.tma = b;
+					emu->cpu.timer.tma = b;
 					return;
 				}
 				else if (addr == 0xFF07) {
-					cpu.timer.tac = b;
+					emu->cpu.timer.tac = b;
 					return;
 				}
 				else if (addr == 0xFF00) {
-					input.wire = b & 0x30;
+					emu->input.wire = b & 0x30;
 					return;
 				}
 				else if (addr >= 0xFF10 && addr <= 0xFF26) {
-					audio.writeByte(b, addr);
+					emu->audio.writeByte(b, addr);
 				}
 				else if (addr >= 0xFF30 && addr <= 0xFF3F) {
-					audio.waveRam[addr - 0xFF30] = b;
+					emu->audio.waveRam[addr - 0xFF30] = b;
 				}			
 			}
 	}
