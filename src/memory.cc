@@ -95,6 +95,82 @@ bool Memory::loadRom(std::string const &filename)
 	return true;
 }
 
+std::string Memory::getRegionName(uint16_t addr)
+{
+	switch (addr & 0xF000) {
+		case 0x0000:
+		case 0x1000:
+		case 0x2000:
+		case 0x3000:
+			if (biosLoaded) {
+				if (addr < 0x0100) {
+					return "BIOS";
+				}
+			}
+			return "ROM0";
+
+		case 0x4000:
+		case 0x5000:
+		case 0x6000:
+		case 0x7000:
+			return "ROM1"; // TODO bank
+
+		case 0x8000:
+		case 0x9000:
+			return "VRAM";
+
+		case 0xA000:
+		case 0xB000:
+			return "EXTRAM";
+
+		case 0xC000:
+		case 0xD000:
+		case 0xE000:
+			return "WRAM";
+
+		case 0xF000:
+			if (addr < 0xFE00) { // Working RAM shadow
+				return "WRAM(S)";
+			}
+			
+			if ((addr & 0x0F00) == 0x0E00) {
+				if (addr < 0xFEA0) {
+					return "OAM";
+				}
+				return "UNK?";
+			}
+			else {
+				switch (addr & 0xFFF0) {
+					case 0xFF00:
+						return "REGS*";
+
+					case 0xFF40:
+					case 0xFF50:
+					case 0xFF60:
+					case 0xFF70:
+						return "REGS(G)";
+
+					case 0xFF80:
+					case 0xFF90:
+					case 0xFFA0:
+					case 0xFFB0:
+					case 0xFFC0:
+					case 0xFFD0:
+					case 0xFFE0:
+						return "ZERO";
+
+					case 0xFFF0:
+						return "REGS(I)";
+
+					default:
+						return "UNK?";
+				}
+			}
+			return "UNK?";
+	}
+	return "UNK?";
+}
+
 uint8_t Memory::readByte(uint16_t addr)
 {
 	switch (addr & 0xF000) {
@@ -193,11 +269,11 @@ uint8_t Memory::readByte(uint16_t addr)
 			
 			if ((addr & 0x0F00) == 0x0E00) {
 				if (addr < 0xFEA0) { // Object Attribute Memory
-			    	return emu->graphics.oam[addr & 0xFF];
-			    }
-			    else {
-			    	return 0;
-			    }
+					return emu->graphics.oam[addr & 0xFF];
+				}
+				else {
+					return 0;
+				}
 			}
 			else {
 				if (addr == 0xFFFF) { // interrupt enable
@@ -449,14 +525,14 @@ void Memory::writeByte(uint8_t b, uint16_t addr)
 			}
 			if ((addr & 0x0F00) == 0x0E00) {
 				if (addr < 0xFEA0) { // Object Attribute Memory
-			    	emu->graphics.oam[addr & 0xFF] = b;
-			    	emu->graphics.buildSpriteData(b, addr - 0xFE00);
-			    	return;
-			    }
-			    else {
-			    	// writes here do nothing
-			    	return;
-			    }
+					emu->graphics.oam[addr & 0xFF] = b;
+					emu->graphics.buildSpriteData(b, addr - 0xFE00);
+					return;
+				}
+				else {
+					// writes here do nothing
+					return;
+				}
 			}
 			else {
 				if (addr == 0xFFFF) { // interrupt enable

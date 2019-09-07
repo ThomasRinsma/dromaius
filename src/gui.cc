@@ -212,12 +212,21 @@ void GUI::renderCPUDebugWindow() {
 		);
 	}
 
+
 	if (ImGui::CollapsingHeader("Disassembly @ PC", ImGuiTreeNodeFlags_DefaultOpen)) {
 		char buf[25 * 20];
 		buf[0] = '\0';
 		emu->cpu.disassemble(emu->cpu.r.pc, 20, buf);
 		ImGui::Text("%s", buf);
 	}
+
+	if (ImGui::CollapsingHeader("Call stack", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::Text("depth: %d", emu->cpu.callStackDepth);
+		for (int i = 0; i < emu->cpu.callStackDepth; ++i) {
+			ImGui::Text("%d: %04X", i, emu->cpu.callStack[i]);
+		}
+	}
+
 	ImGui::End();
 }
 
@@ -372,17 +381,18 @@ void GUI::renderMemoryViewerWindow() {
 
 	ImGui::Begin("Memory viewer", nullptr);
  	
- 	// SetNextWindowContentWidth()
-	ImGui::Columns(3);
+	ImGui::Columns(4);
 
 	// hack to make columns non resizable
 	ImGui::GetCurrentWindow()->DC.CurrentColumns[0].Flags |= ImGuiColumnsFlags_NoResize;
 	ImGui::GetCurrentWindow()->DC.CurrentColumns[1].Flags |= ImGuiColumnsFlags_NoResize;
 	ImGui::GetCurrentWindow()->DC.CurrentColumns[2].Flags |= ImGuiColumnsFlags_NoResize;
+	ImGui::GetCurrentWindow()->DC.CurrentColumns[3].Flags |= ImGuiColumnsFlags_NoResize;
 
-	ImGui::SetColumnWidth(0, 50);
-	ImGui::SetColumnWidth(1, 300);
-	ImGui::SetColumnWidth(2, 150);
+	ImGui::SetColumnWidth(0, 60);
+	ImGui::SetColumnWidth(1, 50);
+	ImGui::SetColumnWidth(2, 300);
+	ImGui::SetColumnWidth(3, 150);
 
 	uint16_t startAddr = 0x000;
 	uint16_t endAddr   = 0xFFF;
@@ -390,11 +400,16 @@ void GUI::renderMemoryViewerWindow() {
 	// Clip invisible lines
 	ImGuiListClipper clipper(endAddr - startAddr, ImGui::GetTextLineHeight());
 	for (int addr = clipper.DisplayStart; addr < clipper.DisplayEnd; ++addr) {
+		// Region
+		ImGui::Text("%s", emu->memory.getRegionName(addr << 4).c_str());
+		ImGui::NextColumn();
+
+		// Address
 		ImGui::Text("%03X0", addr);
 		ImGui::NextColumn();
 
 		for (int i = 0; i < 16; ++i) {
-			lineBuffer[i] = emu->memory.readByte((addr << 8) + i);
+			lineBuffer[i] = emu->memory.readByte((addr << 4) + i);
 			charBuffer[i] = (lineBuffer[i] >= 0x20 and lineBuffer[i] <= 0x7E) ? lineBuffer[i] : '.';
 		}
 

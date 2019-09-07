@@ -98,6 +98,8 @@ struct Memory
 
 	void writeByte(uint8_t b, uint16_t addr);
 	void writeWord(uint16_t w, uint16_t addr);
+
+	std::string getRegionName(uint16_t addr);
 	
 	void dumpToFile(std::string const &filename);
 

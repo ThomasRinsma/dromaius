@@ -17,7 +17,7 @@ void CPU::initialize()
 	
 	// Jump over bios
 	r.pc = 0x0100;
-
+	callStackPush(0x0000, r.pc);
 	
 	intsOn = false;//1;
 	intFlags = 0;
@@ -30,19 +30,6 @@ void CPU::initialize()
 
 	timer.cycleCount = 0;
 	timer.cycleCountDiv = 0;
-
-
-	/*
-
-		Bit 2    - Timer Stop  (0=Stop, 1=Start)
-		Bits 1-0 - Input Clock Select
-		           00:   4096 Hz  (every 1024|256 cycles)
-		           01: 262144 Hz  (every 16|4 cycles)
-		           10:  65536 Hz  (every 64|16 cycles)
-		           11:  16384 Hz  (every 256|64 cycles)
-
-		(DMG runs at 4194304 Hz)
-	*/
 	timer.maxCount[0] = 256;
 	timer.maxCount[1] = 4;
 	timer.maxCount[2] = 16;
@@ -528,8 +515,11 @@ void CPU::doOpcodeUNIMP()
 int lastInst;
 void CPU::printRegisters()
 {
-	printf("{a=%02X,f=%02X,b=%02X,c=%02X,d=%02X,e=%02X,h=%02X,l=%02X,pc=%04X,sp=%04X,inst=%02X}\n",
-		r.a, r.f, r.b, r.c, r.d, r.e, r.h, r.l, r.pc, r.sp, lastInst);
+	char instStr[100];
+	instructionToString(r.pc, instStr);
+	printf("%s\n", instStr);
+	printf("  {rombank=%d,rambank=%d,a=%02X,f=%02X,b=%02X,c=%02X,d=%02X,e=%02X,h=%02X,l=%02X,pc=%04X,sp=%04X,inst=%02X}\n",
+		emu->memory.romBank, emu->memory.ramBank, r.a, r.f, r.b, r.c, r.d, r.e, r.h, r.l, r.pc, r.sp, lastInst);
 }
 
 uint8_t *CPU::numToRegPtr(uint8_t num)
@@ -759,7 +749,8 @@ void CPU::doExtraOP(uint8_t op)
 }
 
 
-void CPU::handleTimers() {
+void CPU::handleTimers()
+{
 	// Timer
 	timer.cycleCountDiv += c - dc;
 	timer.cycleCount += c - dc;
@@ -787,7 +778,32 @@ void CPU::handleTimers() {
 	}
 }
 
-void CPU::handleInterrupts() {
+void CPU::callStackPush(uint16_t oldpc, uint16_t pc)
+{
+	//for(int i = 0; i < callStackDepth+1; ++i) printf("--");
+	//printf("push: %04X -> %04X\n", oldpc, pc);
+	// Just wrap if the callstack becomes really high..
+	if (callStackDepth == CPU_CALL_STACK_SIZE - 1) {
+		callStackDepth = 0;
+		printf("callstack overflow\n");
+	}
+	callStack[callStackDepth++] = pc;
+}
+
+void CPU::callStackPop(uint16_t oldpc, uint16_t pc)
+{
+	//for(int i = 0; i < callStackDepth; ++i) printf("--");
+	//printf("pop: %04X -> %04X\n", oldpc, pc);
+	callStackDepth--;
+
+	if (callStackDepth < 0) {
+		callStackDepth = 0;
+		printf("callstack underflow\n");
+	}
+}
+
+void CPU::handleInterrupts()
+{
 	// Interrupts
 	if (intsOn and (ints & intFlags)) {
 		uint8_t interrupts = intFlags & ints; // mask enabled interrupt(s)
@@ -838,6 +854,7 @@ int CPU::executeInstruction()
 	uint16_t utmp16, utmp16_2;
 	int8_t tmp8, tmp8_2;
 	uint8_t utmp8, utmp8_2;
+	uint16_t oldpc;
 	
 	dc = c;
 
@@ -1978,7 +1995,9 @@ int CPU::executeInstruction()
 
 			case 0xC0: // RET NZ
 				if (not getFlag(Flag::ZERO)) {
+					oldpc = r.pc;
 					r.pc = emu->memory.readWord(r.sp);
+					callStackPop(oldpc, r.pc);
 					r.sp += 2;
 					c += 3;
 				}
@@ -2012,7 +2031,9 @@ int CPU::executeInstruction()
 				if (not getFlag(Flag::ZERO)) {
 					r.sp -= 2;
 					emu->memory.writeWord(r.pc + 2, r.sp);
+					oldpc = r.pc;
 					r.pc = emu->memory.readWord(r.pc);
+					callStackPush(oldpc, r.pc);
 					c += 3;
 				} else {
 					r.pc += 2;
@@ -2044,7 +2065,9 @@ int CPU::executeInstruction()
 
 			case 0xC8: // RET Z
 				if (getFlag(Flag::ZERO)) {
+					oldpc = r.pc;
 					r.pc = emu->memory.readWord(r.sp);
+					callStackPop(oldpc, r.pc);
 					r.sp += 2;
 					c += 3;
 				}
@@ -2052,7 +2075,9 @@ int CPU::executeInstruction()
 				break;
 
 			case 0xC9: // RET
+				oldpc = r.pc;
 				r.pc = emu->memory.readWord(r.sp);
+				callStackPop(oldpc, r.pc);
 				r.sp += 2;
 				c += 4;
 				break;
@@ -2077,7 +2102,9 @@ int CPU::executeInstruction()
 				if (getFlag(Flag::ZERO)) {
 					r.sp -= 2;
 					emu->memory.writeWord(r.pc + 2, r.sp);
+					oldpc = r.pc;
 					r.pc = emu->memory.readWord(r.pc);
+					callStackPush(oldpc, r.pc);
 					c += 3;
 				} else {
 					r.pc += 2;
@@ -2088,7 +2115,9 @@ int CPU::executeInstruction()
 			case 0xCD: // CALL nn
 				r.sp -= 2;
 				emu->memory.writeWord(r.pc + 2, r.sp);
+				oldpc = r.pc;
 				r.pc = emu->memory.readWord(r.pc);
+				callStackPush(oldpc, r.pc);
 				c += 6;
 				break;
 
@@ -2107,7 +2136,9 @@ int CPU::executeInstruction()
 
 			case 0xD0: // RET NC
 				if (not getFlag(Flag::CARRY)) {
+					oldpc = r.pc;
 					r.pc = emu->memory.readWord(r.sp);
+					callStackPop(oldpc, r.pc);
 					r.sp += 2;
 					c += 3;
 				}
@@ -2140,7 +2171,9 @@ int CPU::executeInstruction()
 				if (not getFlag(Flag::CARRY)) {
 					r.sp -= 2;
 					emu->memory.writeWord(r.pc + 2, r.sp);
+					oldpc = r.pc;
 					r.pc = emu->memory.readWord(r.pc);
+					callStackPush(oldpc, r.pc);
 					c += 3;
 				} else {
 					r.pc += 2;
@@ -2171,7 +2204,9 @@ int CPU::executeInstruction()
 
 			case 0xD8: // RET C
 				if (getFlag(Flag::CARRY)) {
+					oldpc = r.pc;
 					r.pc = emu->memory.readWord(r.sp);
+					callStackPop(oldpc, r.pc);
 					r.sp += 2;
 					c += 3;
 				}
@@ -2206,7 +2241,9 @@ int CPU::executeInstruction()
 				if (getFlag(Flag::CARRY)) {
 					r.sp -= 2;
 					emu->memory.writeWord(r.pc + 2, r.sp);
+					oldpc = r.pc;
 					r.pc = emu->memory.readWord(r.pc);
+					callStackPush(oldpc, r.pc);
 					c += 3;
 				} else {
 					r.pc += 2;

@@ -4,6 +4,8 @@
 #include <cstdint>
 struct Dromaius;
 
+#define CPU_CALL_STACK_SIZE 0x100
+
 struct CPU
 {
 	enum Int {
@@ -63,6 +65,10 @@ struct CPU
 	bool stepInst;
 	bool stepFrame;
 
+	// Debugging
+	uint16_t callStack[CPU_CALL_STACK_SIZE];
+	int callStackDepth;
+
 	// Cycle count
 	int c;
 	int dc;
@@ -104,6 +110,9 @@ struct CPU
 	inline const char *numToRegName(uint8_t num);
 	uint16_t instructionToString(uint16_t pc, char *instStr);
 	void disassemble(uint16_t pc, size_t instCnt, char *buf);
+
+	void callStackPush(uint16_t oldpc, uint16_t pc);
+	void callStackPop(uint16_t oldpc, uint16_t pc);
 };
 
 #endif
