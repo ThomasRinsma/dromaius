@@ -1,5 +1,9 @@
 #include <fstream>
+#include <iterator>
 #include <iostream>
+#include <filesystem>
+#include <algorithm>
+#include <map>
 #include "dromaius.h"
 
 constexpr uint8_t Memory::bios[256];
@@ -92,7 +96,68 @@ bool Memory::loadRom(std::string const &filename)
 		mbc = MBC::OTHER;
 	}
 
+	// For debugging, also try to load a similarly named symbols list file
+	std::filesystem::path symfile = filename;
+	symfile.replace_extension(".sym");
+	tryParseSymbolsFile(symfile);
 	return true;
+}
+
+void Memory::tryParseSymbolsFile(std::string filename)
+{
+	printf("Trying to load symbols file '%s'...\n", filename.c_str());
+
+	// Read sym file
+	try {
+		std::ifstream symFile(filename, std::ios::in);
+
+		// Line elements
+		std::string line, symbol, bankAndAddr, hexBank, hexAddr;
+		uint8_t bank;
+		uint16_t addr;
+
+		size_t symCnt = 0, lineCnt = 0;
+		while (std::getline(symFile, line))
+		{
+			std::istringstream iss(line);
+			try {
+				// Parse bank nr
+				iss >> bankAndAddr;
+
+				hexBank = bankAndAddr.substr(0, bankAndAddr.find(":"));
+				hexAddr = bankAndAddr.substr(bankAndAddr.find(":")+1);
+
+				bank = std::stoi(hexBank, 0, 16);
+				addr = std::stoi(hexAddr, 0, 16);
+
+				// Parse symbol name
+				iss >> symbol;
+
+				symbols[{bank, addr}] = symbol;
+				symCnt++;
+
+			} catch (std::exception &e) {
+				// NOP
+			}
+			lineCnt++;
+		}
+		printf("  parsed %d symbols from %d lines \n", symCnt, lineCnt);
+
+
+	} catch (std::exception &e) {
+		printf("  no symbol file or error while parsing symbol file\n");
+	}
+	
+}
+
+std::string Memory::getSymbolName(uint8_t bank, uint16_t addr)
+{
+	try {
+		return symbols.at({bank, addr});
+	} catch (std::exception &e) {
+		return "";
+	}
+
 }
 
 std::string Memory::getRegionName(uint16_t addr)

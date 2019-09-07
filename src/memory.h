@@ -4,7 +4,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <map>
 struct Dromaius;
+
+#define MEMORY_MAX_SYMBOL_SIZE 100
 
 struct Memory
 {
@@ -91,6 +94,9 @@ struct Memory
 	bool romLoaded = false;
 	bool biosLoaded = true;
 
+	// map<<pageNr, addr>, symbol>
+	std::map<std::pair<uint8_t, uint16_t>, std::string> symbols;
+
 	~Memory();
 
 	uint8_t readByte(uint16_t addr);
@@ -104,6 +110,8 @@ struct Memory
 	void dumpToFile(std::string const &filename);
 
 	// TODO: operator[]() overload?
+	void tryParseSymbolsFile(std::string filename);
+	std::string getSymbolName(uint8_t bank, uint16_t addr);
 
 	bool loadRom(std::string const &filename);
 	void initialize();

@@ -798,7 +798,7 @@ void CPU::callStackPop(uint16_t oldpc, uint16_t pc)
 
 	if (callStackDepth < 0) {
 		callStackDepth = 0;
-		printf("callstack underflow\n");
+		//printf("callstack underflow\n");
 	}
 }
 

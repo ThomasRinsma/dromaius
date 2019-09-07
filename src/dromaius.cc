@@ -79,9 +79,13 @@ bool Dromaius::loadState(uint8_t slot)
 	// Read into state
 	file.read((char *)state, expectedLen);
 
-	// Save ROM ptr before overwriting
+	// Save pointers before overwriting
 	uint8_t *rom = memory.rom;
 	auto stepMode = cpu.stepMode;
+
+	// Save non-pointers by deep copy
+	uint8_t *symbols = new uint8_t[sizeof(memory.symbols)];
+	memcpy(symbols, (uint8_t *)(&memory.symbols), sizeof(memory.symbols));
 
 	// Overwrite all state
 	uint8_t *src = state;
@@ -95,6 +99,9 @@ bool Dromaius::loadState(uint8_t slot)
 	memory.rom = rom;
 	audio.emu = cpu.emu = graphics.emu = input.emu = memory.emu = this;
 	cpu.stepMode = stepMode;
+
+	// Restore non-pointers by deep copy
+	memcpy((uint8_t *)(&memory.symbols), symbols, sizeof(memory.symbols));
 
 	return true;
 }

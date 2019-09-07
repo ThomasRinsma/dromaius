@@ -1,4 +1,4 @@
-CXX = g++ --std=c++11
+CXX = g++ --std=c++17
 CFLAGS =-g -O0 -I libs/imgui -I libs/gl3w `sdl2-config --cflags` -Wno-pmf-conversions
 LDFLAGS =`sdl2-config --libs` -lm -lGL -ldl
 

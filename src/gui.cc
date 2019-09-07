@@ -223,7 +223,12 @@ void GUI::renderCPUDebugWindow() {
 	if (ImGui::CollapsingHeader("Call stack", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::Text("depth: %d", emu->cpu.callStackDepth);
 		for (int i = 0; i < emu->cpu.callStackDepth; ++i) {
-			ImGui::Text("%d: %04X", i, emu->cpu.callStack[i]);
+			std::string symbol = emu->memory.getSymbolName(emu->memory.romBank, emu->cpu.callStack[i]);
+			if (symbol != "") {
+				ImGui::Text("%d: %04X (%s)", i, emu->cpu.callStack[i], symbol.c_str());
+			} else {
+				ImGui::Text("%d: %04X", i, emu->cpu.callStack[i]);
+			}
 		}
 	}
 
