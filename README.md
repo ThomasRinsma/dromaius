@@ -1,12 +1,21 @@
-# Dromaius, a C++ gameboy emulator
-This is an emulator for the original Nintendo GameBoy (aka DMG).
+# Dromaius, a C++ gameboy emulator / debugger
+This is an emulator but mostly a debugger for the original Nintendo GameBoy (aka DMG).
 
-Currently it is able to start most games (with compatible MBC, not all are implemented yet), and some of those games are actually playable. Other games don't make it past the nintendo logo, and some even segfault. Not (yet) implemented: RTC, battery, proper halting and timers, windows, serial, etc. In other words: if you just want to play games, use another emulator.
- 
+What started as an attempt at emulating the most basic Z80/GB code is now a graphical GameBoy debugger that also kind of plays games :)
+It's still far from complete but it kind of plays Pokemon Red. Current functionality includes:
+
+- memory viewer
+- disassembler
+- live callstack view with support for imported symbols
+- stepping by cycle / frame
+- VRAM viewer: BG tileset, sprite data, PPU registers
+- audio buffer viewer, with pretty waveform plots
+- savestate support in the most hacky way possible
+
 Usage:
 
     $ make
-    $ ./gbemu tests/tetris.gb
+    $ ./dromaius tests/tetris.gb
 
 (requires SDL2)
 
