@@ -146,7 +146,7 @@ void GUI::renderSettingsWindow() {
 	if (ImGui::Button("Load state")) {
 		emu->loadState(0);
 	}
-	if (ImGui::Button("Dump emu->memory. to \nfile (memdump.bin)")) {
+	if (ImGui::Button("Dump memory to \nfile (memdump.bin)")) {
 		emu->memory.dumpToFile("memdump.bin");
 	}
 	
@@ -499,7 +499,7 @@ void GUI::render() {
 			ImGui::MenuItem("CPU info", nullptr, &showCPUDebugWindow);
 			ImGui::MenuItem("Graphics info", nullptr, &showGraphicsDebugWindow);
 			ImGui::MenuItem("Audio info", nullptr, &showAudioWindow);
-			ImGui::MenuItem("emu->memory. viewer", nullptr, &showMemoryViewerWindow);
+			ImGui::MenuItem("Memory viewer", nullptr, &showMemoryViewerWindow);
 			
 			ImGui::EndMenu();
 		}
