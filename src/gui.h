@@ -35,6 +35,9 @@ private:
 	void renderGraphicsDebugWindow();
 	void renderGBScreenWindow();
 	void renderMemoryViewerWindow();
+	
+
+	std::string getPokeStringAt(uint16_t addr, uint16_t length);
 	void renderTestWindow();
 };
 

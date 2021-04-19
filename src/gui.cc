@@ -442,11 +442,55 @@ void GUI::renderMemoryViewerWindow() {
 	ImGui::End();
 }
 
+// Read at most `length` poke-encoded characters from `addr`
+std::string GUI::getPokeStringAt(uint16_t addr, uint16_t length) {
+	std::string str;
+
+	const char charMap[255] = 
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ():;[]abcdefghijklmnopqrstuvwxyzedlstv"
+		"                                "
+		"\"PM-rm?!.   >>vM$*./,F0123456789";
+
+	for (int i; i < length; ++i) {
+		uint8_t b = emu->memory.readByte(addr + i);
+		if (b == 0x50) {
+			// 0x50 is the string delimiter
+			break;
+		}
+
+		// Meaningful chars start at 0x80
+		if (b < 0x80) {
+			str.push_back(' ');
+		} else {
+			str.push_back(charMap[b - 0x80]);
+		}
+	}
+
+	return str;
+}
 
 void GUI::renderTestWindow() {
 	// https://datacrystal.romhacking.net/wiki/Pok%C3%A9mon_Red/Blue:RAM_map
 	ImGui::Begin("Testing Pokered stuff", nullptr);
 
+	// Window contents is game-dependant
+	auto romheader = (Memory::romheader_t *)(emu->memory.rom + 0x134); 
+	auto gameName = std::string(romheader->gamename);
+
+	if (gameName == "POKEMON RED") {
+		auto playerName = getPokeStringAt(0xD158, 0x10);
+		auto rivalName = getPokeStringAt(0xD34A, 0x10);
+		ImGui::Text("player: %s, rival: %s", playerName.c_str(), rivalName.c_str());
+
+		// TODO grab Mon info
+		auto monNick = getPokeStringAt(0xD2B5, 0x10);
+		ImGui::Text("1st mon: %s", monNick.c_str());
+
+
+		
+	} else {
+		ImGui::Text("Sorry, no special features for this game.");
+	}
 
 
 	ImGui::End();
