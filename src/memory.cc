@@ -133,9 +133,11 @@ void Memory::tryParseSymbolsFile(std::string filename)
 				// Parse symbol name
 				iss >> symbol;
 
-				symbols[{bank, addr}] = symbol;
-				symCnt++;
+				// Two-way lookup
+				addrToSymbol[{bank, addr}] = symbol;
+				symbolToAddr[symbol] = {bank, addr};
 
+				symCnt++;
 			} catch (std::exception &e) {
 				// NOP
 			}
@@ -150,12 +152,23 @@ void Memory::tryParseSymbolsFile(std::string filename)
 	
 }
 
-std::string Memory::getSymbolName(uint8_t bank, uint16_t addr)
+std::string Memory::getSymbolFromAddress(uint8_t bank, uint16_t addr)
 {
 	try {
-		return symbols.at({bank, addr});
+		return addrToSymbol.at({bank, addr});
 	} catch (std::exception &e) {
 		return "";
+	}
+
+}
+
+// Returns pair of <bank, addr>
+std::pair<uint8_t, uint16_t> Memory::getAddressFromSymbol(uint8_t bank, std::string &symbol)
+{
+	try {
+		return symbolToAddr.at(symbol);
+	} catch (std::exception &e) {
+		return {0, 0};
 	}
 
 }

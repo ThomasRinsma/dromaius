@@ -190,8 +190,8 @@ void GUI::renderCPUDebugWindow() {
 	ImGui::Separator();
 
 	ImGui::Text("timer: %s", emu->cpu.timer.tac & 0x04 ? "started" : "stopped");
-	ImGui::Text("    clock: %02X    div: %02X", emu->cpu.timer.tac & 0x03, emu->cpu.timer.tma);
-	ImGui::Text("     tima: %02X    tma: %02X", emu->cpu.timer.tima, emu->cpu.timer.div);
+	ImGui::Text("      tac: %02X    tma: %02X", emu->cpu.timer.tac, emu->cpu.timer.tma);
+	ImGui::Text("     tima: %02X    div: %02X", emu->cpu.timer.tima, emu->cpu.timer.div);
 
 
 
@@ -223,7 +223,7 @@ void GUI::renderCPUDebugWindow() {
 	if (ImGui::CollapsingHeader("Call stack", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::Text("depth: %d", emu->cpu.callStackDepth);
 		for (int i = 0; i < emu->cpu.callStackDepth; ++i) {
-			std::string symbol = emu->memory.getSymbolName(emu->memory.romBank, emu->cpu.callStack[i]);
+			std::string symbol = emu->memory.getSymbolFromAddress(emu->memory.romBank, emu->cpu.callStack[i]);
 			if (symbol != "") {
 				ImGui::Text("%d: %04X (%s)", i, emu->cpu.callStack[i], symbol.c_str());
 			} else {
@@ -443,6 +443,14 @@ void GUI::renderMemoryViewerWindow() {
 }
 
 
+void GUI::renderTestWindow() {
+	ImGui::Begin("Testing Pokered stuff", nullptr);
+
+	ImGui::End();
+}
+
+
+
 void GUI::renderGBScreenWindow() {
 	// GB Screen window
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -521,6 +529,9 @@ void GUI::render() {
 
 	if (showMemoryViewerWindow)
 		renderMemoryViewerWindow();
+
+	if (showTestWindow)
+		renderTestWindow();
 
 
 	ImGui::End(); // main window

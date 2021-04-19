@@ -84,8 +84,10 @@ bool Dromaius::loadState(uint8_t slot)
 	auto stepMode = cpu.stepMode;
 
 	// Save non-pointers by deep copy
-	uint8_t *symbols = new uint8_t[sizeof(memory.symbols)];
-	memcpy(symbols, (uint8_t *)(&memory.symbols), sizeof(memory.symbols));
+	uint8_t *addrToSymbol = new uint8_t[sizeof(memory.addrToSymbol)];
+	uint8_t *symbolToAddr = new uint8_t[sizeof(memory.symbolToAddr)];
+	memcpy(addrToSymbol, (uint8_t *)(&memory.addrToSymbol), sizeof(memory.addrToSymbol));
+	memcpy(symbolToAddr, (uint8_t *)(&memory.symbolToAddr), sizeof(memory.symbolToAddr));
 
 	// Overwrite all state
 	uint8_t *src = state;
@@ -101,7 +103,8 @@ bool Dromaius::loadState(uint8_t slot)
 	cpu.stepMode = stepMode;
 
 	// Restore non-pointers by deep copy
-	memcpy((uint8_t *)(&memory.symbols), symbols, sizeof(memory.symbols));
+	memcpy((uint8_t *)(&memory.addrToSymbol), addrToSymbol, sizeof(memory.addrToSymbol));
+	memcpy((uint8_t *)(&memory.symbolToAddr), symbolToAddr, sizeof(memory.symbolToAddr));
 
 	return true;
 }
@@ -126,6 +129,7 @@ void Dromaius::run()
 			// Do a frame
 			graphics.renderDebugTileset();
 			
+			// Step CPU
 			int frametime = cpu.c + CPU_CLOCKS_PER_FRAME;
 			while (cpu.c < frametime) {
 				if (not cpu.executeInstruction()) {
@@ -160,11 +164,6 @@ void Dromaius::run()
 							
 					case SDLK_F3: // dump memory contents to file
 						memory.dumpToFile("memdump.bin");
-						break;
-						
-					case SDLK_F4:
-						printf("buttons held: 0x%02X, buttons down: 0x%02X. scroll timer: 0x%02X\n",
-							memory.readByte(0xC0A1), memory.readByte(0xC0A2), memory.readByte(0xC0A3));
 						break;
 					
 					case SDLK_r: // reset

@@ -755,11 +755,13 @@ void CPU::handleTimers()
 	timer.cycleCountDiv += c - dc;
 	timer.cycleCount += c - dc;
 
+	// Divider always counts, independent of TAC
+	timer.div++;
+
 	if (timer.tac & 0x04) { // started
 		if (timer.cycleCountDiv >= 64) {
 			timer.cycleCountDiv -= 64;
 
-			timer.div++;
 			//printf("div = %d.\n", timer.div);
 		}
 		if (timer.cycleCount >= timer.maxCount[timer.tac & 0x03]) {
@@ -861,8 +863,13 @@ int CPU::executeInstruction()
 	handleInterrupts();
 
 	if (emu->settings.debug) {
-		//printf("Read instruction 0x%02X at 0x%04X. (%d)\n", inst, r.pc, r.pc);
-		printRegisters();
+		// printRegisters();
+
+		// Print trace of executed symbols
+		std::string symbol = emu->memory.getSymbolFromAddress(emu->memory.romBank, r.pc);
+		if (not symbol.empty()) {
+			printf("hit symbol: %s\n", symbol.c_str());
+		}
 	}
 
 	if (not halted) {
@@ -994,6 +1001,7 @@ int CPU::executeInstruction()
 			case 0x10: // STOP
 				// TODO: Implement this
 				printf("STOP instruction\n");
+				timer.div = 0; // STOP resets the timer
 				c += 1;
 				break;
 				

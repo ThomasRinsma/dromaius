@@ -95,7 +95,9 @@ struct Memory
 	bool biosLoaded = true;
 
 	// map<<pageNr, addr>, symbol>
-	std::map<std::pair<uint8_t, uint16_t>, std::string> symbols;
+	std::map<std::pair<uint8_t, uint16_t>, std::string> addrToSymbol;
+	// map<symbol, <pageNr, addr>>
+	std::map<std::string, std::pair<uint8_t, uint16_t>> symbolToAddr;
 
 	~Memory();
 
@@ -111,7 +113,10 @@ struct Memory
 
 	// TODO: operator[]() overload?
 	void tryParseSymbolsFile(std::string filename);
-	std::string getSymbolName(uint8_t bank, uint16_t addr);
+
+
+	std::string getSymbolFromAddress(uint8_t bank, uint16_t addr);
+	std::pair<uint8_t, uint16_t> getAddressFromSymbol(uint8_t bank, std::string &symbol);
 
 	bool loadRom(std::string const &filename);
 	void initialize();

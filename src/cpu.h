@@ -6,6 +6,14 @@ struct Dromaius;
 
 #define CPU_CALL_STACK_SIZE 0x100
 
+/*
+
+GB CPU freq:                 4194304 Hz
+m-cycles per sec:            1048576 Hz
+DIV register, increments at:   16384 Hz (every 64 m-cycles)
+*/
+
+
 struct CPU
 {
 	enum Int {
