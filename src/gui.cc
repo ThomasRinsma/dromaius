@@ -122,7 +122,7 @@ void GUI::renderHoverText(const char *fmt, ...) {
 void GUI::renderInfoWindow() {
 	ImGui::Begin("Info", nullptr);
 
-	auto romheader = (Memory::romheader_t *)emu->memory.rom; 
+	auto romheader = (Memory::romheader_t *)(emu->memory.rom + 0x134); 
 	ImGui::Text("ROM Name: %s\nMBC: %s\nCountry: %s\nROM size: %d\nRAM size: %d",
 		romheader->gamename,
 		emu->memory.mbcAsString().c_str(),
@@ -444,7 +444,10 @@ void GUI::renderMemoryViewerWindow() {
 
 
 void GUI::renderTestWindow() {
+	// https://datacrystal.romhacking.net/wiki/Pok%C3%A9mon_Red/Blue:RAM_map
 	ImGui::Begin("Testing Pokered stuff", nullptr);
+
+
 
 	ImGui::End();
 }
