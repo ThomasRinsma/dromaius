@@ -455,7 +455,7 @@ void GUI::renderMemoryViewerWindow() {
 }
 
 // Read at most `length` poke-encoded characters from `addr`
-std::string GUI::getPokeStringAt(uint16_t addr, uint16_t length) {
+std::string GUI::getPokeStringAt(uint16_t addr, uint16_t len) {
 	std::string str;
 
 	const char charMap[255] = 
@@ -463,7 +463,7 @@ std::string GUI::getPokeStringAt(uint16_t addr, uint16_t length) {
 		"                                "
 		"\"PM-rm?!.   >>vM$*./,F0123456789";
 
-	for (int i; i < length; ++i) {
+	for (int i = 0; i < len; ++i) {
 		uint8_t b = emu->memory.readByte(addr + i);
 		if (b == 0x50) {
 			// 0x50 is the string delimiter
@@ -490,8 +490,8 @@ void GUI::renderTestWindow() {
 	auto gameName = std::string(romheader->gamename);
 
 	if (gameName == "POKEMON RED") {
-		auto playerName = getPokeStringAt(0xD158, 0x10);
-		auto rivalName = getPokeStringAt(0xD34A, 0x10);
+		auto const playerName = getPokeStringAt(0xD158, 0x10);
+		auto const rivalName = getPokeStringAt(0xD34A, 0x10);
 		ImGui::Text("player: %s, rival: %s", playerName.c_str(), rivalName.c_str());
 
 		// TODO grab Mon info
@@ -512,8 +512,8 @@ void GUI::renderTestWindow() {
 
 void GUI::renderGBScreenWindow() {
 	// GB Screen window
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin("LCD", nullptr, ImGuiWindowFlags_NoResize);
+	// ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::Begin("LCD", nullptr);
 
 	// Scaling
 	
@@ -529,8 +529,19 @@ void GUI::renderGBScreenWindow() {
 		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
 	
 	ImGui::End();
-	ImGui::PopStyleVar();
 }
+
+void GUI::renderConsoleWindow() {
+	// Console window
+	ImGui::Begin("Console", nullptr);
+
+	// TODO: circular log buffer
+
+	ImGui::Text("TODO");
+	
+	ImGui::End();
+}
+
 
 
 void GUI::render() {
@@ -574,14 +585,14 @@ void GUI::render() {
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			ImGui::MenuItem("Open...");
+			// ImGui::MenuItem("Open...");
 			ImGui::Separator();
 			if (ImGui::MenuItem("Exit")) {
 				printf("TODO exit\n");
 			}
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("Debug windows"))
+		if (ImGui::BeginMenu("Windows"))
 		{
 			ImGui::MenuItem("CPU info", nullptr, &showCPUDebugWindow);
 			ImGui::MenuItem("Graphics info", nullptr, &showGraphicsDebugWindow);
