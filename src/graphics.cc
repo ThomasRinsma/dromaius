@@ -14,6 +14,10 @@ void Graphics::initialize()
 	r.scy = 0;
 	r.flags = 0;
 
+	// Default screen scale
+	// TODO: make setting
+	screenScale = 3;
+
 	// Initialize pixel buffers
 	memset(screenPixels, 0x00, sizeof(screenPixels));
 	memset(debugTilesetPixels, 0x00, sizeof(debugTilesetPixels));

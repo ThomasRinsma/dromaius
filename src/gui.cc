@@ -514,8 +514,20 @@ void GUI::renderGBScreenWindow() {
 	// GB Screen window
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	ImGui::Begin("LCD", nullptr, ImGuiWindowFlags_NoResize);
-	ImGui::Image((void*)((intptr_t)emu->graphics.screenTexture), ImVec2(GB_SCREEN_WIDTH * emu->graphics.screenScale, GB_SCREEN_HEIGHT * emu->graphics.screenScale),
+
+	// Scaling
+	
+	ImGui::SliderInt("Scale factor", (int *)&emu->graphics.screenScale, 1, 5);
+
+	// Center the image
+	auto image_size = ImVec2(GB_SCREEN_WIDTH * emu->graphics.screenScale, GB_SCREEN_HEIGHT * emu->graphics.screenScale);
+	auto window_size = ImGui::GetWindowSize();
+	ImGui::SetCursorPos(ImVec2((int)(window_size.x - image_size.x)/2, (int)(window_size.y - image_size.y)/2));
+
+	// Draw image
+	ImGui::Image((void*)((intptr_t)emu->graphics.screenTexture), image_size,
 		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
+	
 	ImGui::End();
 	ImGui::PopStyleVar();
 }

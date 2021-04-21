@@ -61,7 +61,7 @@ struct Graphics
 	// Up-reference
 	Dromaius *emu;
 
-	static const unsigned int screenScale = 2;
+	unsigned int screenScale;
 
 	// Buffers and such
 	uint8_t vram[0x2000];
