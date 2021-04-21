@@ -498,6 +498,29 @@ void GUI::renderTestWindow() {
 		auto monNick = getPokeStringAt(0xD2B5, 0x10);
 		ImGui::Text("1st mon: %s", monNick.c_str());
 
+		// Items in inventory
+		// auto itemCount = emu->memory.readByte(0xD31D);
+		// for (int i = 0; i < itemCount; ++i) {
+		// 	auto itemNum = emu->memory.readByte(0xD31E + i * 2);
+		// 	auto itemQnt = emu->memory.readByte(0xD31F + i * 2);
+		// 	ImGui::Text("item %d x %d\n", itemNum, itemQnt);
+		// }
+
+		uint8_t zero = 0;
+		uint8_t twenty = 20;
+		uint8_t twofivefive = 255;
+
+		ImGui::SliderScalar("Items", ImGuiDataType_U8, &emu->memory.workram[0x131D], &zero, &twenty);
+		for (int i = 0; i < 20; ++i) {
+			char label[255];
+
+			sprintf(label, "Item %d", i);
+			ImGui::SliderScalar(label, ImGuiDataType_U8, &emu->memory.workram[0x131E + i * 2], &zero, &twofivefive);
+			
+			sprintf(label, "Count %d", i);
+			ImGui::SliderScalar(label, ImGuiDataType_U8, &emu->memory.workram[0x131F + i * 2], &zero, &twofivefive);
+		}
+
 
 		
 	} else {
