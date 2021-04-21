@@ -501,7 +501,7 @@ void GUI::renderTestWindow() {
 void GUI::renderGBScreenWindow() {
 	// GB Screen window
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin("GB Screen", nullptr, ImGuiWindowFlags_NoResize);
+	ImGui::Begin("LCD", nullptr, ImGuiWindowFlags_NoResize);
 	ImGui::Image((void*)((intptr_t)emu->graphics.screenTexture), ImVec2(GB_SCREEN_WIDTH * emu->graphics.screenScale, GB_SCREEN_HEIGHT * emu->graphics.screenScale),
 		ImVec2(0,0), ImVec2(1,1), ImColor(255,255,255,255), ImColor(0,0,0,0));
 	ImGui::End();
