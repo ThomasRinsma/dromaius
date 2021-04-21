@@ -384,60 +384,72 @@ void GUI::renderMemoryViewerWindow() {
 	uint16_t lineBuffer[16];
 	uint8_t charBuffer[16];
 
+	const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
+    const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
+
 	ImGui::Begin("Memory viewer", nullptr);
  	
-	ImGui::Columns(4);
+ 	ImGuiTableFlags flags = 
+ 		ImGuiTableFlags_BordersV | 
+ 		// ImGuiTableFlags_RowBg |
+ 		ImGuiTableFlags_SizingFixedFit;
 
-	// hack to make columns non resizable
-	ImGui::GetCurrentWindow()->DC.CurrentColumns[0].Flags |= ImGuiColumnsFlags_NoResize;
-	ImGui::GetCurrentWindow()->DC.CurrentColumns[1].Flags |= ImGuiColumnsFlags_NoResize;
-	ImGui::GetCurrentWindow()->DC.CurrentColumns[2].Flags |= ImGuiColumnsFlags_NoResize;
-	ImGui::GetCurrentWindow()->DC.CurrentColumns[3].Flags |= ImGuiColumnsFlags_NoResize;
+	if(ImGui::BeginTable("mem", 4, flags)) {
 
-	ImGui::SetColumnWidth(0, 60);
-	ImGui::SetColumnWidth(1, 50);
-	ImGui::SetColumnWidth(2, 300);
-	ImGui::SetColumnWidth(3, 150);
+		// ImGui::TableSetColumnWidth(0, 60);
+		// ImGui::TableSetColumnWidth(1, 50);
+		// ImGui::TableSetColumnWidth(2, 300);
+		// ImGui::TableSetColumnWidth(3, 150);
+		ImGui::TableSetupColumn("1", ImGuiTableColumnFlags_None, 60);
+		ImGui::TableSetupColumn("2", ImGuiTableColumnFlags_None, 50);
+		ImGui::TableSetupColumn("3", ImGuiTableColumnFlags_None, 300);
+		ImGui::TableSetupColumn("4", ImGuiTableColumnFlags_None, 150);
 
-	uint16_t startAddr = 0x000;
-	uint16_t endAddr   = 0xFFF;
+		uint16_t startAddr = 0x000;
+		uint16_t endAddr   = 0xFFF;
 
-	// Clip invisible lines
-	ImGuiListClipper clipper(endAddr - startAddr, ImGui::GetTextLineHeight());
-	for (int addr = clipper.DisplayStart; addr < clipper.DisplayEnd; ++addr) {
-		// Region
-		ImGui::Text("%s", emu->memory.getRegionName(addr << 4).c_str());
-		ImGui::NextColumn();
+		ImGuiListClipper clipper;//(endAddr - startAddr, ImGui::GetTextLineHeight());
+		clipper.Begin(endAddr - startAddr);
+		while(clipper.Step()) {
+			for (int addr = clipper.DisplayStart; addr < clipper.DisplayEnd; ++addr) {
+				ImGui::TableNextRow();
 
-		// Address
-		ImGui::Text("%03X0", addr);
-		ImGui::NextColumn();
+				// Region
+				ImGui::TableNextColumn();
+				ImGui::Text("%s", emu->memory.getRegionName(addr << 4).c_str());
 
-		for (int i = 0; i < 16; ++i) {
-			lineBuffer[i] = emu->memory.readByte((addr << 4) + i);
-			charBuffer[i] = (lineBuffer[i] >= 0x20 and lineBuffer[i] <= 0x7E) ? lineBuffer[i] : '.';
+				// Address
+				ImGui::TableNextColumn();
+				ImGui::Text("%03X0", addr);
+
+				for (int i = 0; i < 16; ++i) {
+					lineBuffer[i] = emu->memory.readByte((addr << 4) + i);
+					charBuffer[i] = (lineBuffer[i] >= 0x20 and lineBuffer[i] <= 0x7E) ? lineBuffer[i] : '.';
+				}
+
+				// Hex bytes
+				ImGui::TableNextColumn();
+				ImGui::Text("%02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X",
+					lineBuffer[0], lineBuffer[1], lineBuffer[2], lineBuffer[3], 
+					lineBuffer[4], lineBuffer[5], lineBuffer[6], lineBuffer[7], 
+					lineBuffer[8], lineBuffer[9], lineBuffer[10], lineBuffer[11], 
+					lineBuffer[12], lineBuffer[13], lineBuffer[14], lineBuffer[15]
+				);
+
+				// ASCII
+				ImGui::TableNextColumn();
+				ImGui::Text("%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
+					charBuffer[0], charBuffer[1], charBuffer[2], charBuffer[3], 
+					charBuffer[4], charBuffer[5], charBuffer[6], charBuffer[7], 
+					charBuffer[8], charBuffer[9], charBuffer[10], charBuffer[11], 
+					charBuffer[12], charBuffer[13], charBuffer[14], charBuffer[15]
+				);
+
+			}
 		}
 
-		ImGui::Text("%02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X",
-			lineBuffer[0], lineBuffer[1], lineBuffer[2], lineBuffer[3], 
-			lineBuffer[4], lineBuffer[5], lineBuffer[6], lineBuffer[7], 
-			lineBuffer[8], lineBuffer[9], lineBuffer[10], lineBuffer[11], 
-			lineBuffer[12], lineBuffer[13], lineBuffer[14], lineBuffer[15]
-		);
-
-		ImGui::NextColumn();
-
-		ImGui::Text("%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
-			charBuffer[0], charBuffer[1], charBuffer[2], charBuffer[3], 
-			charBuffer[4], charBuffer[5], charBuffer[6], charBuffer[7], 
-			charBuffer[8], charBuffer[9], charBuffer[10], charBuffer[11], 
-			charBuffer[12], charBuffer[13], charBuffer[14], charBuffer[15]
-		);
-
-		ImGui::NextColumn();
-
+		ImGui::EndTable();
 	}
-	clipper.End();
 
 	ImGui::End();
 }
