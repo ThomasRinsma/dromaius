@@ -10,10 +10,10 @@ struct GUI
 	Dromaius *emu;
 	
 	// window states
-	bool showCPUDebugWindow = false;
-	bool showGraphicsDebugWindow = false;
-	bool showAudioWindow = false;
-	bool showMemoryViewerWindow = false;
+	bool showCPUDebugWindow = true;
+	bool showGraphicsDebugWindow = true;
+	bool showAudioWindow = true;
+	bool showMemoryViewerWindow = true;
 	bool showTestWindow = true;
 
 	// SDL/gl contexts

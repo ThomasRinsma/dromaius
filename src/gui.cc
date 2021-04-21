@@ -42,7 +42,7 @@ GUI::GUI() {
 	SDL_DisplayMode current;
 	SDL_GetCurrentDisplayMode(0, &current);
 
-	// Set intiial window size
+	// Set intial window size
 	int initialWidth, initialHeight;
 	SDL_DisplayMode dm;
 	if (SDL_GetDesktopDisplayMode(0, &dm) != 0)
@@ -522,20 +522,28 @@ void GUI::render() {
 	// Scale main window up to SDL window size
 	int windowWidth, windowHeight;
 	SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	ImGui::SetNextWindowPos(ImVec2(.0f, .0f), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_Always);
 	ImGui::SetNextWindowBgAlpha(0.0f);
 	ImGui::Begin("Main window", nullptr, 
 		ImGuiWindowFlags_NoResize |
-		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoDocking |
 		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_NoScrollbar |
 		ImGuiWindowFlags_NoScrollWithMouse |
 		ImGuiWindowFlags_NoBringToFrontOnFocus |
+		ImGuiWindowFlags_NoNavFocus |
 		ImGuiWindowFlags_NoFocusOnAppearing |
 		ImGuiWindowFlags_NoNavFocus |
+		ImGuiWindowFlags_NoBackground |
 		ImGuiWindowFlags_MenuBar
 	);
+	ImGui::PopStyleVar();
 
 	// Menubar
 	if (ImGui::BeginMenuBar())
@@ -560,6 +568,11 @@ void GUI::render() {
 		}
 		ImGui::EndMenuBar();
 	}
+	// === Docking code ===
+	ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+	ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_PassthruCentralNode;
+	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+	// === End docking code ===
 
 	renderInfoWindow();
 	renderSettingsWindow();
