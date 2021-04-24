@@ -454,75 +454,15 @@ void GUI::renderMemoryViewerWindow() {
 	ImGui::End();
 }
 
-// Read at most `length` poke-encoded characters from `addr`
-std::string GUI::getPokeStringAt(uint16_t addr, uint16_t len) {
-	std::string str;
 
-	const char charMap[255] = 
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZ():;[]abcdefghijklmnopqrstuvwxyzedlstv"
-		"                                "
-		"\"PM-rm?!.   >>vM$*./,F0123456789";
+void GUI::renderGameSpecificWindow() {
+	ImGui::Begin("Game-specific", nullptr);
 
-	for (int i = 0; i < len; ++i) {
-		uint8_t b = emu->memory.readByte(addr + i);
-		if (b == 0x50) {
-			// 0x50 is the string delimiter
-			break;
-		}
-
-		// Meaningful chars start at 0x80
-		if (b < 0x80) {
-			str.push_back(' ');
-		} else {
-			str.push_back(charMap[b - 0x80]);
-		}
-	}
-
-	return str;
-}
-
-void GUI::renderTestWindow() {
-	// https://datacrystal.romhacking.net/wiki/Pok%C3%A9mon_Red/Blue:RAM_map
-	ImGui::Begin("Testing Pokered stuff", nullptr);
-
-	// Window contents is game-dependant
+	// Window contents is game-dependent
 	auto romheader = (Memory::romheader_t *)(emu->memory.rom + 0x134); 
 	auto gameName = std::string(romheader->gamename);
-
 	if (gameName == "POKEMON RED") {
-		auto const playerName = getPokeStringAt(0xD158, 0x10);
-		auto const rivalName = getPokeStringAt(0xD34A, 0x10);
-		ImGui::Text("player: %s, rival: %s", playerName.c_str(), rivalName.c_str());
-
-		// TODO grab Mon info
-		auto monNick = getPokeStringAt(0xD2B5, 0x10);
-		ImGui::Text("1st mon: %s", monNick.c_str());
-
-		// Items in inventory
-		// auto itemCount = emu->memory.readByte(0xD31D);
-		// for (int i = 0; i < itemCount; ++i) {
-		// 	auto itemNum = emu->memory.readByte(0xD31E + i * 2);
-		// 	auto itemQnt = emu->memory.readByte(0xD31F + i * 2);
-		// 	ImGui::Text("item %d x %d\n", itemNum, itemQnt);
-		// }
-
-		uint8_t zero = 0;
-		uint8_t twenty = 20;
-		uint8_t twofivefive = 255;
-
-		ImGui::SliderScalar("Items", ImGuiDataType_U8, &emu->memory.workram[0x131D], &zero, &twenty);
-		for (int i = 0; i < 20; ++i) {
-			char label[255];
-
-			sprintf(label, "Item %d", i);
-			ImGui::SliderScalar(label, ImGuiDataType_U8, &emu->memory.workram[0x131E + i * 2], &zero, &twofivefive);
-			
-			sprintf(label, "Count %d", i);
-			ImGui::SliderScalar(label, ImGuiDataType_U8, &emu->memory.workram[0x131F + i * 2], &zero, &twofivefive);
-		}
-
-
-		
+		gameGUI_pokemon_red(emu);
 	} else {
 		ImGui::Text("Sorry, no special features for this game.");
 	}
@@ -626,6 +566,7 @@ void GUI::render() {
 		}
 		ImGui::EndMenuBar();
 	}
+
 	// === Docking code ===
 	ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 	ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_PassthruCentralNode;
@@ -648,8 +589,8 @@ void GUI::render() {
 	if (showMemoryViewerWindow)
 		renderMemoryViewerWindow();
 
-	if (showTestWindow)
-		renderTestWindow();
+	if (showGameSpecificWindow)
+		renderGameSpecificWindow();
 
 	if (showImguiDemoWindow)
 		ImGui::ShowDemoWindow();

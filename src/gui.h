@@ -14,7 +14,7 @@ struct GUI
 	bool showGraphicsDebugWindow = true;
 	bool showAudioWindow = true;
 	bool showMemoryViewerWindow = true;
-	bool showTestWindow = true;
+	bool showGameSpecificWindow = true;
 	bool showImguiDemoWindow = false;
 
 	// SDL/gl contexts
@@ -40,7 +40,7 @@ private:
 	
 
 	std::string getPokeStringAt(uint16_t addr, uint16_t length);
-	void renderTestWindow();
+	void renderGameSpecificWindow();
 };
 
 #endif // include guard

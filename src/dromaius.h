@@ -14,6 +14,7 @@
 #include "gui.h"
 #include "input.h"
 #include "memory.h"
+#include "games/games.h"
 
 typedef struct keymap_s {
 	int start;

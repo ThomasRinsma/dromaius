@@ -49,7 +49,7 @@ struct CPU
 		uint8_t tima;
 		uint8_t tma;
 		uint8_t tac;
-		int cycleCount;
+		unsigned long long cycleCount;
 		int cycleCountDiv;
 		int maxCount[4];
 	};
@@ -78,8 +78,8 @@ struct CPU
 	int callStackDepth;
 
 	// Cycle count
-	int c;
-	int dc;
+	unsigned long long c;
+	unsigned long long dc;
 
 	void initialize();
 
