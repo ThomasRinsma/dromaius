@@ -401,9 +401,19 @@ void GUI::renderMemoryViewerWindow() {
  	
  	ImGuiTableFlags flags = 
  		ImGuiTableFlags_BordersV | 
- 		// ImGuiTableFlags_RowBg |
+ 		ImGuiTableFlags_RowBg |
  		ImGuiTableFlags_SizingFixedFit;
 
+ 	ImGui::BeginTable("headers", 4, flags);
+ 	ImGui::TableSetupColumn("Region", ImGuiTableColumnFlags_None, 60);
+ 	ImGui::TableSetupColumn("Addr", ImGuiTableColumnFlags_None, 50);
+ 	ImGui::TableSetupColumn("0 1  2 3  4 5  6 7  8 9  A B  C D  E F", ImGuiTableColumnFlags_None, 300);
+ 	ImGui::TableSetupColumn("0123456789ABCDEF", ImGuiTableColumnFlags_None, 150);
+ 	ImGui::TableHeadersRow();
+ 	ImGui::EndTable();
+
+ 	ImVec2 child_size = ImVec2(0, 0);
+ 	ImGui::BeginChild("##ScrollingRegion", child_size);//, false);
 	if(ImGui::BeginTable("mem", 4, flags)) {
 
 		// ImGui::TableSetColumnWidth(0, 60);
@@ -439,26 +449,49 @@ void GUI::renderMemoryViewerWindow() {
 
 				// Hex bytes
 				ImGui::TableNextColumn();
+				auto hex_screen_pos = ImGui::GetCursorScreenPos();
 				ImGui::Text("%02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X",
 					lineBuffer[0], lineBuffer[1], lineBuffer[2], lineBuffer[3], 
 					lineBuffer[4], lineBuffer[5], lineBuffer[6], lineBuffer[7], 
 					lineBuffer[8], lineBuffer[9], lineBuffer[10], lineBuffer[11], 
 					lineBuffer[12], lineBuffer[13], lineBuffer[14], lineBuffer[15]
 				);
+				if (ImGui::IsItemHovered()) {
+					int offset = (int)(ImGui::GetMousePos().x - hex_screen_pos.x) / TEXT_BASE_WIDTH;
+					
+					// Don't show popup on space
+					if (offset % 5 != 4) {
+						auto hoverAddr = (addr << 8) + (offset / 5) * 2 + (offset % 5) / 2;
+
+						ImGui::BeginTooltip();
+						ImGui::Text("0x%04X", hoverAddr);
+						ImGui::EndTooltip();
+					}
+				}
 
 				// ASCII
 				ImGui::TableNextColumn();
+				hex_screen_pos = ImGui::GetCursorScreenPos();
 				ImGui::Text("%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
 					charBuffer[0], charBuffer[1], charBuffer[2], charBuffer[3], 
 					charBuffer[4], charBuffer[5], charBuffer[6], charBuffer[7], 
 					charBuffer[8], charBuffer[9], charBuffer[10], charBuffer[11], 
 					charBuffer[12], charBuffer[13], charBuffer[14], charBuffer[15]
 				);
+				if (ImGui::IsItemHovered()) {
+					int offset = (int)(ImGui::GetMousePos().x - hex_screen_pos.x) / TEXT_BASE_WIDTH;
+					auto hoverAddr = (addr << 8) + offset;
+
+					ImGui::BeginTooltip();
+					ImGui::Text("0x%04X", hoverAddr);
+					ImGui::EndTooltip();
+				}
 
 			}
 		}
 
 		ImGui::EndTable();
+		ImGui::EndChild();
 	}
 
 	ImGui::End();

@@ -154,51 +154,28 @@ std::map<uint8_t, char const *> poke_item_names = {
 typedef struct pokemon_s
 {
 	
-	// D16B - Pokémon (Again)
 	uint8_t index;
-	// D16C-D16D - Current HP
 	uint16_t hp;
-	// D16E - 'Level' (not the actual level, see the notes article)
 	uint8_t pseudoLevel;
-	// D16F - Status (Poisoned, Paralyzed, etc.)
 	uint8_t status; 
-	// D170 - Type 1
 	uint8_t types[2];
-	// D172 - Catch rate/Held item (When traded to Generation II)
 	uint8_t catchRate;
-	// D173 - Move 1
 	uint8_t moves[4];
-	// D177-D178 - Trainer ID
 	uint16_t trainerId;
-	// D179-D17B - Experience
 	uint8_t exp[3];
-	// D17C-D17D - HP EV
 	uint16_t evHp;
-	// D17E-D17F - Attack EV
 	uint16_t evAttack;
-	// D180-D181 - Defense EV
 	uint16_t evDefense;
-	// D182-D183 - Speed EV
 	uint16_t evSpeed;
-	// D184-D185 - Special EV
 	uint16_t evSpecial;
-	// D186 - Attack/Defense IV
 	uint8_t ivAttackDefense;
-	// D187 - Speed/Special IV
 	uint8_t ivSpeedSpecial;
-	// D188 - PP Move 1
 	uint8_t pp[4];
-	// D18C - Level (actual level)
 	uint8_t level;
-	// D18D-D18E - Max HP
 	uint16_t maxHp;
-	// D18F-D190 - Attack
 	uint16_t attack;
-	// D191-D192 - Defense
 	uint16_t defense;
-	// D193-D194 - Speed
 	uint16_t speed;
-	// D195-D196 - Special
 	uint16_t special;
 
 } __attribute__((packed)) pokemon_t;
@@ -409,13 +386,24 @@ void renderParty(Dromaius *emu) {
 }
 
 void gameGUI_pokemon_red(Dromaius *emu) {
-
+	uint8_t const s = 1;
 	
 	auto const playerName = getPokeStringAt(emu, 0xD158, 0x10);
 	auto const rivalName = getPokeStringAt(emu, 0xD34A, 0x10);
 
 	// Basic info
 	ImGui::Text("player: %s, rival: %s", playerName.c_str(), rivalName.c_str());
+
+	if (ImGui::CollapsingHeader("Player")) {
+		// 0xD361
+		// ImGui::InputScalar("Player X", ImGuiDataType_U8, &emu->memory.workram[0x1362], &s);
+		// ImGui::InputScalar("Player Y", ImGuiDataType_U8, &emu->memory.workram[0x1361], &s);
+	
+
+		
+	}
+
+
 
 	if (ImGui::CollapsingHeader("Badges")) {
 		renderBadges(emu);
