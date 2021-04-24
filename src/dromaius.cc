@@ -130,7 +130,7 @@ void Dromaius::run()
 			graphics.renderDebugTileset();
 			
 			// Step CPU
-			int frametime = cpu.c + CPU_CLOCKS_PER_FRAME;
+			unsigned long long frametime = cpu.c + CPU_CLOCKS_PER_FRAME;
 			while (cpu.c < frametime) {
 				if (not cpu.executeInstruction()) {
 					done = 1;
@@ -195,7 +195,7 @@ void Dromaius::run()
 		}
 		
 		uint32_t deltaTime = SDL_GetTicks() - oldTime;
-		if (deltaTime < 16 and not cpu.fastForward) {
+		if (deltaTime > 0 and deltaTime < 16 and not cpu.fastForward) {
 			SDL_Delay(16 - deltaTime);
 		}
 	}

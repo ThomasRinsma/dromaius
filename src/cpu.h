@@ -51,7 +51,7 @@ struct CPU
 		uint8_t tac;
 		unsigned long long cycleCount;
 		int cycleCountDiv;
-		int maxCount[4];
+		int maxCount[4]; // const
 	};
 
 	// Up-reference

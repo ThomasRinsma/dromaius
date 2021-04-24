@@ -393,27 +393,63 @@ void GUI::renderGraphicsDebugWindow() {
 void GUI::renderMemoryViewerWindow() {
 	uint16_t lineBuffer[16];
 	uint8_t charBuffer[16];
+	int jumpAddr = -1;
 
 	const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
     const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
 
 	ImGui::Begin("Memory viewer", nullptr);
+
+	if (ImGui::BeginTable("jumps", 2, ImGuiTableFlags_BordersInnerV)) {
+		// Jump to addr
+		static char hexBuf[5] = {0x00};
+		ImGui::TableNextColumn();
+		ImGui::SetNextItemWidth(100);
+		ImGui::InputTextWithHint("###jump to", "address", hexBuf, 5,
+			ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase);
+		ImGui::SameLine();
+		if (ImGui::Button("<- jump to addr")) {
+			jumpAddr = (int)strtol(hexBuf, NULL, 16);
+		}
+
+		// Jump to SP
+		ImGui::TableNextColumn();
+		ImGui::Text("Jump to: ");
+		ImGui::SameLine();
+		if (ImGui::Button("SP")) {
+			jumpAddr = emu->cpu.r.sp;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("PC")) {
+			jumpAddr = emu->cpu.r.pc;
+		}
+
+		ImGui::EndTable();
+	}
+
  	
  	ImGuiTableFlags flags = 
  		ImGuiTableFlags_BordersV | 
  		ImGuiTableFlags_RowBg |
  		ImGuiTableFlags_SizingFixedFit;
 
- 	ImGui::BeginTable("headers", 4, flags);
- 	ImGui::TableSetupColumn("Region", ImGuiTableColumnFlags_None, 60);
- 	ImGui::TableSetupColumn("Addr", ImGuiTableColumnFlags_None, 50);
- 	ImGui::TableSetupColumn("0 1  2 3  4 5  6 7  8 9  A B  C D  E F", ImGuiTableColumnFlags_None, 300);
- 	ImGui::TableSetupColumn("0123456789ABCDEF", ImGuiTableColumnFlags_None, 150);
- 	ImGui::TableHeadersRow();
- 	ImGui::EndTable();
+ 	if (ImGui::BeginTable("headers", 4, flags)) {
+	 	ImGui::TableSetupColumn("Region", ImGuiTableColumnFlags_None, 60);
+	 	ImGui::TableSetupColumn("Addr", ImGuiTableColumnFlags_None, 50);
+	 	ImGui::TableSetupColumn("0 1  2 3  4 5  6 7  8 9  A B  C D  E F", ImGuiTableColumnFlags_None, 300);
+	 	ImGui::TableSetupColumn("0123456789ABCDEF", ImGuiTableColumnFlags_None, 150);
+	 	ImGui::TableHeadersRow();
+	 	ImGui::EndTable();
+ 	}
 
  	ImVec2 child_size = ImVec2(0, 0);
  	ImGui::BeginChild("##ScrollingRegion", child_size);//, false);
+
+ 	// Jump to addr if clicked
+ 	if (jumpAddr != -1) {
+ 		ImGui::SetScrollY((jumpAddr >> 4) * TEXT_BASE_HEIGHT);
+ 	}
+
 	if(ImGui::BeginTable("mem", 4, flags)) {
 
 		// ImGui::TableSetColumnWidth(0, 60);
@@ -491,9 +527,8 @@ void GUI::renderMemoryViewerWindow() {
 		}
 
 		ImGui::EndTable();
-		ImGui::EndChild();
 	}
-
+	ImGui::EndChild();
 	ImGui::End();
 }
 
