@@ -248,27 +248,37 @@ void GUI::renderAudioWindow() {
 	g_emu = emu;
 	ImGui::Text("waveram: ");
 	ImGui::SameLine();
+	ImGui::PushItemWidth(-1);
 	ImGui::PlotLines("",
 		[](void *data, int idx) { return (float)(g_emu->audio.waveRam[idx/2] & ((idx % 2) ? 0xF0 : 0x0F));}, NULL, 32);
+	ImGui::PopItemWidth();
 
 	ImGui::Separator();
 
 	// Show waveforms of last N samples
 	ImGui::Text("ch1 (%s): ", emu->audio.ch1.isEnabled ? "on " : "off");
 	ImGui::SameLine();
+	ImGui::PushItemWidth(-1);
 	ImGui::PlotLines("", [](void*data, int idx) { return (float)g_emu->audio.sampleHistory[0][(idx + g_emu->cpu.c) % AUDIO_SAMPLE_HISTORY_SIZE]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
-	
+	ImGui::PopItemWidth();
+
 	ImGui::Text("ch2 (%s): ", emu->audio.ch2.isEnabled ? "on " : "off");
 	ImGui::SameLine();
+	ImGui::PushItemWidth(-1);
 	ImGui::PlotLines("", [](void*data, int idx) { return (float)g_emu->audio.sampleHistory[1][(idx + g_emu->cpu.c) % AUDIO_SAMPLE_HISTORY_SIZE]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
+	ImGui::PopItemWidth();
 	
 	ImGui::Text("ch3 (%s): ", emu->audio.ch3.isEnabled ? "on " : "off");
 	ImGui::SameLine();
+	ImGui::PushItemWidth(-1);
 	ImGui::PlotLines("", [](void*data, int idx) { return (float)g_emu->audio.sampleHistory[2][(idx + g_emu->cpu.c) % AUDIO_SAMPLE_HISTORY_SIZE]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
+	ImGui::PopItemWidth();
 	
 	ImGui::Text("ch4 (%s): ", emu->audio.ch4.isEnabled ? "on " : "off");
 	ImGui::SameLine();
+	ImGui::PushItemWidth(-1);
 	ImGui::PlotLines("", [](void*data, int idx) { return (float)g_emu->audio.sampleHistory[3][(idx + g_emu->cpu.c) % AUDIO_SAMPLE_HISTORY_SIZE]; }, NULL, AUDIO_SAMPLE_HISTORY_SIZE);
+	ImGui::PopItemWidth();
 	ImGui::End();
 }
 
