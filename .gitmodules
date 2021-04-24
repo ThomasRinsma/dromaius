@@ -1,3 +1,6 @@
 [submodule "libs/imgui"]
 	path = libs/imgui
 	url = git@github.com:ocornut/imgui.git
+[submodule "libs/imgui-filebrowser"]
+	path = libs/imgui-filebrowser
+	url = https://github.com/AirGuanZ/imgui-filebrowser

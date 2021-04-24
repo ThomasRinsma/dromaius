@@ -5,6 +5,7 @@
 #include <string>
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <imfilebrowser.h>
 #include <GL/gl3w.h>
 #include <SDL2/SDL.h>
 

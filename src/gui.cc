@@ -626,7 +626,12 @@ void GUI::render() {
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			// ImGui::MenuItem("Open...");
+			if (ImGui::MenuItem("Open...")) {
+				fileDialog.SetTitle("Select a GB ROM");
+				fileDialog.SetTypeFilters({".gb"});
+
+				fileDialog.Open();
+			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Exit")) {
 				printf("TODO exit\n");
@@ -675,6 +680,9 @@ void GUI::render() {
 
 
 	ImGui::End(); // main window
+
+	// Display a file dialog if it is open
+	fileDialog.Display();
 
 	ImGui::Render();
 }
