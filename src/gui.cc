@@ -621,7 +621,7 @@ void GUI::render() {
 			ImGui::MenuItem("Graphics info", nullptr, &showGraphicsDebugWindow);
 			ImGui::MenuItem("Audio info", nullptr, &showAudioWindow);
 			ImGui::MenuItem("Memory viewer", nullptr, &showMemoryViewerWindow);
-			
+			ImGui::MenuItem("imgui demo window", nullptr, &showImguiDemoWindow);
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
@@ -650,6 +650,9 @@ void GUI::render() {
 
 	if (showTestWindow)
 		renderTestWindow();
+
+	if (showImguiDemoWindow)
+		ImGui::ShowDemoWindow();
 
 
 	ImGui::End(); // main window

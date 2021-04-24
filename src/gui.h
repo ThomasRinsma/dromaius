@@ -15,6 +15,7 @@ struct GUI
 	bool showAudioWindow = true;
 	bool showMemoryViewerWindow = true;
 	bool showTestWindow = true;
+	bool showImguiDemoWindow = false;
 
 	// SDL/gl contexts
 	SDL_Window *window;
