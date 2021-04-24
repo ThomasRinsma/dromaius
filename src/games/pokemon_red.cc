@@ -342,36 +342,62 @@ void renderParty(Dromaius *emu) {
 		auto const title = monNick + ", lvl " + std::to_string(monData->level) + "###" + std::to_string(i);
 		if (ImGui::TreeNode(title.c_str())) {
 
-			ImGui::Text("Trainer: %s", monTrainer.c_str());
+			ImGui::Text("Trainer: %s, ID: %d", monTrainer.c_str(), monData->trainerId);
 			ImGui::InputScalar("Index nr.", ImGuiDataType_U8, &emu->memory.workram[partyBase + 1 + i], &s);
 			// Make sure both datapoints are in sync
 			monData->index = emu->memory.workram[partyBase + 1 + i];
 
 			ImGui::InputScalar("Level", ImGuiDataType_U8, &monData->level, &s);
 			ImGui::InputScalar("HP", ImGuiDataType_U8, &monData->hp, &s);
+			ImGui::InputScalar("Max HP", ImGuiDataType_U8, &monData->maxHp, &s);
 			ImGui::InputScalar("Status", ImGuiDataType_U8, &monData->status, &s);
 			ImGui::InputScalar("Type 1", ImGuiDataType_U8, &monData->types[0], &s);
 			ImGui::InputScalar("Type 2", ImGuiDataType_U8, &monData->types[1], &s);
 
-			ImGui::BeginTable("moves", 2, ImGuiTableFlags_BordersInnerV);
-			ImGui::TableNextColumn();
-			ImGui::InputScalar("Move 1", ImGuiDataType_U8, &monData->moves[0], &s);
-			ImGui::TableNextColumn();
-			ImGui::InputScalar("PP##1", ImGuiDataType_U8, &monData->pp[0], &s);
-			ImGui::TableNextColumn();
-			ImGui::InputScalar("Move 2", ImGuiDataType_U8, &monData->moves[1], &s);
-			ImGui::TableNextColumn();
-			ImGui::InputScalar("PP##2", ImGuiDataType_U8, &monData->pp[1], &s);
-			ImGui::TableNextColumn();
-			ImGui::InputScalar("Move 3", ImGuiDataType_U8, &monData->moves[2], &s);
-			ImGui::TableNextColumn();
-			ImGui::InputScalar("PP##3", ImGuiDataType_U8, &monData->pp[2], &s);
-			ImGui::TableNextColumn();
-			ImGui::InputScalar("Move 4", ImGuiDataType_U8, &monData->moves[3], &s);
-			ImGui::TableNextColumn();
-			ImGui::InputScalar("PP##4", ImGuiDataType_U8, &monData->pp[3], &s);
-			ImGui::EndTable();
+			if (ImGui::TreeNode("Moveset")) {
+				ImGui::BeginTable("moves", 2, ImGuiTableFlags_BordersInnerV);
+				ImGui::TableNextColumn();
+				ImGui::InputScalar("Move 1", ImGuiDataType_U8, &monData->moves[0], &s);
+				ImGui::TableNextColumn();
+				ImGui::InputScalar("PP##1", ImGuiDataType_U8, &monData->pp[0], &s);
+				ImGui::TableNextColumn();
+				ImGui::InputScalar("Move 2", ImGuiDataType_U8, &monData->moves[1], &s);
+				ImGui::TableNextColumn();
+				ImGui::InputScalar("PP##2", ImGuiDataType_U8, &monData->pp[1], &s);
+				ImGui::TableNextColumn();
+				ImGui::InputScalar("Move 3", ImGuiDataType_U8, &monData->moves[2], &s);
+				ImGui::TableNextColumn();
+				ImGui::InputScalar("PP##3", ImGuiDataType_U8, &monData->pp[2], &s);
+				ImGui::TableNextColumn();
+				ImGui::InputScalar("Move 4", ImGuiDataType_U8, &monData->moves[3], &s);
+				ImGui::TableNextColumn();
+				ImGui::InputScalar("PP##4", ImGuiDataType_U8, &monData->pp[3], &s);
+				ImGui::EndTable();
+				ImGui::TreePop();
+			}
 
+			if (ImGui::TreeNode("Stats")) {
+				ImGui::InputScalar("Attack", ImGuiDataType_U8, &monData->attack, &s);
+				ImGui::InputScalar("Defense", ImGuiDataType_U8, &monData->defense, &s);
+				ImGui::InputScalar("Speed", ImGuiDataType_U8, &monData->speed, &s);
+				ImGui::InputScalar("Special", ImGuiDataType_U8, &monData->special, &s);
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("EVs")) {
+				ImGui::InputScalar("HP", ImGuiDataType_U8, &monData->evHp, &s);
+				ImGui::InputScalar("Attack", ImGuiDataType_U8, &monData->evAttack, &s);
+				ImGui::InputScalar("Defense", ImGuiDataType_U8, &monData->evDefense, &s);
+				ImGui::InputScalar("Speed", ImGuiDataType_U8, &monData->evSpeed, &s);
+				ImGui::InputScalar("Special", ImGuiDataType_U8, &monData->evSpecial, &s);
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("IVs")) {
+				ImGui::InputScalar("Attack/Defense", ImGuiDataType_U8, &monData->ivAttackDefense, &s);
+				ImGui::InputScalar("Speed/Special", ImGuiDataType_U8, &monData->ivSpeedSpecial, &s);
+				ImGui::TreePop();
+			}
 
 			ImGui::TreePop();
 		}
