@@ -39,24 +39,37 @@ void renderBadges(Dromaius *emu) {
 	ImGui::CheckboxFlags("Thunder", (int *)&emu->memory.workram[0x1356], 0x04);
 	ImGui::SameLine();
 	ImGui::CheckboxFlags("Rainbow", (int *)&emu->memory.workram[0x1356], 0x08);
-	ImGui::CheckboxFlags("Soul",    (int *)&emu->memory.workram[0x1356], 0x10);
+	ImGui::CheckboxFlags("Soul   ", (int *)&emu->memory.workram[0x1356], 0x10);
 	ImGui::SameLine();
-	ImGui::CheckboxFlags("Marsh",   (int *)&emu->memory.workram[0x1356], 0x20);
+	ImGui::CheckboxFlags("Marsh  ", (int *)&emu->memory.workram[0x1356], 0x20);
 	ImGui::CheckboxFlags("Volcano", (int *)&emu->memory.workram[0x1356], 0x40);
 	ImGui::SameLine();
-	ImGui::CheckboxFlags("Earth",   (int *)&emu->memory.workram[0x1356], 0x80);
+	ImGui::CheckboxFlags("Earth  ", (int *)&emu->memory.workram[0x1356], 0x80);
 }
 
-void renderItems(Dromaius *emu) {
+void renderItems(Dromaius *emu, bool stored = false) {
 	uint8_t const zero = 0;
 	uint8_t const twofivefour = 254;
 	uint8_t const twofivefive = 255;
+
+	uint16_t baseAddr;
+	uint8_t max;
+
+	if (stored) {
+		max = 50;
+		baseAddr = 0xD53A - 0xC000;
+	}
+	else {
+		max = 20;
+		baseAddr = 0xD31D - 0xC000;
+	}
 	
+	ImGui::PushID(stored);
 	ImGui::BeginTable("player items", 2, ImGuiTableFlags_Borders);
 	int i;
-	for (i = 0; i < 20; ++i) {
+	for (i = 0; i < max; ++i) {
 		// List is 0xFF-terminated
-		if (emu->memory.workram[0x131E + i * 2] == 0xFF) {
+		if (emu->memory.workram[baseAddr + 1 + i * 2] == 0xFF) {
 			++i;
 			break;
 		}
@@ -64,36 +77,37 @@ void renderItems(Dromaius *emu) {
 		ImGui::TableNextColumn();
 		ImGui::PushID(i*2);
 		ImGui::PushItemWidth(-1);
-		ImGui::DragScalar("##item", ImGuiDataType_U8, &emu->memory.workram[0x131E + i * 2], 0.5, &zero, &twofivefour, "Item: %d");
+		ImGui::DragScalar("##item", ImGuiDataType_U8, &emu->memory.workram[baseAddr + 1 + i * 2], 0.5, &zero, &twofivefour, "Item: %d");
 		ImGui::PopItemWidth();
 		ImGui::PopID();
 
 		ImGui::TableNextColumn();
 		ImGui::PushID(i*2+1);
 		ImGui::PushItemWidth(-1);
-		ImGui::DragScalar("##count", ImGuiDataType_U8, &emu->memory.workram[0x131F + i * 2], 0.5, &zero, &twofivefive, "Count: %d");
+		ImGui::DragScalar("##count", ImGuiDataType_U8, &emu->memory.workram[baseAddr + 2 + i * 2], 0.5, &zero, &twofivefive, "Count: %d");
 		ImGui::PopItemWidth();
 		ImGui::PopID();
 	}
 	ImGui::EndTable();
 
 	// If the list is not full
-	if (i < 20 && ImGui::Button("Add item")) {
+	if (i < max && ImGui::Button("Add item")) {
 		// Remove list terminator
-		emu->memory.workram[0x131E + (i-1) * 2] = 0x00;
+		emu->memory.workram[baseAddr + 1 + (i-1) * 2] = 0x00;
 
 		// Add a new terminator if this is not the last item
-		if (i < 20) {
-			emu->memory.workram[0x131E + i * 2] = 0xFF;
+		if (i < max) {
+			emu->memory.workram[baseAddr + 1 + i * 2] = 0xFF;
 		}
 
 		// Update total item count (0xD31D)
-		emu->memory.workram[0x131D] = i;
+		emu->memory.workram[baseAddr] = i;
 	}
 	// ImGui::SameLine();
 	if (i > 1 && ImGui::Button("Remove last")) {
-		emu->memory.workram[0x131E + (i-2) * 2] = 0xFF;
+		emu->memory.workram[baseAddr + 1 + (i-2) * 2] = 0xFF;
 	}
+	ImGui::PopID();
 }
 
 void renderMons(Dromaius *emu) {
@@ -118,6 +132,10 @@ void gameGUI_pokemon_red(Dromaius *emu) {
 
 	if (ImGui::CollapsingHeader("Items (player)")) {
 		renderItems(emu);
+	}
+
+	if (ImGui::CollapsingHeader("Items (storage)")) {
+		renderItems(emu, true);
 	}
 
 	if (ImGui::CollapsingHeader("Pokemon (player)")) {
