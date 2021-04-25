@@ -29,6 +29,7 @@ struct GUI
 
 private:
 	void initializeImgui();
+	void triggerRomLoadDialog();
 	void renderHoverText(const char *fmt, ...);
 	void renderInfoWindow();
 	void renderSettingsWindow();

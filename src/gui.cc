@@ -124,12 +124,20 @@ void GUI::renderInfoWindow() {
 
 	if (emu->memory.romLoaded) {
 		auto romheader = (Memory::romheader_t *)(emu->memory.rom + 0x134); 
-		ImGui::Text("ROM Name: %s\nMBC: %s\nCountry: %s\nROM size: %d\nRAM size: %d",
+		ImGui::Text("ROM: %s", emu->filename.c_str());
+		ImGui::Text("ROM Name: %s\nMBC: %s\nCountry: %s\nType: %s\nROM size: %s\nRAM size: %s",
 			romheader->gamename,
 			emu->memory.mbcAsString().c_str(),
 			romheader->country ? "Other" : "Japan",
-			romheader->romsize,
-			romheader->ramsize);
+			emu->memory.getCartridgeTypeString(romheader->type).c_str(),
+			emu->memory.getCartridgeRomSizeString(romheader->romsize).c_str(),
+			emu->memory.getCartridgeRomSizeString(romheader->ramsize).c_str()
+		);
+	} else {
+		ImGui::Text("No ROM loaded");
+		if (ImGui::Button("Load ROM...")) {
+			triggerRomLoadDialog();
+		}
 	}
 	ImGui::End(); // info window
 }
@@ -137,10 +145,11 @@ void GUI::renderInfoWindow() {
 
 void GUI::renderSettingsWindow() {
 	ImGui::Begin("Controls", nullptr);
-	float fps = ImGui::GetIO().Framerate;
-	ImGui::Text("FPS: %.1f (%.1fx speed)", fps, fps / 61.0f);
 
 	if (emu->memory.romLoaded) {
+		float fps = ImGui::GetIO().Framerate;
+		ImGui::Text("FPS: %.1f (%.1fx speed)", fps, fps / 61.0f);
+		
 		if (ImGui::Button("Reset ROM")) {
 			emu->reset();
 		}
@@ -602,6 +611,12 @@ void GUI::renderConsoleWindow() {
 }
 
 
+void GUI::triggerRomLoadDialog() {
+	openRomDialog.SetTitle("Select a GB ROM");
+	openRomDialog.SetTypeFilters({".gb"});
+	openRomDialog.Open();
+}
+
 
 void GUI::render() {
 	// Start a new frame
@@ -645,9 +660,7 @@ void GUI::render() {
 		if (ImGui::BeginMenu("File"))
 		{
 			if (ImGui::MenuItem("Open...")) {
-				openRomDialog.SetTitle("Select a GB ROM");
-				openRomDialog.SetTypeFilters({".gb"});
-				openRomDialog.Open();
+				triggerRomLoadDialog();
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Exit")) {

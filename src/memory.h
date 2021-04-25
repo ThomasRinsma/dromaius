@@ -101,6 +101,7 @@ struct Memory
 
 	~Memory();
 
+	// TODO: operator[]() overload?
 	uint8_t readByte(uint16_t addr);
 	uint16_t readWord(uint16_t addr);
 
@@ -108,10 +109,13 @@ struct Memory
 	void writeWord(uint16_t w, uint16_t addr);
 
 	std::string getRegionName(uint16_t addr);
+	std::string getCartridgeTypeString(uint8_t type);
+	std::string getCartridgeRomSizeString(uint8_t size);
+	std::string getCartridgeRamSizeString(uint8_t size);
 	
-	void dumpToFile(std::string const &filename);
 
-	// TODO: operator[]() overload?
+
+	void dumpToFile(std::string const &filename);
 	void tryParseSymbolsFile(std::string filename);
 
 

@@ -180,6 +180,71 @@ std::pair<uint8_t, uint16_t> Memory::getAddressFromSymbol(uint8_t bank, std::str
 
 }
 
+std::string Memory::getCartridgeTypeString(uint8_t type) {
+
+	switch (type) {
+		case 0x00: return "ROM ONLY";
+		case 0x01: return "MBC1";
+		case 0x02: return "MBC1+RAM";
+		case 0x03: return "MBC1+RAM+BATTERY";
+		case 0x05: return "MBC2";
+		case 0x06: return "MBC2+BATTERY";
+		case 0x08: return "ROM+RAM *";
+		case 0x09: return "ROM+RAM+BATTERY *";
+		case 0x0B: return "MMM01";
+		case 0x0C: return "MMM01+RAM";
+		case 0x0D: return "MMM01+RAM+BATTERY";
+		case 0x0F: return "MBC3+TIMER+BATTERY";
+		case 0x10: return "MBC3+TIMER+RAM+BATTERY **";
+		case 0x11: return "MBC3";
+		case 0x12: return "MBC3+RAM **";
+		case 0x13: return "MBC3+RAM+BATTERY **";
+		case 0x19: return "MBC5";
+		case 0x1A: return "MBC5+RAM";
+		case 0x1B: return "MBC5+RAM+BATTERY";
+		case 0x1C: return "MBC5+RUMBLE";
+		case 0x1D: return "MBC5+RUMBLE+RAM";
+		case 0x1E: return "MBC5+RUMBLE+RAM+BATTERY";
+		case 0x20: return "MBC6";
+		case 0x22: return "MBC7+SENSOR+RUMBLE+RAM+BATTERY";
+		case 0xFC: return "POCKET CAMERA";
+		case 0xFD: return "BANDAI TAMA5";
+		case 0xFE: return "HuC3";
+		case 0xFF: return "HuC1+RAM+BATTERY";
+		default: return "(unknown)";
+	}
+}
+
+std::string Memory::getCartridgeRomSizeString(uint8_t size) {
+	switch (size) {
+		case 0x00: return "32 KB";
+		case 0x01: return "64 KB";
+		case 0x02: return "128 KB";
+		case 0x03: return "256 KB";
+		case 0x04: return "512 KB";
+		case 0x05: return "1 MB";
+		case 0x06: return "2 MB";
+		case 0x07: return "4 MB";
+		case 0x08: return "8 MB";
+		case 0x52: return "1.1 MB";
+		case 0x53: return "1.2 MB";
+		case 0x54: return "1.5 MB";
+		default: return "(unknown)";
+	}
+}
+
+std::string Memory::getCartridgeRamSizeString(uint8_t size) {
+	switch (size) {
+		case 0x00: return "No RAM";
+		case 0x02: return "8 KB";
+		case 0x03: return "32 KB";
+		case 0x04: return "128 KB";
+		case 0x05: return "64 KB";
+		default: return "(unknown)";
+	}
+}
+
+
 std::string Memory::getRegionName(uint16_t addr)
 {
 	switch (addr & 0xF000) {
