@@ -328,51 +328,49 @@ void GUI::renderGraphicsDebugWindow() {
 
 
 		if (ImGui::CollapsingHeader("Sprites", ImGuiTreeNodeFlags_DefaultOpen)) {
-			ImGui::Columns(5);
-			// hack to make columns non resizable
-			ImGui::GetCurrentWindow()->DC.CurrentColumns[0].Flags |= ImGuiColumnsFlags_NoResize;
-			ImGui::GetCurrentWindow()->DC.CurrentColumns[1].Flags |= ImGuiColumnsFlags_NoResize;
-			ImGui::GetCurrentWindow()->DC.CurrentColumns[2].Flags |= ImGuiColumnsFlags_NoResize;
-			ImGui::GetCurrentWindow()->DC.CurrentColumns[3].Flags |= ImGuiColumnsFlags_NoResize;
-			ImGui::GetCurrentWindow()->DC.CurrentColumns[4].Flags |= ImGuiColumnsFlags_NoResize;
+			if (ImGui::BeginTable("sprites", 5, ImGuiTableFlags_SizingFixedFit)) {
 
-			for (int i = 0; i < 40; i++) {
-				int spriteVisible = ((emu->graphics.spritedata[i].x > -8 and emu->graphics.spritedata[i].x < 168)
-					and (emu->graphics.spritedata[i].y > -16 and emu->graphics.spritedata[i].y < 160));
+				// Column sizing
+				ImGui::TableSetupColumn("1", ImGuiTableColumnFlags_None, 16);
+				ImGui::TableSetupColumn("2", ImGuiTableColumnFlags_None, 16);
+				ImGui::TableSetupColumn("3", ImGuiTableColumnFlags_None, 16);
+				ImGui::TableSetupColumn("4", ImGuiTableColumnFlags_None, 16);
+				ImGui::TableSetupColumn("5", ImGuiTableColumnFlags_None, 16);
 
-				// slightly make elements transparent if not visible
-				if (not spriteVisible) {
-					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f);
-				}
+				for (int i = 0; i < 40; i++) {
+					int spriteVisible = ((emu->graphics.spritedata[i].x > -8 and emu->graphics.spritedata[i].x < 168)
+						and (emu->graphics.spritedata[i].y > -16 and emu->graphics.spritedata[i].y < 160));
 
-				ImGui::Text("%2d:", i);
-				ImGui::SameLine();
+					// slightly make elements transparent if not visible
+					if (not spriteVisible) {
+						ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f);
+					}
 
-				if (spriteVisible) {
-					int tilex = emu->graphics.spritedata[i].tile % 16;
-					int tiley = emu->graphics.spritedata[i].tile >> 4;
+					if (spriteVisible) {
+						int tilex = emu->graphics.spritedata[i].tile % 16;
+						int tiley = emu->graphics.spritedata[i].tile >> 4;
 
-					// Draw image with details on hover
-					ImGui::Image((void*)((intptr_t)emu->graphics.debugTexture), ImVec2(16,16), ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
+						// Draw image with details on hover
+						ImGui::Image((void*)((intptr_t)emu->graphics.debugTexture), ImVec2(16,16), ImVec2(tilex*(1.0/16),tiley*(1.0/24)), ImVec2((tilex+1)*(1.0/16),(tiley+1)*(1.0/24)), ImColor(255,255,255,255), ImColor(0,0,0,0));
+
+					} else {
+						// Sprite not on screen
+						// Show spacer to make the UI not flicker when showing/hiding sprites
+						ImGui::Dummy(ImVec2(16.0f, 16.0f));
+					}
 					renderHoverText("%2d (0x%2X) (%3d,%3d) f:%02X: ", i,
 						emu->graphics.spritedata[i].x, emu->graphics.spritedata[i].y,
 						emu->graphics.spritedata[i].tile, emu->graphics.spritedata[i].flags);
 
-				} else {
-					// Sprite not on screen
-					// Show spacer to make the UI not flicker when showing/hiding sprites
-					ImGui::Dummy(ImVec2(16.0f, 16.0f));
+					if (not spriteVisible) {
+						ImGui::PopStyleVar();
+					}
+
+					ImGui::TableNextColumn();
 				}
 
-				if (not spriteVisible) {
-					ImGui::PopStyleVar();
-				}
-
-				ImGui::NextColumn();
-				if (i % 5 == 0)
-					ImGui::Separator();
+				ImGui::EndTable();
 			}
-			ImGui::Columns(1);
 		}
 
 		if (ImGui::CollapsingHeader("Background tileset", ImGuiTreeNodeFlags_DefaultOpen)) {
