@@ -11,27 +11,29 @@ Audio::~Audio()
 
 void Audio::initialize()
 {
-	memset(&want, 0, sizeof(want));
+	if (not initialized) {
+		memset(&want, 0, sizeof(want));
 
-	want.freq = 48000;
-	want.format = AUDIO_S8;
-	want.channels = 1;
-	want.samples = 128;
-	want.userdata = this; // store reference to this for the callback
-	want.callback = reinterpret_cast<void (*)(void*, unsigned char*, int)>(&Audio::play_audio);
+		want.freq = 48000;
+		want.format = AUDIO_S8;
+		want.channels = 1;
+		want.samples = 128;
+		want.userdata = this; // store reference to this for the callback
+		want.callback = reinterpret_cast<void (*)(void*, unsigned char*, int)>(&Audio::play_audio);
 
-	dev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
-	if (not dev) {
-		std::cout << "Failed to open audio: " << SDL_GetError() << std::endl;
+		dev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
+		if (not dev) {
+			std::cout << "Failed to open audio: " << SDL_GetError() << std::endl;
+		}
+
+		// Unpause audio device
+		SDL_PauseAudioDevice(dev, 0);
+
+		// Reset sample counter
+		sample_ctr = 0;
+
+		initialized = true;
 	}
-
-	// Unpause audio device
-    SDL_PauseAudioDevice(dev, 0);
-
-    // Reset sample counter
-    sample_ctr = 0;
-
-    initialized = true;
 }
 
 void Audio::writeByte(uint8_t b, uint16_t addr)
@@ -300,10 +302,10 @@ void Audio::play_audio(uint8_t *stream, int len)
 
 		// Add everything together
 		tmp = ((double)ch_sample[0]
-		    + (double)ch_sample[1]
-		    + (ch3.volume == 0 ? 0.0 :
-		    	(double)(ch_sample[2] >> (ch3.volume - 1)))
-		    + (double)ch_sample[3]) * 32;
+			+ (double)ch_sample[1]
+			+ (ch3.volume == 0 ? 0.0 :
+				(double)(ch_sample[2] >> (ch3.volume - 1)))
+			+ (double)ch_sample[3]) * 32;
 		//stream[i] = (tmp >= 127 ? 127 : (tmp <= -128 ? -128 : tmp));
 		stream[i] = tmp;
 

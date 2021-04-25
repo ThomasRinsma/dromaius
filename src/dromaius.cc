@@ -43,7 +43,7 @@ void Dromaius::reset()
 	graphics.initialize();
 	input.initialize();
 	memory.initialize();
-	//audio.initialize();
+	audio.initialize();
 }
 
 void Dromaius::saveState(uint8_t slot)
@@ -59,7 +59,9 @@ void Dromaius::saveState(uint8_t slot)
 	memcpy(dest, (uint8_t *)&memory, sizeof(Memory)); dest += sizeof(Memory);
 
 	// Write to file
-	std::ofstream file("savestate.bin", std::ios::binary);
+	char filename[255];
+	sprintf(filename, "savestate_%d.bin", slot);
+	std::ofstream file(filename, std::ios::binary);
 	file.write((const char *)state, sizeof(state));
 }
 
@@ -69,7 +71,9 @@ bool Dromaius::loadState(uint8_t slot)
 	uint8_t state[expectedLen];
 
 	// Load file
-	std::ifstream file("savestate.bin", std::ios::binary);
+	char filename[255];
+	sprintf(filename, "savestate_%d.bin", slot);
+	std::ifstream file(filename, std::ios::binary);
 
 	// Verify length
 	file.seekg(0, file.end);

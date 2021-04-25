@@ -153,12 +153,42 @@ void GUI::renderSettingsWindow() {
 		if (ImGui::Button("Reset ROM")) {
 			emu->reset();
 		}
-		if (ImGui::Button("Save state")) {
-			emu->saveState(0);
+		ImGui::SameLine();
+		if (ImGui::Button("Unload ROM")) {
+			emu->unloadRom();
 		}
-		if (ImGui::Button("Load state")) {
-			emu->loadState(0);
+
+		ImGui::Separator();
+
+		// Savestates
+		ImGui::Text("Save state: ");
+		ImGui::PushID(0);
+		for (int i = 0; i < 10; ++i) {
+			if (i > 0)
+				ImGui::SameLine();
+			if (ImGui::SmallButton(std::to_string(i).c_str())) {
+				emu->saveState(i);
+			}
+
 		}
+		ImGui::PopID();
+
+		ImGui::Separator();
+
+		ImGui::Text("Load state: ");
+		ImGui::PushID(1);
+		for (int i = 0; i < 10; ++i) {
+			if (i > 0)
+				ImGui::SameLine();
+			if (ImGui::SmallButton(std::to_string(i).c_str())) {
+				emu->loadState(i);
+			}
+
+		}
+		ImGui::PopID();
+
+		ImGui::Separator();
+
 		if (ImGui::Button("Dump memory to \nfile (memdump.bin)")) {
 			emu->memory.dumpToFile("memdump.bin");
 		}
