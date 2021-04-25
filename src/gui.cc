@@ -691,6 +691,7 @@ void GUI::render() {
 	ImGui::PopStyleVar();
 
 	// Menubar
+	static void(*showAboutPopup)() = [](){};
 	if (ImGui::BeginMenuBar())
 	{
 		if (ImGui::BeginMenu("File"))
@@ -713,8 +714,38 @@ void GUI::render() {
 			ImGui::MenuItem("imgui demo window", nullptr, &showImguiDemoWindow);
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Help"))
+		{
+			if (ImGui::MenuItem("About")) {
+				showAboutPopup = []()
+				{
+					if (!ImGui::IsPopupOpen("about"))
+						ImGui::OpenPopup("about");
+				
+					if (ImGui::BeginPopupModal("about", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+						ImGui::Text("Dromaius is a GameBoy (DMG) emulator and debugger.\n");
+						ImGui::Text("https://github.com/ThomasRinsma/dromaius/\n\n");
+						ImGui::Text("Libraries used:");
+						ImGui::BulletText("Dear ImGui: https://github.com/ocornut/imgui");
+						ImGui::BulletText("imgui-filebrowser: https://github.com/AirGuanZ/imgui-filebrowser");
+						ImGui::Text("\n\n");
+
+						if (ImGui::Button("Close", ImVec2(80, 0)))
+						{
+							ImGui::CloseCurrentPopup();
+							showAboutPopup = [](){};
+						}
+
+						ImGui::EndPopup();
+					}
+				};
+				ImGui::OpenPopup("about");
+			}
+			ImGui::EndMenu();
+		}
 		ImGui::EndMenuBar();
 	}
+	showAboutPopup();
 
 	// === Docking code ===
 	ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
