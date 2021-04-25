@@ -289,6 +289,14 @@ void GUI::renderAudioWindow() {
 	ImGui::Begin("Audio", nullptr);
 
 	if (emu->memory.romLoaded) {
+		if (ImGui::Button("mute")) {
+			SDL_PauseAudioDevice(emu->audio.dev, 1);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("unmute")) {
+			SDL_PauseAudioDevice(emu->audio.dev, 0);
+		}
+
 		ImGui::Text("Enabled: %s", emu->audio.isEnabled ? "yes" : "no");
 
 		ImGui::Separator();
