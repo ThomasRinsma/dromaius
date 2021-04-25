@@ -119,6 +119,7 @@ struct Memory
 	std::pair<uint8_t, uint16_t> getAddressFromSymbol(uint8_t bank, std::string &symbol);
 
 	bool loadRom(std::string const &filename);
+	void unloadRom();
 	void initialize();
 	void freeBuffers();
 

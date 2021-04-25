@@ -103,6 +103,13 @@ bool Memory::loadRom(std::string const &filename)
 	return true;
 }
 
+void Memory::unloadRom() {
+	if (romLoaded) {
+		delete[] rom;
+		romLoaded = false;
+	}
+}
+
 void Memory::tryParseSymbolsFile(std::string filename)
 {
 	printf("Trying to load symbols file '%s'...\n", filename.c_str());

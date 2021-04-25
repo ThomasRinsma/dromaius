@@ -21,7 +21,7 @@ struct GUI
 	SDL_Window *window;
 	SDL_GLContext glcontext;
 	const char* glsl_version;
-	ImGui::FileBrowser fileDialog;
+	ImGui::FileBrowser openRomDialog;
 
 	GUI();
 	~GUI();

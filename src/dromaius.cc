@@ -32,6 +32,10 @@ bool Dromaius::initializeWithRom(std::string const filename)
 	return memory.loadRom(this->filename);
 }
 
+void Dromaius::unloadRom() {
+	memory.unloadRom();
+}
+
 void Dromaius::reset()
 {
 	// (re-)initialize GB components
@@ -116,33 +120,37 @@ void Dromaius::run()
 	while (not done) {
 		int oldTime = SDL_GetTicks();
 
-		if (cpu.stepMode and cpu.stepInst) {
-			// Perform one CPU instruction
-			if (not cpu.executeInstruction()) {
-				done = 1;
-				break;
-			}
-			graphics.step();
-			
-			cpu.stepInst = false;
-		} else if (not cpu.stepMode or cpu.stepFrame) {
-			// Do a frame
-			graphics.renderDebugTileset();
-			
-			// Step CPU
-			unsigned long long frametime = cpu.c + CPU_CLOCKS_PER_FRAME;
-			while (cpu.c < frametime) {
+		// Skip all logic if no ROM is loaded
+		if (memory.romLoaded) {
+			if (cpu.stepMode and cpu.stepInst) {
+				// Perform one CPU instruction
 				if (not cpu.executeInstruction()) {
 					done = 1;
 					break;
 				}
-
 				graphics.step();
-			}
+				
+				cpu.stepInst = false;
+			} else if (not cpu.stepMode or cpu.stepFrame) {
+				// Do a frame
+				graphics.renderDebugTileset();
+				
+				// Step CPU
+				unsigned long long frametime = cpu.c + CPU_CLOCKS_PER_FRAME;
+				while (cpu.c < frametime) {
+					if (not cpu.executeInstruction()) {
+						done = 1;
+						break;
+					}
 
-			cpu.stepFrame = false;
+					graphics.step();
+				}
+
+				cpu.stepFrame = false;
+			}
 		}
 
+		// Always render frames, for UI to work
 		graphics.renderFrame();
 		
 		// SDL event loop

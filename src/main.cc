@@ -24,9 +24,11 @@ settings_t initSettings()
 
 int main(int argc, char *argv[])
 {
-	if (argc != 2) {
-		std::cerr << "No rom provided, exiting.\n";
-		exit(1);
+	char *filename = nullptr;
+
+	// Optional filename argument
+	if (argc == 2) {
+		filename = argv[1];
 	}
 	
 	// Initialize emulator with settings
@@ -34,13 +36,15 @@ int main(int argc, char *argv[])
 	Dromaius emu(settings);
 
 
-	// Initialize components and try to load ROM file.
-	if (emu.initializeWithRom(argv[1])) {
-		std::cout << "Succesfully loaded ROM '" << argv[1]
-		          << "' of size " << emu.memory.romLen << " into memory.\n";
-	} else {
-		std::cerr << "Error loading rom, exiting.\n";
-		return -1;
+	if (filename) {
+		// Initialize components and try to load ROM file.
+		if (emu.initializeWithRom(argv[1])) {
+			std::cout << "Succesfully loaded ROM '" << argv[1]
+			          << "' of size " << emu.memory.romLen << " into memory.\n";
+		} else {
+			std::cerr << "Error loading rom, exiting.\n";
+			return -1;
+		}
 	}
 
 	// Start the emulation (synchronous)
