@@ -1,4 +1,5 @@
 dromaius
+tests/
 memdump.bin
 savestate.bin
 savestate_*.bin
