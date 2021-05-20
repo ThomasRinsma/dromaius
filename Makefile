@@ -1,8 +1,8 @@
 CXX = g++ --std=c++20
 CFLAGS =-g -O0 -I libs/imgui -I libs/imgui-filebrowser -I libs/gl3w `sdl2-config --cflags` -Wno-pmf-conversions
-LDFLAGS =`sdl2-config --libs` -lm -lGL -ldl
+LDFLAGS =`sdl2-config --libs` -lSDL2_net -lm -lGL -ldl
 
-SOURCES = audio.cc cpu.cc graphics.cc gui.cc input.cc main.cc memory.cc dromaius.cc
+SOURCES = gdbstub.cc audio.cc cpu.cc graphics.cc gui.cc input.cc main.cc memory.cc dromaius.cc
 SOURCES += games/pokemon_red.cc
 SOURCES += imgui_impl_sdl.cc imgui_impl_opengl3.cc
 LIBSOURCES = libs/imgui/imgui.cpp libs/imgui/imgui_widgets.cpp libs/imgui/imgui_tables.cpp libs/imgui/imgui_demo.cpp

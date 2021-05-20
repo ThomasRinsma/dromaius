@@ -16,6 +16,12 @@ GUI::GUI() {
 		exit(1);
 	}
 
+	if (SDLNet_Init() == -1) {
+		std::cerr << "Failed to initialize SDL_net.\n";
+		exit(1);
+	}
+
+
 	// Setup window
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -91,6 +97,7 @@ GUI::~GUI() {
 	//SDL_GL_DeleteContext(glcontext);
 	//SDL_DestroyWindow(window);
 	SDL_Quit();
+	SDLNet_Quit();
 }
 
 void GUI::initializeImgui() {
